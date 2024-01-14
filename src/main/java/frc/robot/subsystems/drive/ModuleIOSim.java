@@ -22,8 +22,8 @@ public class ModuleIOSim implements ModuleIO {
   private double turnAppliedVolts = 0.0;
 
   public ModuleIOSim() {
-    this.m_driveSim = new DCMotorSim(DCMotor.getNEO(1), Constants.Drivetrain.kDriveGearing, 0.025);
-    this.m_turnSim = new DCMotorSim(DCMotor.getNEO(1), Constants.Drivetrain.kTurnGearing, 0.004);
+    this.m_driveSim = new DCMotorSim(DCMotor.getNEO(1), DriveBase.kDriveGearing, 0.025);
+    this.m_turnSim = new DCMotorSim(DCMotor.getNEO(1), DriveBase.kTurnGearing, 0.004);
   }
 
   @Override

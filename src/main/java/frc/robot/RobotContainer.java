@@ -10,9 +10,9 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.commands.FeedForwardCharacterization;
 import frc.robot.commands.drive.DriveCommandFactory;
 import frc.robot.constants.Constants;
-import frc.robot.constants.HardwareIds;
 import frc.robot.subsystems.drive.*;
 import frc.robot.util.LocalADStarAK;
 import frc.robot.util.PathPlannerUtil;
@@ -35,23 +35,11 @@ public class RobotContainer {
       case REAL -> {
         m_drive =
             new DriveBase(
-                new GyroIOPigeon2(HardwareIds.kPigeonId),
-                new ModuleIOSparkMax(
-                    HardwareIds.kFrontLeftDriveId,
-                    HardwareIds.kFrontLeftTurnId,
-                    HardwareIds.kFrontLeftEncoderId),
-                new ModuleIOSparkMax(
-                    HardwareIds.kFrontRightDriveId,
-                    HardwareIds.kFrontRightTurnId,
-                    HardwareIds.kFrontRightEncoderId),
-                new ModuleIOSparkMax(
-                    HardwareIds.kBackLeftDriveId,
-                    HardwareIds.kBackLeftTurnId,
-                    HardwareIds.kBackLeftEncoderId),
-                new ModuleIOSparkMax(
-                    HardwareIds.kBackRightDriveId,
-                    HardwareIds.kBackRightTurnId,
-                    HardwareIds.kBackRightEncoderId));
+                new GyroIOPigeon2(),
+                new ModuleIOSparkMax(0),
+                new ModuleIOSparkMax(1),
+                new ModuleIOSparkMax(2),
+                new ModuleIOSparkMax(3));
       }
       case SIM -> {
         m_drive =
@@ -77,11 +65,11 @@ public class RobotContainer {
     AutoBuilder.configureHolonomic(
         () -> PoseEstimator.getInstance().getPose(),
         (pose) -> PoseEstimator.getInstance().resetPose(pose),
-        () -> Constants.Drivetrain.m_kinematics.toChassisSpeeds(m_drive.getModuleStates()),
+        () -> DriveBase.m_kinematics.toChassisSpeeds(m_drive.getModuleStates()),
         m_drive::runVelocity,
         new HolonomicPathFollowerConfig(
-            Constants.Drivetrain.kMaxLinearVelocityMetersPerSecond,
-            Constants.Drivetrain.kDriveBaseRadiusMeters,
+            DriveBase.kMaxLinearVelocityMetersPerSecond,
+            DriveBase.kDriveBaseRadiusMeters,
             new ReplanningConfig()),
         () ->
             DriverStation.getAlliance().isPresent()
@@ -99,19 +87,25 @@ public class RobotContainer {
             "Auto Choices",
             PathPlannerUtil.configureChooserWithPaths(AutoBuilder.buildAutoChooser()));
 
+    if (Constants.TUNING_MODE) {
+      // Set up FF characterization routines
+      autoChooser.addOption(
+          "DriveBase FF Characterization",
+          new FeedForwardCharacterization(
+              m_drive, m_drive::runCharacterizationVolts, m_drive::getCharacterizationVelocity));
+    }
+
     // Configure the button bindings
     configureButtonBindings();
   }
 
   private void configureButtonBindings() {
     m_drive.setDefaultCommand(
-        DriveCommandFactory.sprintJoystickDrive(
+        DriveCommandFactory.joystickDrive(
             m_drive,
             () -> -controller.getLeftY(),
             () -> -controller.getLeftX(),
             () -> -controller.getRightX(),
-            controller.getHID()::getRightBumper,
-            0.5,
             0.1));
     controller.x().onTrue(Commands.runOnce(m_drive::stopWithX, m_drive));
   }

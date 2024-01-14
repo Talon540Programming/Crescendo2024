@@ -6,6 +6,8 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.Pigeon2;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
+import frc.robot.constants.Constants;
+import frc.robot.constants.HardwareIds;
 import frc.robot.util.PoseEstimator;
 import java.util.Queue;
 
@@ -27,8 +29,12 @@ public class GyroIOPigeon2 implements GyroIO {
 
   private final Queue<Double> yawPositionQueue;
 
-  public GyroIOPigeon2(int id) {
-    this.m_gyro = new Pigeon2(id);
+  public GyroIOPigeon2() {
+    switch (Constants.getRobotType()) {
+      case ROBOT_2023_OFFSEASON -> this.m_gyro = new Pigeon2(HardwareIds.OFFSEASON_2023.kPigeonId);
+      case ROBOT_2024_COMP -> this.m_gyro = new Pigeon2(HardwareIds.COMP_2024.kPigeonId);
+      default -> throw new RuntimeException("Invalid RobotType for GyroIOPigeon2");
+    }
 
     this.m_gyro.getConfigurator().setYaw(0.0);
 

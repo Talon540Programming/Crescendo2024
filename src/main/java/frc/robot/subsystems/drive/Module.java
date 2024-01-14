@@ -39,18 +39,28 @@ public class Module {
       new PIDController(0, 0, 0, Constants.kLoopPeriodSecs);
 
   static {
-    switch (Constants.getRobotMode()) {
-      case REPLAY, REAL:
-        driveKp.initDefault(0.1); // TODO
+    switch (Constants.getRobotType()) {
+      case ROBOT_2023_OFFSEASON -> {
+        driveKp.initDefault(0.1);
+        driveKi.initDefault(0.0);
+        driveKd.initDefault(0.0);
+        driveKs.initDefault(0.14085);
+        driveKv.initDefault(0.12816);
+        turnKp.initDefault(7.5);
+        turnKi.initDefault(0.0);
+        turnKd.initDefault(0.0);
+      }
+      case ROBOT_2024_COMP -> {
+        driveKp.initDefault(0.0); // TODO
         driveKi.initDefault(0.0); // TODO
         driveKd.initDefault(0.0); // TODO
-        driveKs.initDefault(0.14507); // TODO
-        driveKv.initDefault(0.13521); // TODO
-        turnKp.initDefault(5.0); // TODO
+        driveKs.initDefault(0.0); // TODO
+        driveKv.initDefault(0.0); // TODO
+        turnKp.initDefault(0.0); // TODO
         turnKi.initDefault(0.0); // TODO
         turnKd.initDefault(0.0); // TODO
-        break;
-      case SIM:
+      }
+      case ROBOT_SIMBOT -> {
         driveKp.initDefault(0.1);
         driveKi.initDefault(0.0);
         driveKd.initDefault(0.0);
@@ -59,17 +69,7 @@ public class Module {
         turnKp.initDefault(10.0);
         turnKi.initDefault(0.0);
         turnKd.initDefault(0.0);
-        break;
-      default:
-        driveKp.initDefault(0.0);
-        driveKi.initDefault(0.0);
-        driveKd.initDefault(0.0);
-        driveKs.initDefault(0.0);
-        driveKv.initDefault(0.0);
-        turnKp.initDefault(0.0);
-        turnKi.initDefault(0.0);
-        turnKd.initDefault(0.0);
-        break;
+      }
     }
   }
 
@@ -123,7 +123,7 @@ public class Module {
             m_driveVelocitySetpoint * Math.cos(m_turnController.getPositionError());
 
         // Run drive controller
-        double velocityRadPerSec = adjustSpeedSetpoint / Constants.Drivetrain.kWheelRadiusMeters;
+        double velocityRadPerSec = adjustSpeedSetpoint / DriveBase.kWheelRadiusMeters;
         m_io.setDriveVoltage(
             m_driveFeedforward.calculate(velocityRadPerSec)
                 + m_driveController.calculate(m_inputs.driveVelocityRadPerSec, velocityRadPerSec));
@@ -135,8 +135,7 @@ public class Module {
         Math.min(m_inputs.odometryDrivePositionsRad.length, m_inputs.odometryTurnPositions.length);
     positionDeltas = new SwerveModulePosition[deltaCount];
     for (int i = 0; i < deltaCount; i++) {
-      double positionMeters =
-          m_inputs.odometryDrivePositionsRad[i] * Constants.Drivetrain.kWheelRadiusMeters;
+      double positionMeters = m_inputs.odometryDrivePositionsRad[i] * DriveBase.kWheelRadiusMeters;
       Rotation2d angle =
           m_inputs.odometryTurnPositions[i].plus(
               m_turnRelativeOffset != null ? m_turnRelativeOffset : new Rotation2d());
@@ -200,12 +199,12 @@ public class Module {
 
   /** Returns the current drive position of the module in meters. */
   public double getPositionMeters() {
-    return m_inputs.drivePositionRad * Constants.Drivetrain.kWheelRadiusMeters;
+    return m_inputs.drivePositionRad * DriveBase.kWheelRadiusMeters;
   }
 
   /** Returns the current drive velocity of the module in meters per second. */
   public double getVelocityMetersPerSec() {
-    return m_inputs.driveVelocityRadPerSec * Constants.Drivetrain.kWheelRadiusMeters;
+    return m_inputs.driveVelocityRadPerSec * DriveBase.kWheelRadiusMeters;
   }
 
   /** Returns the module position (turn angle and drive position). */

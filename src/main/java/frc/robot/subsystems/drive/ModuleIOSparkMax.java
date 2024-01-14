@@ -10,6 +10,7 @@ import com.revrobotics.RelativeEncoder;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.constants.Constants;
+import frc.robot.constants.HardwareIds;
 import frc.robot.util.PoseEstimator;
 import java.util.Queue;
 
@@ -25,10 +26,77 @@ public class ModuleIOSparkMax implements ModuleIO {
   private final Queue<Double> drivePositionQueue;
   private final Queue<Double> turnPositionQueue;
 
-  public ModuleIOSparkMax(int driveID, int turnID, int encoderID) {
-    this.m_driveMotor = new CANSparkMax(driveID, MotorType.kBrushless);
-    this.m_turnMotor = new CANSparkMax(turnID, MotorType.kBrushless);
-    this.m_absoluteEncoder = new CANcoder(encoderID);
+  public ModuleIOSparkMax(int moduleIndex) {
+    switch (Constants.getRobotType()) {
+      case ROBOT_2023_OFFSEASON -> {
+        switch (moduleIndex) {
+          case 0 -> {
+            this.m_driveMotor =
+                new CANSparkMax(HardwareIds.OFFSEASON_2023.kFrontLeftDriveId, MotorType.kBrushless);
+            this.m_turnMotor =
+                new CANSparkMax(HardwareIds.OFFSEASON_2023.kFrontLeftTurnId, MotorType.kBrushless);
+            this.m_absoluteEncoder = new CANcoder(HardwareIds.OFFSEASON_2023.kFrontLeftEncoderId);
+          }
+          case 1 -> {
+            this.m_driveMotor =
+                new CANSparkMax(
+                    HardwareIds.OFFSEASON_2023.kFrontRightDriveId, MotorType.kBrushless);
+            this.m_turnMotor =
+                new CANSparkMax(HardwareIds.OFFSEASON_2023.kFrontRightTurnId, MotorType.kBrushless);
+            this.m_absoluteEncoder = new CANcoder(HardwareIds.OFFSEASON_2023.kFrontRightEncoderId);
+          }
+          case 2 -> {
+            this.m_driveMotor =
+                new CANSparkMax(HardwareIds.OFFSEASON_2023.kBackLeftDriveId, MotorType.kBrushless);
+            this.m_turnMotor =
+                new CANSparkMax(HardwareIds.OFFSEASON_2023.kBackLeftTurnId, MotorType.kBrushless);
+            this.m_absoluteEncoder = new CANcoder(HardwareIds.OFFSEASON_2023.kBackLeftEncoderId);
+          }
+          case 3 -> {
+            this.m_driveMotor =
+                new CANSparkMax(HardwareIds.OFFSEASON_2023.kBackRightDriveId, MotorType.kBrushless);
+            this.m_turnMotor =
+                new CANSparkMax(HardwareIds.OFFSEASON_2023.kBackRightTurnId, MotorType.kBrushless);
+            this.m_absoluteEncoder = new CANcoder(HardwareIds.OFFSEASON_2023.kBackRightEncoderId);
+          }
+          default -> throw new RuntimeException("Invalid module index for ModuleIOSparkMax");
+        }
+      }
+      case ROBOT_2024_COMP -> {
+        switch (moduleIndex) {
+          case 0 -> {
+            this.m_driveMotor =
+                new CANSparkMax(HardwareIds.COMP_2024.kFrontLeftDriveId, MotorType.kBrushless);
+            this.m_turnMotor =
+                new CANSparkMax(HardwareIds.COMP_2024.kFrontLeftTurnId, MotorType.kBrushless);
+            this.m_absoluteEncoder = new CANcoder(HardwareIds.COMP_2024.kFrontLeftEncoderId);
+          }
+          case 1 -> {
+            this.m_driveMotor =
+                new CANSparkMax(HardwareIds.COMP_2024.kFrontRightDriveId, MotorType.kBrushless);
+            this.m_turnMotor =
+                new CANSparkMax(HardwareIds.COMP_2024.kFrontRightTurnId, MotorType.kBrushless);
+            this.m_absoluteEncoder = new CANcoder(HardwareIds.COMP_2024.kFrontRightEncoderId);
+          }
+          case 2 -> {
+            this.m_driveMotor =
+                new CANSparkMax(HardwareIds.COMP_2024.kBackLeftDriveId, MotorType.kBrushless);
+            this.m_turnMotor =
+                new CANSparkMax(HardwareIds.COMP_2024.kBackLeftTurnId, MotorType.kBrushless);
+            this.m_absoluteEncoder = new CANcoder(HardwareIds.COMP_2024.kBackLeftEncoderId);
+          }
+          case 3 -> {
+            this.m_driveMotor =
+                new CANSparkMax(HardwareIds.COMP_2024.kBackRightDriveId, MotorType.kBrushless);
+            this.m_turnMotor =
+                new CANSparkMax(HardwareIds.COMP_2024.kBackRightTurnId, MotorType.kBrushless);
+            this.m_absoluteEncoder = new CANcoder(HardwareIds.COMP_2024.kBackRightEncoderId);
+          }
+          default -> throw new RuntimeException("Invalid module index for ModuleIOSparkMax");
+        }
+      }
+      default -> throw new RuntimeException("Invalid robot for ModuleIOSparkMax");
+    }
 
     this.m_driveMotor.restoreFactoryDefaults();
     this.m_turnMotor.restoreFactoryDefaults();
@@ -40,7 +108,6 @@ public class ModuleIOSparkMax implements ModuleIO {
     this.m_turnRelativeEncoder = this.m_turnMotor.getEncoder();
     this.m_turnAbsoluteEncoder = this.m_absoluteEncoder.getAbsolutePosition();
 
-    this.m_turnMotor.setInverted(Constants.Drivetrain.kTurnMotorInverted);
     this.m_driveMotor.setSmartCurrentLimit(40);
     this.m_turnMotor.setSmartCurrentLimit(30);
     this.m_driveMotor.enableVoltageCompensation(12.0);
@@ -77,10 +144,10 @@ public class ModuleIOSparkMax implements ModuleIO {
   @Override
   public void updateInputs(ModuleIOInputs inputs) {
     inputs.drivePositionRad =
-        Units.rotationsToRadians(m_driveEncoder.getPosition()) / Constants.Drivetrain.kDriveGearing;
+        Units.rotationsToRadians(m_driveEncoder.getPosition()) / DriveBase.kDriveGearing;
     inputs.driveVelocityRadPerSec =
         Units.rotationsPerMinuteToRadiansPerSecond(m_driveEncoder.getVelocity())
-            / Constants.Drivetrain.kDriveGearing;
+            / DriveBase.kDriveGearing;
     inputs.driveAppliedVolts = m_driveMotor.getAppliedOutput() * m_driveMotor.getBusVoltage();
     inputs.driveCurrentAmps = new double[] {m_driveMotor.getOutputCurrent()};
 
@@ -90,25 +157,21 @@ public class ModuleIOSparkMax implements ModuleIO {
         Rotation2d.fromRotations(m_turnAbsoluteEncoder.getValueAsDouble());
 
     inputs.turnPosition =
-        Rotation2d.fromRotations(
-            m_turnRelativeEncoder.getPosition() / Constants.Drivetrain.kTurnGearing);
+        Rotation2d.fromRotations(m_turnRelativeEncoder.getPosition() / DriveBase.kTurnGearing);
     inputs.turnVelocityRadPerSec =
         Units.rotationsPerMinuteToRadiansPerSecond(m_turnRelativeEncoder.getVelocity())
-            / Constants.Drivetrain.kTurnGearing;
+            / DriveBase.kTurnGearing;
     inputs.turnAppliedVolts = m_turnMotor.getAppliedOutput() * m_turnMotor.getBusVoltage();
     inputs.turnCurrentAmps = new double[] {m_turnMotor.getOutputCurrent()};
 
     inputs.odometryDrivePositionsRad =
         this.drivePositionQueue.stream()
             .mapToDouble(
-                (Double value) ->
-                    Units.rotationsToRadians(value) / Constants.Drivetrain.kDriveGearing)
+                (Double value) -> Units.rotationsToRadians(value) / DriveBase.kDriveGearing)
             .toArray();
     inputs.odometryTurnPositions =
         this.turnPositionQueue.stream()
-            .map(
-                (Double value) ->
-                    Rotation2d.fromRotations(value / Constants.Drivetrain.kTurnGearing))
+            .map((Double value) -> Rotation2d.fromRotations(value / DriveBase.kTurnGearing))
             .toArray(Rotation2d[]::new);
     this.drivePositionQueue.clear();
     this.turnPositionQueue.clear();

@@ -13,6 +13,7 @@ public class LoggerUtil {
     // Record metadata from generated state file.
     Logger.recordMetadata("ROBOT_NAME", Constants.getRobotType().toString());
     Logger.recordMetadata("RUNTIME_ENVIRONMENT", RobotBase.getRuntimeType().toString());
+    Logger.recordMetadata("TUNING_MODE", Boolean.toString(Constants.TUNING_MODE));
     Logger.recordMetadata("PROJECT_NAME", BuildConstants.MAVEN_NAME);
     Logger.recordMetadata("BUILD_DATE", BuildConstants.BUILD_DATE);
     Logger.recordMetadata("GIT_SHA", BuildConstants.GIT_SHA);

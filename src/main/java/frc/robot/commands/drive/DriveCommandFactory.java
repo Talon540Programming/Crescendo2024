@@ -4,7 +4,6 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.constants.Constants;
 import frc.robot.subsystems.drive.DriveBase;
 import frc.robot.util.PoseEstimator;
 import java.util.function.BooleanSupplier;
@@ -115,14 +114,18 @@ public class DriveCommandFactory {
           if (x_val != 0) {
             x_val =
                 (x_val * xCoefficient.get() * maxNonSprintSpeed)
-                    + (sprintSupplier.getAsBoolean() ? sprintIncreaseVal : 0.0);
+                    + (sprintSupplier.getAsBoolean()
+                        ? Math.copySign(sprintIncreaseVal, x_val)
+                        : 0.0);
             x = Math.copySign(Math.min(Math.pow(x_val, 2), 1.0), x_val);
           }
 
           if (y_val != 0) {
             y_val =
                 (y_val * yCoefficient.get() * maxNonSprintSpeed)
-                    + (sprintSupplier.getAsBoolean() ? sprintIncreaseVal : 0.0);
+                    + (sprintSupplier.getAsBoolean()
+                        ? Math.copySign(sprintIncreaseVal, y_val)
+                        : 0.0);
             y = Math.copySign(Math.min(Math.pow(y_val, 2), 1.0), y_val);
           }
 
@@ -138,16 +141,16 @@ public class DriveCommandFactory {
 
   private static ChassisSpeeds toFieldRelative(double x, double y, double omega) {
     return ChassisSpeeds.fromFieldRelativeSpeeds(
-        x * Constants.Drivetrain.kMaxLinearVelocityMetersPerSecond,
-        y * Constants.Drivetrain.kMaxLinearVelocityMetersPerSecond,
-        omega * Constants.Drivetrain.kMaxAngularVelocityRadiansPerSecond,
+        x * DriveBase.kMaxLinearVelocityMetersPerSecond,
+        y * DriveBase.kMaxLinearVelocityMetersPerSecond,
+        omega * DriveBase.kMaxAngularVelocityRadiansPerSecond,
         PoseEstimator.getInstance().getPose().getRotation());
   }
 
   private static ChassisSpeeds toRobotRelative(double x, double y, double omega) {
     return new ChassisSpeeds(
-        x * Constants.Drivetrain.kMaxLinearVelocityMetersPerSecond,
-        y * Constants.Drivetrain.kMaxLinearVelocityMetersPerSecond,
-        omega * Constants.Drivetrain.kMaxAngularVelocityRadiansPerSecond);
+        x * DriveBase.kMaxLinearVelocityMetersPerSecond,
+        y * DriveBase.kMaxLinearVelocityMetersPerSecond,
+        omega * DriveBase.kMaxAngularVelocityRadiansPerSecond);
   }
 }
