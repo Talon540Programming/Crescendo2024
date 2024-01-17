@@ -5,6 +5,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.constants.Constants;
+import frc.robot.util.TimestampedSensorMeasurement;
+import java.util.List;
 
 /**
  * Physics sim implementation of module IO.
@@ -43,8 +45,9 @@ public class ModuleIOSim implements ModuleIO {
     inputs.turnAppliedVolts = turnAppliedVolts;
     inputs.turnCurrentAmps = new double[] {Math.abs(m_turnSim.getCurrentDrawAmps())};
 
-    inputs.odometryDrivePositionsRad = new double[] {inputs.drivePositionRad};
-    inputs.odometryTurnPositions = new Rotation2d[] {inputs.turnPosition};
+    inputs.odometryDrivePositionsRad =
+        List.of(new TimestampedSensorMeasurement<>(inputs.drivePositionRad));
+    inputs.odometryTurnPositions = List.of(new TimestampedSensorMeasurement<>(inputs.turnPosition));
   }
 
   @Override
