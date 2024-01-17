@@ -40,7 +40,7 @@ public class Robot extends LoggedRobot {
         break;
     }
 
-    Logger.start();
+    if(Constants.ENABLE_LOGGING) Logger.start();
 
     robotContainer = new RobotContainer();
   }
