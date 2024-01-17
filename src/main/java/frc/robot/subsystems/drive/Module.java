@@ -6,12 +6,16 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import frc.robot.constants.Constants;
+import frc.robot.subsystems.drive.ModuleIO.ModuleIOInputs;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.TimestampedSensorMeasurement;
+import java.util.ArrayList;
+import java.util.List;
 import org.littletonrobotics.junction.Logger;
 
 public class Module {
   private final ModuleIO m_io;
-  private final ModuleIOInputsAutoLogged m_inputs = new ModuleIOInputsAutoLogged();
+  private final ModuleIOInputs m_inputs = new ModuleIOInputs();
   private final int kModuleIndex;
 
   private Rotation2d m_turnAngleSetpoint = null;
@@ -20,7 +24,7 @@ public class Module {
   private Rotation2d m_turnRelativeOffset = null;
   private double m_lastPositionMeters;
 
-  private SwerveModulePosition[] positionDeltas = new SwerveModulePosition[] {};
+  private List<TimestampedSensorMeasurement<SwerveModulePosition>> positionDeltas = List.of();
 
   private static final LoggedTunableNumber driveKp = new LoggedTunableNumber("DriveKp");
   private static final LoggedTunableNumber driveKi = new LoggedTunableNumber("DriveKi");
@@ -132,14 +136,27 @@ public class Module {
 
     // Calculate position deltas for odometry
     int deltaCount =
-        Math.min(m_inputs.odometryDrivePositionsRad.length, m_inputs.odometryTurnPositions.length);
-    positionDeltas = new SwerveModulePosition[deltaCount];
+        Math.min(m_inputs.odometryDrivePositionsRad.size(), m_inputs.odometryTurnPositions.size());
+    positionDeltas = new ArrayList<>(deltaCount);
     for (int i = 0; i < deltaCount; i++) {
-      double positionMeters = m_inputs.odometryDrivePositionsRad[i] * DriveBase.kWheelRadiusMeters;
+      var positionMetersMeasurement = m_inputs.odometryDrivePositionsRad.get(i);
+      double positionMetersTimestamp = positionMetersMeasurement.getTimestampSeconds();
+      double positionMeters =
+          positionMetersMeasurement.getMeasurement() * DriveBase.kWheelRadiusMeters;
+
+      var turnAngleMeasurement = m_inputs.odometryTurnPositions.get(i);
+      double angleTimestamp = turnAngleMeasurement.getTimestampSeconds();
       Rotation2d angle =
-          m_inputs.odometryTurnPositions[i].plus(
-              m_turnRelativeOffset != null ? m_turnRelativeOffset : new Rotation2d());
-      positionDeltas[i] = new SwerveModulePosition(positionMeters - m_lastPositionMeters, angle);
+          turnAngleMeasurement
+              .getMeasurement()
+              .plus(m_turnRelativeOffset != null ? m_turnRelativeOffset : new Rotation2d());
+
+      double measurementTimestamp = Math.max(positionMetersTimestamp, angleTimestamp);
+
+      positionDeltas.add(
+          new TimestampedSensorMeasurement<>(
+              measurementTimestamp,
+              new SwerveModulePosition(positionMeters - m_lastPositionMeters, angle)));
       m_lastPositionMeters = positionMeters;
     }
   }
@@ -218,7 +235,7 @@ public class Module {
   }
 
   /** Returns the module position deltas received this cycle. */
-  public SwerveModulePosition[] getPositionDeltas() {
+  public List<TimestampedSensorMeasurement<SwerveModulePosition>> getPositionDeltas() {
     return positionDeltas;
   }
 }

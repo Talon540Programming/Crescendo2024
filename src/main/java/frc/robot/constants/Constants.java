@@ -7,6 +7,8 @@ public final class Constants {
   private static RobotType kRobotType = RobotType.ROBOT_2023_OFFSEASON;
   // Allows tunable values to be changed when enabled. Also adds tunable selectors to AutoSelector
   public static final boolean TUNING_MODE = true;
+  // Disable the AdvantageKit logger from running
+  public static final boolean ENABLE_LOGGING = true;
 
   public static final double kLoopPeriodSecs = 0.02;
 

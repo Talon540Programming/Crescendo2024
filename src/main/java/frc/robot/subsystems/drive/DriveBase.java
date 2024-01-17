@@ -10,6 +10,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.Constants;
+import frc.robot.subsystems.drive.GyroIO.GyroIOInputs;
 import frc.robot.util.PoseEstimator;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -29,7 +30,7 @@ public class DriveBase extends SubsystemBase {
   public static final SwerveDriveKinematics m_kinematics;
 
   private final GyroIO m_gyroIO;
-  private final GyroIOInputsAutoLogged m_gyroInputs = new GyroIOInputsAutoLogged();
+  private final GyroIOInputs m_gyroInputs = new GyroIOInputs();
   private final Module[] m_modules = new Module[4]; // FL, FR, BL, BR
 
   private Rotation2d m_lastGyroRotation = new Rotation2d();
@@ -104,14 +105,17 @@ public class DriveBase extends SubsystemBase {
 
     // Update odometry
     int deltaCount =
-        m_gyroInputs.connected ? m_gyroInputs.odometryYawPositions.length : Integer.MAX_VALUE;
+        m_gyroInputs.connected ? m_gyroInputs.odometryYawPositions.size() : Integer.MAX_VALUE;
     for (var module : m_modules) {
-      deltaCount = Math.min(deltaCount, module.getPositionDeltas().length);
+      deltaCount = Math.min(deltaCount, module.getPositionDeltas().size());
     }
     for (int i = 0; i < deltaCount; i++) {
+      double timestampSeconds = Double.NEGATIVE_INFINITY;
       SwerveModulePosition[] wheelDeltas = new SwerveModulePosition[4];
       for (int j = 0; j < 4; j++) {
-        wheelDeltas[j] = m_modules[j].getPositionDeltas()[i];
+        var moduleMeasurement = m_modules[j].getPositionDeltas().get(i);
+        timestampSeconds = Math.max(moduleMeasurement.getTimestampSeconds(), timestampSeconds);
+        wheelDeltas[j] = moduleMeasurement.getMeasurement();
       }
 
       // The twist represents the motion of the robot since the last
@@ -119,16 +123,19 @@ public class DriveBase extends SubsystemBase {
       // the gyro. The gyro is always disconnected in simulation.
       var twist = m_kinematics.toTwist2d(wheelDeltas);
       if (m_gyroInputs.connected) {
+        var gyroMeasurement = m_gyroInputs.odometryYawPositions.get(i);
+        timestampSeconds = Math.max(gyroMeasurement.getTimestampSeconds(), timestampSeconds);
         // If the gyro is connected, replace the theta component of the twist
         // with the change in angle since the last sample.
-        Rotation2d gyroRotation = m_gyroInputs.odometryYawPositions[i];
+        Rotation2d gyroRotation = gyroMeasurement.getMeasurement();
+
         twist.dtheta = gyroRotation.minus(m_lastGyroRotation).getRadians();
 
         m_lastGyroRotation = gyroRotation;
       }
 
       // Apply the twist (change since last sample) to the current pose
-      PoseEstimator.getInstance().addDriveData(twist);
+      PoseEstimator.getInstance().addDriveData(timestampSeconds, twist);
     }
 
     Logger.recordOutput("Odometry/EstimatedPose", PoseEstimator.getInstance().getPose());

@@ -11,7 +11,9 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareIds;
+import frc.robot.util.OdometryQueueThread;
 import frc.robot.util.PoseEstimator;
+import frc.robot.util.TimestampedSensorMeasurement;
 import java.util.Queue;
 
 public class ModuleIOSparkMax implements ModuleIO {
@@ -23,8 +25,8 @@ public class ModuleIOSparkMax implements ModuleIO {
   private final RelativeEncoder m_turnRelativeEncoder;
   private final StatusSignal<Double> m_turnAbsoluteEncoder;
 
-  private final Queue<Double> drivePositionQueue;
-  private final Queue<Double> turnPositionQueue;
+  private final Queue<TimestampedSensorMeasurement<Double>> drivePositionQueue;
+  private final Queue<TimestampedSensorMeasurement<Double>> turnPositionQueue;
 
   public ModuleIOSparkMax(int moduleIndex) {
     switch (Constants.getRobotType()) {
@@ -131,9 +133,9 @@ public class ModuleIOSparkMax implements ModuleIO {
     this.m_turnAbsoluteEncoder.setUpdateFrequency(50);
 
     this.drivePositionQueue =
-        SparkMaxOdometryThread.getInstance().registerSignal(m_driveEncoder::getPosition);
+        OdometryQueueThread.getInstance().registerSignal(m_driveEncoder::getPosition);
     this.turnPositionQueue =
-        SparkMaxOdometryThread.getInstance().registerSignal(m_turnRelativeEncoder::getPosition);
+        OdometryQueueThread.getInstance().registerSignal(m_turnRelativeEncoder::getPosition);
 
     this.m_driveMotor.burnFlash();
     this.m_turnMotor.burnFlash();
@@ -166,13 +168,20 @@ public class ModuleIOSparkMax implements ModuleIO {
 
     inputs.odometryDrivePositionsRad =
         this.drivePositionQueue.stream()
-            .mapToDouble(
-                (Double value) -> Units.rotationsToRadians(value) / DriveBase.kDriveGearing)
-            .toArray();
+            .map(
+                v ->
+                    new TimestampedSensorMeasurement<>(
+                        v.getTimestampSeconds(), v.getMeasurement() / DriveBase.kDriveGearing))
+            .toList();
     inputs.odometryTurnPositions =
         this.turnPositionQueue.stream()
-            .map((Double value) -> Rotation2d.fromRotations(value / DriveBase.kTurnGearing))
-            .toArray(Rotation2d[]::new);
+            .map(
+                v ->
+                    new TimestampedSensorMeasurement<>(
+                        v.getTimestampSeconds(),
+                        Rotation2d.fromRotations(v.getMeasurement() / DriveBase.kTurnGearing)))
+            .toList();
+
     this.drivePositionQueue.clear();
     this.turnPositionQueue.clear();
   }
