@@ -7,6 +7,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import java.util.ArrayList;
 import org.photonvision.PhotonCamera;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
@@ -38,19 +39,23 @@ public class VisionIOPhotonCamera implements VisionIO {
               .plus(fieldToCamera)
               .relativeTo(VisionBase.m_fieldLayout.getOrigin())
               .plus(kRobotToCamera.inverse());
-      inputs.detectedTags =
+      inputs.detectedTagsIds =
           res.getMultiTagResult().fiducialIDsUsed.stream().mapToInt(Integer::intValue).toArray();
       inputs.visionMeasurementStdDevs = MULTI_TARGET_STDDEVS;
     } else if (!res.getTargets().isEmpty()) {
       // Find the detected target with the lowest pose ambiguity that is within the field layout
       double lowestAmbiguityScore = Double.POSITIVE_INFINITY;
       PhotonTrackedTarget lowestAmbiguityTarget = null;
+      var tagsUsed = new ArrayList<Integer>();
       for (var target : res.getTargets()) {
         double targetPoseAmbiguity = target.getPoseAmbiguity();
+        // Filter out tags that aren't in the ATFL or aren't fiducial targets
+        if (VisionBase.m_fieldLayout.getTagPose(target.getFiducialId()).isEmpty()
+            || targetPoseAmbiguity == -1) continue;
 
-        if (targetPoseAmbiguity != -1
-            && targetPoseAmbiguity < lowestAmbiguityScore
-            && VisionBase.m_fieldLayout.getTagPose(target.getFiducialId()).isPresent()) {
+        tagsUsed.add(target.getFiducialId());
+
+        if (targetPoseAmbiguity < lowestAmbiguityScore) {
           lowestAmbiguityScore = targetPoseAmbiguity;
           lowestAmbiguityTarget = target;
         }
@@ -65,8 +70,7 @@ public class VisionIOPhotonCamera implements VisionIO {
                   .get()
                   .transformBy(lowestAmbiguityTarget.getBestCameraToTarget().inverse())
                   .transformBy(kRobotToCamera.inverse());
-          inputs.detectedTags =
-              res.getTargets().stream().mapToInt(PhotonTrackedTarget::getFiducialId).toArray();
+          inputs.detectedTagsIds = tagsUsed.stream().mapToInt(Integer::intValue).toArray();
           inputs.visionMeasurementStdDevs = SINGLE_TARGET_STDDEVS;
         }
       }
@@ -77,12 +81,13 @@ public class VisionIOPhotonCamera implements VisionIO {
       // fiducial targets in three dimensions
       double totalDistance = 0.0;
       // Guaranteed to have at least one target
-      int numTags = 0;
-      for (int tagId : inputs.detectedTags) {
-        var tagPoseOpt = VisionBase.m_fieldLayout.getTagPose(tagId);
-        if (tagPoseOpt.isEmpty()) continue;
-        numTags++;
-        var tagPose = tagPoseOpt.get();
+      int numTags = inputs.detectedTagsIds.length;
+      inputs.detectedTagPoses = new Pose3d[numTags];
+      for (int i = 0; i < numTags; i++) {
+        int tagId = inputs.detectedTagsIds[i];
+        // All values are guaranteed to exist within the ATFL
+        var tagPose = VisionBase.m_fieldLayout.getTagPose(tagId).orElseThrow();
+        inputs.detectedTagPoses[i] = tagPose;
         totalDistance +=
             tagPose.getTranslation().getDistance(inputs.estimatedRobotPose.getTranslation());
       }
@@ -93,7 +98,8 @@ public class VisionIOPhotonCamera implements VisionIO {
     } else {
       // Record default values if no results were found
       inputs.estimatedRobotPose = new Pose3d();
-      inputs.detectedTags = new int[] {};
+      inputs.detectedTagsIds = new int[] {};
+      inputs.detectedTagPoses = new Pose3d[] {};
       inputs.visionMeasurementStdDevs = MatBuilder.fill(Nat.N3(), Nat.N1(), 0.0, 0.0, 0.0);
     }
   }

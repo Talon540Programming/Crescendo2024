@@ -14,16 +14,18 @@ public interface VisionIO {
     public boolean hasResult = false;
     public double timestampSeconds = 0.0;
     public Pose3d estimatedRobotPose = new Pose3d();
-    public int[] detectedTags = new int[] {};
     public Matrix<N3, N1> visionMeasurementStdDevs =
-        MatBuilder.fill(Nat.N3(), Nat.N1(), 0.0, 0.0, 0.0);
+            MatBuilder.fill(Nat.N3(), Nat.N1(), 0.0, 0.0, 0.0);
+    public int[] detectedTagsIds = new int[] {};
+    public Pose3d[] detectedTagPoses = new Pose3d[] {};
 
     @Override
     public void toLog(LogTable table) {
       table.put("HasResult", hasResult);
       table.put("TimestampSeconds", timestampSeconds);
       table.put("EstimatedRobotPose", estimatedRobotPose);
-      table.put("DetectedTags", detectedTags);
+      table.put("DetectedTagsIds", detectedTagsIds);
+      table.put("DetectedTagPoses", detectedTagPoses);
       table.put("VisionMeasurementStdDevs", visionMeasurementStdDevs.getData());
     }
 
@@ -32,7 +34,8 @@ public interface VisionIO {
       hasResult = table.get("HasResult", hasResult);
       timestampSeconds = table.get("TimestampSeconds", timestampSeconds);
       estimatedRobotPose = table.get("EstimatedRobotPose", estimatedRobotPose);
-      detectedTags = table.get("DetectedTags", detectedTags);
+      detectedTagsIds = table.get("DetectedTagsIds", detectedTagsIds);
+      detectedTagPoses = table.get("DetectedTagPoses", detectedTagPoses);
       visionMeasurementStdDevs =
           MatBuilder.fill(
               Nat.N3(),
@@ -40,12 +43,13 @@ public interface VisionIO {
               table.get("VisionMeasurementStdDevs", visionMeasurementStdDevs.getData()));
     }
 
-    public VisionIOInputsAutoLogged clone() {
-      VisionIOInputsAutoLogged copy = new VisionIOInputsAutoLogged();
+    public VisionIOInputs clone() {
+      VisionIOInputs copy = new VisionIOInputs();
       copy.hasResult = this.hasResult;
       copy.timestampSeconds = this.timestampSeconds;
       copy.estimatedRobotPose = this.estimatedRobotPose;
-      copy.detectedTags = this.detectedTags.clone();
+      copy.detectedTagsIds = this.detectedTagsIds.clone();
+      copy.detectedTagPoses = this.detectedTagPoses.clone();
       copy.visionMeasurementStdDevs = this.visionMeasurementStdDevs.copy();
       return copy;
     }
