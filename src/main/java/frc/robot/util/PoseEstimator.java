@@ -51,5 +51,5 @@ public class PoseEstimator {
   }
 
   public void addVisionData(
-      Pose2d pose, double timestampSeconds, Matrix<N3, N1> visionMeasurementStdDevs) {}
+      double timestampSeconds, Pose2d pose, Matrix<N3, N1> visionMeasurementStdDevs) {}
 }

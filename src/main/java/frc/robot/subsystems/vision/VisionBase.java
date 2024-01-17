@@ -38,8 +38,8 @@ public class VisionBase extends SubsystemBase {
 
       PoseEstimator.getInstance()
           .addVisionData(
-              input.estimatedRobotPose.toPose2d(),
               input.timestampSeconds,
+              input.estimatedRobotPose.toPose2d(),
               input.visionMeasurementStdDevs);
     }
   }

@@ -15,7 +15,7 @@ public interface VisionIO {
     public double timestampSeconds = 0.0;
     public Pose3d estimatedRobotPose = new Pose3d();
     public Matrix<N3, N1> visionMeasurementStdDevs =
-            MatBuilder.fill(Nat.N3(), Nat.N1(), 0.0, 0.0, 0.0);
+        MatBuilder.fill(Nat.N3(), Nat.N1(), 0.0, 0.0, 0.0);
     public int[] detectedTagsIds = new int[] {};
     public Pose3d[] detectedTagPoses = new Pose3d[] {};
 
