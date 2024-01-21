@@ -33,7 +33,7 @@ public class VisionBase extends SubsystemBase {
       m_cameras[i].updateInputs(input);
       Logger.processInputs("Vision/Cam" + i, input);
 
-      // Don't report if no tags were found
+      // Don't report if there is no valid global pose estimate
       if (!input.hasResult) continue;
 
       PoseEstimator.getInstance()
