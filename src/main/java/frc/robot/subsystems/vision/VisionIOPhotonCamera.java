@@ -27,6 +27,7 @@ public class VisionIOPhotonCamera implements VisionIO {
 
   @Override
   public void updateInputs(VisionIOInputs inputs) {
+    inputs.isConnected = m_camera.isConnected();
     var res = m_camera.getLatestResult();
     inputs.timestampSeconds = res.getTimestampSeconds();
     inputs.hasResult = false;

@@ -11,6 +11,7 @@ import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 public interface VisionIO {
   public static class VisionIOInputs implements LoggableInputs, Cloneable {
+    public boolean isConnected = false;
     public boolean hasResult = false;
     public double timestampSeconds = 0.0;
     public Pose3d estimatedRobotPose = new Pose3d();
@@ -21,6 +22,7 @@ public interface VisionIO {
 
     @Override
     public void toLog(LogTable table) {
+      table.put("IsConnected", isConnected);
       table.put("HasResult", hasResult);
       table.put("TimestampSeconds", timestampSeconds);
       table.put("EstimatedRobotPose", estimatedRobotPose);
@@ -31,6 +33,7 @@ public interface VisionIO {
 
     @Override
     public void fromLog(LogTable table) {
+      isConnected = table.get("IsConnected", isConnected);
       hasResult = table.get("HasResult", hasResult);
       timestampSeconds = table.get("TimestampSeconds", timestampSeconds);
       estimatedRobotPose = table.get("EstimatedRobotPose", estimatedRobotPose);
@@ -45,6 +48,7 @@ public interface VisionIO {
 
     public VisionIOInputs clone() {
       VisionIOInputs copy = new VisionIOInputs();
+      copy.isConnected = this.isConnected;
       copy.hasResult = this.hasResult;
       copy.timestampSeconds = this.timestampSeconds;
       copy.estimatedRobotPose = this.estimatedRobotPose;
