@@ -37,23 +37,14 @@ public class DriveBase extends SubsystemBase {
 
   static {
     switch (Constants.getRobotType()) {
-      case ROBOT_SIMBOT, ROBOT_2023_OFFSEASON -> {
+      case ROBOT_SIMBOT, ROBOT_2024_COMP -> {
         kDriveGearing = (50.0 / 14.0) * (17.0 / 27.0) * (45.0 / 15.0);
         kTurnGearing = 12.8;
         kWheelRadiusMeters = Units.inchesToMeters(2.0);
-        kTrackWidthXMeters = Units.inchesToMeters(20.5);
-        kTrackWidthYMeters = Units.inchesToMeters(20.5);
+        kTrackWidthXMeters = Units.inchesToMeters(22.5);
+        kTrackWidthYMeters = Units.inchesToMeters(22.5);
 
         kMaxLinearVelocityMetersPerSecond = Units.feetToMeters(14.5);
-      }
-      case ROBOT_2024_COMP -> {
-        kDriveGearing = 0.0; // TODO
-        kTurnGearing = 0.0; // TODO
-        kWheelRadiusMeters = 0.0; // TODO
-        kTrackWidthXMeters = 0.0; // TODO
-        kTrackWidthYMeters = 0.0; // TODO
-
-        kMaxLinearVelocityMetersPerSecond = 0.0; // TODO
       }
       default -> throw new RuntimeException("Unknown RobotType for Drivebase");
     }

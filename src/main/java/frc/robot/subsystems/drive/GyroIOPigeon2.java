@@ -33,7 +33,6 @@ public class GyroIOPigeon2 implements GyroIO {
 
   public GyroIOPigeon2() {
     switch (Constants.getRobotType()) {
-      case ROBOT_2023_OFFSEASON -> this.m_gyro = new Pigeon2(HardwareIds.OFFSEASON_2023.kPigeonId);
       case ROBOT_2024_COMP -> this.m_gyro = new Pigeon2(HardwareIds.COMP_2024.kPigeonId);
       default -> throw new RuntimeException("Invalid RobotType for GyroIOPigeon2");
     }

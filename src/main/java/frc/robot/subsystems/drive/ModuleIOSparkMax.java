@@ -30,40 +30,6 @@ public class ModuleIOSparkMax implements ModuleIO {
 
   public ModuleIOSparkMax(int moduleIndex) {
     switch (Constants.getRobotType()) {
-      case ROBOT_2023_OFFSEASON -> {
-        switch (moduleIndex) {
-          case 0 -> {
-            this.m_driveMotor =
-                new CANSparkMax(HardwareIds.OFFSEASON_2023.kFrontLeftDriveId, MotorType.kBrushless);
-            this.m_turnMotor =
-                new CANSparkMax(HardwareIds.OFFSEASON_2023.kFrontLeftTurnId, MotorType.kBrushless);
-            this.m_absoluteEncoder = new CANcoder(HardwareIds.OFFSEASON_2023.kFrontLeftEncoderId);
-          }
-          case 1 -> {
-            this.m_driveMotor =
-                new CANSparkMax(
-                    HardwareIds.OFFSEASON_2023.kFrontRightDriveId, MotorType.kBrushless);
-            this.m_turnMotor =
-                new CANSparkMax(HardwareIds.OFFSEASON_2023.kFrontRightTurnId, MotorType.kBrushless);
-            this.m_absoluteEncoder = new CANcoder(HardwareIds.OFFSEASON_2023.kFrontRightEncoderId);
-          }
-          case 2 -> {
-            this.m_driveMotor =
-                new CANSparkMax(HardwareIds.OFFSEASON_2023.kBackLeftDriveId, MotorType.kBrushless);
-            this.m_turnMotor =
-                new CANSparkMax(HardwareIds.OFFSEASON_2023.kBackLeftTurnId, MotorType.kBrushless);
-            this.m_absoluteEncoder = new CANcoder(HardwareIds.OFFSEASON_2023.kBackLeftEncoderId);
-          }
-          case 3 -> {
-            this.m_driveMotor =
-                new CANSparkMax(HardwareIds.OFFSEASON_2023.kBackRightDriveId, MotorType.kBrushless);
-            this.m_turnMotor =
-                new CANSparkMax(HardwareIds.OFFSEASON_2023.kBackRightTurnId, MotorType.kBrushless);
-            this.m_absoluteEncoder = new CANcoder(HardwareIds.OFFSEASON_2023.kBackRightEncoderId);
-          }
-          default -> throw new RuntimeException("Invalid module index for ModuleIOSparkMax");
-        }
-      }
       case ROBOT_2024_COMP -> {
         switch (moduleIndex) {
           case 0 -> {
