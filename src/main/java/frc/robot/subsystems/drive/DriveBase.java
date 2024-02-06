@@ -184,20 +184,6 @@ public class DriveBase extends SubsystemBase {
     return states;
   }
 
-  public void runCharacterizationVolts(double volts) {
-    for (var module : m_modules) {
-      module.runCharacterization(volts);
-    }
-  }
-
-  public double getCharacterizationVelocity() {
-    double driveVelocityAverage = 0.0;
-    for (var module : m_modules) {
-      driveVelocityAverage += module.getCharacterizationVelocity();
-    }
-    return driveVelocityAverage / 4.0;
-  }
-
   public static Translation2d[] getModuleTranslations(double trackWidthX, double trackWidthY) {
     return new Translation2d[] {
       new Translation2d(trackWidthX / 2.0, trackWidthY / 2.0),
