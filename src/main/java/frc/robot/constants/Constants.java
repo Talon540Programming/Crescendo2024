@@ -1,5 +1,9 @@
 package frc.robot.constants;
 
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 
@@ -43,5 +47,13 @@ public final class Constants {
   public static RobotMode getRobotMode() {
     if (getRobotType() == RobotType.ROBOT_SIMBOT) return RobotMode.SIM;
     else return RobotBase.isReal() ? RobotMode.REAL : RobotMode.REPLAY;
+  }
+
+  public static class Shooter {
+    public static final Rotation2d MIN_SHOOTER_ANGLE = Rotation2d.fromDegrees(27.5);
+    public static final Rotation2d MAX_SHOOTER_ANGLE = Rotation2d.fromDegrees(120.0);
+    public static final double SHOOTER_LENGTH_METERS = Units.inchesToMeters(20.75);
+    public static final Pose3d PIVOT_POSE =
+        new Pose3d(0.0, Units.inchesToMeters(2.5), Units.inchesToMeters(8.25), new Rotation3d());
   }
 }

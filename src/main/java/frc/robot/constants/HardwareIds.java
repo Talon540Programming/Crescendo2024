@@ -19,5 +19,18 @@ public class HardwareIds {
     public static final int kBackRightEncoderId = 0; // TODO
 
     public static final int kPigeonId = 0; // TODO
+
+    public static final int kErectorLeaderId = 0; // TODO
+    public static final int kErectorFollowerId = 0; // TODO
+    public static final int kErectorAbsoluteEncoderPort = 0; // TODO
+    public static final int kErectorRelativeEncoderAPort = 0; // TODO
+    public static final int kErectorRelativeEncoderBPort = 0; // TODO
+
+    public static final int kShooterLeaderId = 0; // TODO
+    public static final int kShooterFollowerId = 0; // TODO
+
+    public static final int kKickupId = 0; // TODO
+    public static final int kKickupForwardBeamBreakPort = 0; // TODO
+    public static final int kKickupRearBeamBreakPort = 0; // TODO
   }
 }
