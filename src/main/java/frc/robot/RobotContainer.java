@@ -3,18 +3,21 @@ package frc.robot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.drive.DriveCommandFactory;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.drive.*;
 import frc.robot.subsystems.shooter.*;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
-  // Subsystems
   private final DriveBase m_drive;
   private final ShooterBase m_shooter;
 
-  // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
+
+  private final LoggedDashboardChooser<Command> m_autoChooser =
+      new LoggedDashboardChooser<>("AutoChooser");
 
   public RobotContainer() {
     switch (Constants.getRobotMode()) {
@@ -54,8 +57,42 @@ public class RobotContainer {
       }
     }
 
-    // Configure the button bindings
+    configureAutos();
+
+    if (Constants.TUNING_MODE) {
+      configureTunableParameters();
+    }
+
     configureButtonBindings();
+  }
+
+  private void configureAutos() {
+    m_autoChooser.addDefaultOption("None", Commands.none());
+  }
+
+  private void configureTunableParameters() {
+    m_autoChooser.addOption(
+        "DriveDynamicForward", m_drive.characterizeDriveDynamic(SysIdRoutine.Direction.kForward));
+    m_autoChooser.addOption(
+        "DriveDynamicReverse", m_drive.characterizeDriveDynamic(SysIdRoutine.Direction.kReverse));
+    m_autoChooser.addOption(
+        "DriveQuasistaticForward",
+        m_drive.characterizeDriveQuasistatic(SysIdRoutine.Direction.kForward));
+    m_autoChooser.addOption(
+        "DriveQuasistaticReverse",
+        m_drive.characterizeDriveQuasistatic(SysIdRoutine.Direction.kReverse));
+    m_autoChooser.addOption(
+        "ErectorDynamicForward",
+        m_shooter.characterizeErectorDynamic(SysIdRoutine.Direction.kForward));
+    m_autoChooser.addOption(
+        "ErectorDynamicReverse",
+        m_shooter.characterizeErectorDynamic(SysIdRoutine.Direction.kReverse));
+    m_autoChooser.addOption(
+        "ErectorQuasistaticForward",
+        m_shooter.characterizeErectorQuasistatic(SysIdRoutine.Direction.kForward));
+    m_autoChooser.addOption(
+        "ErectorQuasistaticReverse",
+        m_shooter.characterizeErectorQuasistatic(SysIdRoutine.Direction.kReverse));
   }
 
   private void configureButtonBindings() {
@@ -70,6 +107,6 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    return Commands.none();
+    return m_autoChooser.get();
   }
 }

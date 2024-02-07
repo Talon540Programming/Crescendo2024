@@ -167,6 +167,15 @@ public class Module {
     return optimizedState;
   }
 
+  public void runCharacterizationVoltage(double volts) {
+    // Closed loop turn control
+    m_turnAngleSetpoint = new Rotation2d();
+
+    // Open loop drive control
+    m_io.setDriveVoltage(volts);
+    m_driveVelocitySetpoint = null;
+  }
+
   /** Disables all outputs to motors. */
   public void disable() {
     m_io.setTurnVoltage(0.0);

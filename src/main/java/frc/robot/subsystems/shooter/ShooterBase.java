@@ -1,15 +1,20 @@
 package frc.robot.subsystems.shooter;
 
+import static edu.wpi.first.units.Units.Volts;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.shooter.ShooterDynamics.ShooterState;
 import frc.robot.util.LoggedTunableNumber;
-import frc.robot.util.SingleJointedMechanismVisualizer;
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 public class ShooterBase extends SubsystemBase {
@@ -32,20 +37,20 @@ public class ShooterBase extends SubsystemBase {
 
   private ShooterState m_setpoint = ShooterState.STARTING_STATE;
 
-  private final SingleJointedMechanismVisualizer m_setpointVisualizer =
-      new SingleJointedMechanismVisualizer(
-          "Shooter",
-          "Setpoint",
-          Constants.Shooter.SHOOTER_LENGTH_METERS,
-          Constants.Shooter.PIVOT_POSE,
-          ShooterState.STARTING_STATE.angle());
-  private final SingleJointedMechanismVisualizer m_measuredVisualizer =
-      new SingleJointedMechanismVisualizer(
-          "Shooter",
-          "Measured",
-          Constants.Shooter.SHOOTER_LENGTH_METERS,
-          Constants.Shooter.PIVOT_POSE,
-          ShooterState.STARTING_STATE.angle());
+  // private final SingleJointedMechanismVisualizer m_setpointVisualizer =
+  //     new SingleJointedMechanismVisualizer(
+  //         "Shooter",
+  //         "Setpoint",
+  //         Constants.Shooter.SHOOTER_LENGTH_METERS,
+  //         Constants.Shooter.PIVOT_POSE,
+  //         ShooterState.STARTING_STATE.angle());
+  // private final SingleJointedMechanismVisualizer m_measuredVisualizer =
+  //     new SingleJointedMechanismVisualizer(
+  //         "Shooter",
+  //         "Measured",
+  //         Constants.Shooter.SHOOTER_LENGTH_METERS,
+  //         Constants.Shooter.PIVOT_POSE,
+  //         ShooterState.STARTING_STATE.angle());
 
   private static final LoggedTunableNumber erectorKs = new LoggedTunableNumber("ErectorKs");
   private static final LoggedTunableNumber erectorKg = new LoggedTunableNumber("ErectorKg");
@@ -71,6 +76,8 @@ public class ShooterBase extends SubsystemBase {
   private final PIDController m_erectorFeedback = new PIDController(0, 0, 0);
   private final PIDController m_shooterModuleFeedback = new PIDController(0, 0, 0);
   private final PIDController m_kickupFeedback = new PIDController(0, 0, 0);
+
+  private final SysIdRoutine m_erectorCharacterizationRoutine;
 
   static {
     switch (Constants.getRobotType()) {
@@ -113,6 +120,18 @@ public class ShooterBase extends SubsystemBase {
     this.m_kickupIO = kickupIO;
 
     m_erectorIO.setBrakeMode(true);
+
+    // TODO, determine ramp rates and step rates due to the erector having much less range to
+    // characterize
+    m_erectorCharacterizationRoutine =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null,
+                null,
+                null,
+                (state) -> Logger.recordOutput("Shooter/SysIdState", state.toString())),
+            new SysIdRoutine.Mechanism(
+                (voltage) -> m_erectorIO.setVoltage(voltage.in(Volts)), null, this, "Erector"));
   }
 
   @Override
@@ -156,7 +175,7 @@ public class ShooterBase extends SubsystemBase {
       m_shooterModuleIO.setVoltage(0.0);
       m_erectorIO.setVoltage(0.0);
       m_kickupIO.setVoltage(0.0);
-    } else {
+    } else if (m_setpoint != null) {
       double erectorMeasurement = m_erectorInputs.absoluteAngle.getRadians();
       double erectorSetpoint = m_setpoint.angle().getRadians();
 
@@ -167,14 +186,14 @@ public class ShooterBase extends SubsystemBase {
               -12,
               12));
 
-      double shooterMeasurement = m_shooterModuleInputs.velocityRadPerSec * SHOOTER_RADIUS_METERS;
+      double shooterMeasurement = getShooterVelocityMetersPerSecond();
       double shooterSetpoint = m_setpoint.shooterVelocityMetersPerSecond();
 
       m_shooterModuleIO.setVoltage(
           MathUtil.clamp(
               m_shooterModuleFeedback.calculate(shooterMeasurement, shooterSetpoint), -12, 12));
 
-      double kickupMeasurement = m_kickupInputs.velocityRadPerSec * KICKUP_RADIUS_METERS;
+      double kickupMeasurement = getKickupVelocityMetersPerSecond();
       double kickupSetpoint = m_setpoint.kickupVelocityMetersPerSecond();
 
       m_kickupIO.setVoltage(
@@ -186,5 +205,41 @@ public class ShooterBase extends SubsystemBase {
 
   public void setShooterState(ShooterState state) {
     m_setpoint = state;
+  }
+
+  public Command characterizeErectorQuasistatic(SysIdRoutine.Direction direction) {
+    return handleCharacterization()
+        .andThen(m_erectorCharacterizationRoutine.quasistatic(direction));
+  }
+
+  public Command characterizeErectorDynamic(SysIdRoutine.Direction direction) {
+    return handleCharacterization().andThen(m_erectorCharacterizationRoutine.dynamic(direction));
+  }
+
+  /**
+   * Stops the subsystem from going to the setpoint
+   *
+   * @return Command that sets up the subsystem for characterization. This should be run before the
+   *     characterization command.
+   */
+  private Command handleCharacterization() {
+    return Commands.runOnce(
+        () -> {
+          m_setpoint = null;
+          m_erectorIO.setVoltage(0);
+          m_kickupIO.setVoltage(0);
+          m_shooterModuleIO.setVoltage(0);
+        },
+        this);
+  }
+
+  @AutoLogOutput(key = "Shooter/VelocityMetersPerSec")
+  public double getShooterVelocityMetersPerSecond() {
+    return m_shooterModuleInputs.velocityRadPerSec * SHOOTER_RADIUS_METERS;
+  }
+
+  @AutoLogOutput(key = "Shooter/KickupVelocityMetersPerSec")
+  public double getKickupVelocityMetersPerSecond() {
+    return m_kickupInputs.velocityRadPerSec * KICKUP_RADIUS_METERS;
   }
 }
