@@ -32,5 +32,7 @@ public class HardwareIds {
     public static final int kKickupId = 0; // TODO
     public static final int kKickupForwardBeamBreakPort = 0; // TODO
     public static final int kKickupRearBeamBreakPort = 0; // TODO
+
+    public static final int kIndexId = 0; // TODO
   }
 }

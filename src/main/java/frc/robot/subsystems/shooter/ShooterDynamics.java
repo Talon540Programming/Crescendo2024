@@ -9,7 +9,7 @@ public class ShooterDynamics {
       double kickupVelocityMetersPerSecond) {
     public static ShooterState STARTING_STATE = new ShooterState(Rotation2d.fromDegrees(70), 0, 0);
     public static ShooterState TRAVEL_STATE = new ShooterState(Rotation2d.fromDegrees(35), 0, 0);
-
+    
     @Override
     public boolean equals(Object obj) {
       if (obj instanceof ShooterState) {
