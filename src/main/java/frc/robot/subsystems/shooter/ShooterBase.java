@@ -18,12 +18,12 @@ import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 public class ShooterBase extends SubsystemBase {
-  public static double ERECTOR_GEARING =
+  public static final double ERECTOR_GEARING =
       (52.0 / 12.0) * (52.0 / 18.0) * (52.0 / 18.0) * (58.0 / 24.0);
-  public static double SHOOTER_GEARING = (26.0 / 52.0);
-  public static double SHOOTER_RADIUS_METERS = Units.inchesToMeters(1.5);
-  public static double KICKUP_GEARING = (5.0 / 1.0);
-  public static double KICKUP_RADIUS_METERS = Units.inchesToMeters(1.0);
+  public static final double SHOOTER_GEARING = (26.0 / 52.0);
+  public static final double SHOOTER_RADIUS_METERS = Units.inchesToMeters(1.5);
+  public static final double KICKUP_GEARING = (5.0 / 1.0);
+  public static final double KICKUP_RADIUS_METERS = Units.inchesToMeters(1.0);
 
   private final ErectorIO m_erectorIO;
   private final ErectorIOInputsAutoLogged m_erectorInputs = new ErectorIOInputsAutoLogged();
@@ -201,10 +201,42 @@ public class ShooterBase extends SubsystemBase {
     }
 
     // TODO do visualizer
+
+    // m_setpointVisualizer.update(m_setpoint.angle());
+    // m_measuredVisualizer.update(m_erectorInputs.absoluteAngle);
   }
 
-  public void setShooterState(ShooterState state) {
+  public void setSetpoint(ShooterState state) {
     m_setpoint = state;
+  }
+
+  public ShooterState getSetpoint() {
+    return m_setpoint;
+  }
+
+  public ShooterState getCurrentState() {
+    return new ShooterState(
+        m_erectorInputs.absoluteAngle,
+        getShooterVelocityMetersPerSecond(),
+        getKickupVelocityMetersPerSecond());
+  }
+
+  public boolean atSetpoint() {
+    return getSetpoint().equals(getCurrentState());
+  }
+
+  @AutoLogOutput(key = "Shooter/VelocityMetersPerSec")
+  public double getShooterVelocityMetersPerSecond() {
+    return m_shooterModuleInputs.velocityRadPerSec * SHOOTER_RADIUS_METERS;
+  }
+
+  @AutoLogOutput(key = "Shooter/KickupVelocityMetersPerSec")
+  public double getKickupVelocityMetersPerSecond() {
+    return m_kickupInputs.velocityRadPerSec * KICKUP_RADIUS_METERS;
+  }
+
+  public boolean holdingNote() {
+    return m_kickupInputs.forwardBeamBreakBroken && m_kickupInputs.rearBeamBreakBroken;
   }
 
   public Command characterizeErectorQuasistatic(SysIdRoutine.Direction direction) {
@@ -231,15 +263,5 @@ public class ShooterBase extends SubsystemBase {
           m_shooterModuleIO.setVoltage(0);
         },
         this);
-  }
-
-  @AutoLogOutput(key = "Shooter/VelocityMetersPerSec")
-  public double getShooterVelocityMetersPerSecond() {
-    return m_shooterModuleInputs.velocityRadPerSec * SHOOTER_RADIUS_METERS;
-  }
-
-  @AutoLogOutput(key = "Shooter/KickupVelocityMetersPerSec")
-  public double getKickupVelocityMetersPerSecond() {
-    return m_kickupInputs.velocityRadPerSec * KICKUP_RADIUS_METERS;
   }
 }

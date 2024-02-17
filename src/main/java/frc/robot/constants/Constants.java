@@ -53,7 +53,12 @@ public final class Constants {
     public static final Rotation2d MIN_SHOOTER_ANGLE = Rotation2d.fromDegrees(27.5);
     public static final Rotation2d MAX_SHOOTER_ANGLE = Rotation2d.fromDegrees(120.0);
     public static final double SHOOTER_LENGTH_METERS = Units.inchesToMeters(20.75);
+    // Position of the pivot point of the shooter in the RCS
     public static final Pose3d PIVOT_POSE =
-        new Pose3d(0.0, Units.inchesToMeters(2.5), Units.inchesToMeters(8.25), new Rotation3d());
+        new Pose3d(
+            0.0,
+            Units.inchesToMeters(-2.5),
+            Units.inchesToMeters(8.25),
+            new Rotation3d(0.0, 0.0, Math.toRadians(180.0)));
   }
 }
