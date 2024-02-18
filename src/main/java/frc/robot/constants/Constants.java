@@ -61,4 +61,10 @@ public final class Constants {
             Units.inchesToMeters(8.25),
             new Rotation3d(0.0, 0.0, Math.toRadians(180.0)));
   }
+
+  public static class Intake {
+    public static final double kIntakeLengthMeters = Units.inchesToMeters(13.5); //TODO
+    public static final Rotation2d kMinIntakeAngle = Rotation2d.fromDegrees(30); //TODO
+    public static final Rotation2d kMaxIntakeAngle = Rotation2d.fromDegrees(420); //TODO
+  }
 }
