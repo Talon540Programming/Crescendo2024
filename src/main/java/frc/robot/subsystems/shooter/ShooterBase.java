@@ -5,6 +5,7 @@ import static edu.wpi.first.units.Units.Volts;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -61,6 +62,11 @@ public class ShooterBase extends SubsystemBase {
   private static final LoggedTunableNumber erectorKi = new LoggedTunableNumber("ErectorKi");
   private static final LoggedTunableNumber erectorKd = new LoggedTunableNumber("ErectorKd");
 
+  private static final LoggedTunableNumber shooterModuleKs =
+      new LoggedTunableNumber("ShooterModuleKs");
+  private static final LoggedTunableNumber shooterModuleKv =
+      new LoggedTunableNumber("ShooterModuleKv");
+
   private static final LoggedTunableNumber shooterModuleKp =
       new LoggedTunableNumber("ShooterModuleKp");
   private static final LoggedTunableNumber shooterModuleKi =
@@ -74,10 +80,12 @@ public class ShooterBase extends SubsystemBase {
 
   private ArmFeedforward m_erectorFeedforward = new ArmFeedforward(0, 0, 0);
   private final PIDController m_erectorFeedback = new PIDController(0, 0, 0);
+  private SimpleMotorFeedforward m_shooterModuleFeedforward = new SimpleMotorFeedforward(0, 0);
   private final PIDController m_shooterModuleFeedback = new PIDController(0, 0, 0);
   private final PIDController m_kickupFeedback = new PIDController(0, 0, 0);
 
   private final SysIdRoutine m_erectorCharacterizationRoutine;
+  private final SysIdRoutine m_shooterCharacterizationRoutine;
 
   static {
     switch (Constants.getRobotType()) {
@@ -89,6 +97,8 @@ public class ShooterBase extends SubsystemBase {
         erectorKp.initDefault(0.0); // TODO
         erectorKi.initDefault(0.0); // TODO
         erectorKd.initDefault(0.0); // TODO
+        shooterModuleKs.initDefault(0.0); // TODO
+        shooterModuleKv.initDefault(0.0); // TODO
         shooterModuleKp.initDefault(0.0); // TODO
         shooterModuleKi.initDefault(0.0); // TODO
         shooterModuleKd.initDefault(0.0); // TODO
@@ -104,6 +114,8 @@ public class ShooterBase extends SubsystemBase {
         erectorKp.initDefault(0.0); // TODO
         erectorKi.initDefault(0.0); // TODO
         erectorKd.initDefault(0.0); // TODO
+        shooterModuleKs.initDefault(0.0); // TODO
+        shooterModuleKv.initDefault(0.0); // TODO
         shooterModuleKp.initDefault(0.0); // TODO
         shooterModuleKi.initDefault(0.0); // TODO
         shooterModuleKd.initDefault(0.0); // TODO
@@ -122,16 +134,29 @@ public class ShooterBase extends SubsystemBase {
     m_erectorIO.setBrakeMode(true);
 
     // TODO, determine ramp rates and step rates due to the erector having much less range to
-    // characterize
+    //  characterize
     m_erectorCharacterizationRoutine =
         new SysIdRoutine(
             new SysIdRoutine.Config(
                 null,
                 null,
                 null,
-                (state) -> Logger.recordOutput("Shooter/SysIdState", state.toString())),
+                (state) -> Logger.recordOutput("Shooter/ErectorSysIdState", state.toString())),
             new SysIdRoutine.Mechanism(
                 (voltage) -> m_erectorIO.setVoltage(voltage.in(Volts)), null, this, "Erector"));
+
+    m_shooterCharacterizationRoutine =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null,
+                null,
+                null,
+                (state) -> Logger.recordOutput("Shooter/ShooterSysIdState", state.toString())),
+            new SysIdRoutine.Mechanism(
+                (voltage) -> m_shooterModuleIO.setVoltage(voltage.in(Volts)),
+                null,
+                this,
+                "Shooter"));
   }
 
   @Override
@@ -155,6 +180,10 @@ public class ShooterBase extends SubsystemBase {
       m_erectorFeedback.setPID(erectorKp.get(), erectorKi.get(), erectorKd.get());
     }
 
+    if (shooterModuleKs.hasChanged(0) || shooterModuleKv.hasChanged(0)) {
+      m_shooterModuleFeedforward =
+          new SimpleMotorFeedforward(shooterModuleKs.get(), shooterModuleKv.get());
+    }
     if (shooterModuleKp.hasChanged(0)
         || shooterModuleKi.hasChanged(0)
         || shooterModuleKd.hasChanged(0)) {
@@ -191,7 +220,10 @@ public class ShooterBase extends SubsystemBase {
 
       m_shooterModuleIO.setVoltage(
           MathUtil.clamp(
-              m_shooterModuleFeedback.calculate(shooterMeasurement, shooterSetpoint), -12, 12));
+              m_shooterModuleFeedforward.calculate(shooterSetpoint)
+                  + m_shooterModuleFeedback.calculate(shooterMeasurement, shooterSetpoint),
+              -12,
+              12));
 
       double kickupMeasurement = getKickupVelocityMetersPerSecond();
       double kickupSetpoint = m_setpoint.kickupVelocityMetersPerSecond();
@@ -245,6 +277,15 @@ public class ShooterBase extends SubsystemBase {
 
   public Command characterizeErectorDynamic(SysIdRoutine.Direction direction) {
     return handleCharacterization().andThen(m_erectorCharacterizationRoutine.dynamic(direction));
+  }
+
+  public Command characterizeShooterQuasistatic(SysIdRoutine.Direction direction) {
+    return handleCharacterization()
+        .andThen(m_shooterCharacterizationRoutine.quasistatic(direction));
+  }
+
+  public Command characterizeShooterDynamic(SysIdRoutine.Direction direction) {
+    return handleCharacterization().andThen(m_shooterCharacterizationRoutine.dynamic(direction));
   }
 
   /**
