@@ -4,7 +4,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import frc.robot.constants.Constants;
-import frc.robot.subsystems.intake.IntakeDynamics.IntakeState;
 
 public class WristIOSim implements WristIO {
     private final SingleJointedArmSim m_sim;
@@ -20,7 +19,7 @@ public class WristIOSim implements WristIO {
                 Constants.Intake.kMinIntakeAngle.getRadians(),
                 Constants.Intake.kMaxIntakeAngle.getRadians(),
                 true,
-                IntakeState.STARTING_STATE.angle().getRadians());
+                Constants.Intake.kMaxIntakeAngle.getRadians());
     }
 
     @Override

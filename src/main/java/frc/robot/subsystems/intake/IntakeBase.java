@@ -8,6 +8,7 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -15,7 +16,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.constants.Constants;
-import frc.robot.subsystems.intake.IntakeDynamics.IntakeState;
 import frc.robot.util.LoggedTunableNumber;
 
 public class IntakeBase extends SubsystemBase {
@@ -23,6 +23,10 @@ public class IntakeBase extends SubsystemBase {
     public static final double ROLLER_GEARING = (5.0 / 1.0);
     public static final double WRIST_RADIUS_METERS = Units.inchesToMeters(0); //TODO
     public static final double ROLLER_RADIUS_METERS = Units.inchesToMeters(0); //TODO
+    public static final double INDEXER_RADIUS_METERS = Units.inchesToMeters(2);
+
+    private final IndexerIO m_indexerIO;
+    private final IndexerIOInputsAutoLogged m_indexerInputs = new IndexerIOInputsAutoLogged();
 
     private final WristIO m_wristIO;
     private final WristIOInputsAutoLogged m_wristInputs = new WristIOInputsAutoLogged();
@@ -30,7 +34,7 @@ public class IntakeBase extends SubsystemBase {
     private final RollerIO m_rollerIO;
     private final RollerIOInputsAutoLogged m_rollerInputs = new RollerIOInputsAutoLogged();
 
-    private IntakeState m_setpoint = IntakeState.STARTING_STATE;
+    private Rotation2d m_wristSetpoint = Constants.Intake.kMaxIntakeAngle;
 
 
     private static final LoggedTunableNumber wristKs = new LoggedTunableNumber("WristKs");
@@ -70,9 +74,10 @@ public class IntakeBase extends SubsystemBase {
         }
     }
 
-    public IntakeBase(WristIO wristIO, RollerIO rollerIO) {
+    public IntakeBase(WristIO wristIO, RollerIO rollerIO, IndexerIO indexerIO) {
         this.m_wristIO = wristIO;
         this.m_rollerIO = rollerIO;
+        this.m_indexerIO = indexerIO;
 
         m_wristIO.setBrakeMode(true);
 
@@ -95,9 +100,11 @@ public class IntakeBase extends SubsystemBase {
     public void periodic() {
         m_wristIO.updateInputs(m_wristInputs);
         m_rollerIO.updateInputs(m_rollerInputs);
+        m_indexerIO.updateInputs(m_indexerInputs);
 
         Logger.processInputs("Intake/Wrist", m_wristInputs);
-        Logger.processInputs("Intake/Roller", m_wristInputs);
+        Logger.processInputs("Intake/Roller", m_rollerInputs);
+        Logger.processInputs("Intake/Indexer", m_indexerInputs);
 
         if (wristKs.hasChanged(0) || wristKg.hasChanged(0) || wristKv.hasChanged(0) || wristKa.hasChanged(0)) {
             m_wristFeedforward = new ArmFeedforward(wristKs.get(), wristKg.get(), wristKv.get(), wristKa.get());
@@ -108,15 +115,16 @@ public class IntakeBase extends SubsystemBase {
 
 
         if (DriverStation.isDisabled()) {
-            m_setpoint = IntakeState.TRAVEL_STATE;
+            m_wristSetpoint = Constants.Intake.kMinIntakeAngle;
 
             m_wristIO.setVoltage(0);
             m_rollerIO.setVoltage(0);
-        } else if (m_setpoint != null) {
+            m_indexerIO.setVoltage(0);
+        } else if (m_wristSetpoint != null) {
 
 
             double wristMeasurement = m_wristInputs.absoluteAngle.getRadians();
-            double wristSetpoint = m_setpoint.angle().getRadians();
+            double wristSetpoint = m_wristSetpoint.getRadians();
 
             m_wristIO.setVoltage(
                 MathUtil.clamp(
@@ -124,33 +132,41 @@ public class IntakeBase extends SubsystemBase {
                          + m_wristFeedback.calculate(wristMeasurement, wristSetpoint),
                     -12,
                     12));
-            
-            
-            m_rollerIO.setVoltage(m_setpoint.rollerPercent()*12.0);
         }
     }
 
-    public void setSetpoint(IntakeState state) {
-        m_setpoint = state;
+    public void setWristSetpoint(Rotation2d state) {
+        m_wristSetpoint = state;
     }
 
-    public IntakeState getSetpoint() {
-        return m_setpoint;
+    public void setRollerVoltage(double volts) {
+        m_rollerIO.setVoltage(MathUtil.clamp(volts, -12, 12));
     }
 
-    public IntakeState getCurrentState() {
-        return new IntakeState(
-            m_wristInputs.absoluteAngle,
-            getRollerVelocityMetersPerSec());
+    public void setIndexerVoltage(double volts) {
+        m_indexerIO.setVoltage(MathUtil.clamp(volts, -12, 12));
     }
 
-    public boolean atSetpoint() {
-        return getSetpoint().equals(getCurrentState());
+    public Rotation2d getWristSetpoint() {
+        return m_wristSetpoint;
+    }
+
+    public Rotation2d getCurrentWristState() {
+        return m_wristInputs.absoluteAngle;
+    }
+
+    public boolean atWristSetpoint() {
+        return getWristSetpoint().equals(getCurrentWristState());
     }
 
     @AutoLogOutput(key="Intake/RollerVelocityMetersPerSec")
     public double getRollerVelocityMetersPerSec() {
         return m_rollerInputs.velocityRadPerSec * ROLLER_RADIUS_METERS;
+    }
+
+    @AutoLogOutput(key="Intake/IndexerVelocityMetersPerSec")
+    public double getIndexerVelocityMetersPerSec() {
+        return m_indexerInputs.velocityRadPerSec * INDEXER_RADIUS_METERS;
     }
 
     public Command characterizeWristQuasistatic(SysIdRoutine.Direction direction) {
@@ -164,7 +180,7 @@ public class IntakeBase extends SubsystemBase {
     private Command handleCharacterization() {
         return Commands.runOnce(
             () -> {
-                m_setpoint = null;
+                m_wristSetpoint = null;
                 m_wristIO.setVoltage(0);
                 m_rollerIO.setVoltage(0);
             },

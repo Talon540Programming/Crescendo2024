@@ -8,13 +8,13 @@ import frc.robot.commands.drive.DriveCommandFactory;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.drive.*;
 import frc.robot.subsystems.shooter.*;
-import frc.robot.subsystems.indexer.*;
+import frc.robot.subsystems.intake.*;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
   private final DriveBase m_drive;
   private final ShooterBase m_shooter;
-  private final IndexerBase m_indexer;
+  private final IntakeBase m_intake;
 
   private final CommandXboxController controller = new CommandXboxController(0);
 
@@ -31,12 +31,8 @@ public class RobotContainer {
                 new ModuleIOSparkMax(1),
                 new ModuleIOSparkMax(2),
                 new ModuleIOSparkMax(3));
-        m_shooter =
-            new ShooterBase(
-                new ErectorIOSparkMax(), new ShooterModuleIOSparkMax(), new KickupIOSparkMax());
-        m_indexer = 
-            new IndexerBase(
-                new IndexerIOSparkMax());
+        m_shooter = new ShooterBase(new ErectorIOSparkMax(), new ShooterModuleIOSparkMax(), new KickupIOSparkMax());
+        m_intake = new IntakeBase(new WristIOSparkMax(), new RollerIOSparkMax(), new IndexerIOSparkMax());
       }
       case SIM -> {
         m_drive =
@@ -46,11 +42,8 @@ public class RobotContainer {
                 new ModuleIOSim(),
                 new ModuleIOSim(),
                 new ModuleIOSim());
-        m_shooter =
-            new ShooterBase(new ErectorIOSim(), new ShooterModuleIOSim(), new KickupIOSim());
-        m_indexer = 
-            new IndexerBase(
-                new IndexerIOSparkMax());
+        m_shooter = new ShooterBase(new ErectorIOSim(), new ShooterModuleIOSim(), new KickupIOSim());
+        m_intake = new IntakeBase(new WristIOSim(), new RollerIOSim(), new IndexerIOSim());
       }
       default -> {
         m_drive =
@@ -60,10 +53,8 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {},
                 new ModuleIO() {});
-        m_shooter =
-            new ShooterBase(new ErectorIO() {}, new ShooterModuleIO() {}, new KickupIO() {});
-        m_indexer = 
-            new IndexerBase(new IndexerIO() {});
+        m_shooter = new ShooterBase(new ErectorIO() {}, new ShooterModuleIO() {}, new KickupIO() {});
+        m_intake = new IntakeBase(new WristIO() {}, new RollerIO() {}, new IndexerIO() {});
       }
     }
 
