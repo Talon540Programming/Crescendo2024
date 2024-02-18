@@ -83,10 +83,8 @@ public class ShooterDynamics {
       Rotation2d angle,
       double shooterVelocityMetersPerSecond,
       double kickupVelocityMetersPerSecond) {
-    public static final ShooterState STARTING_STATE =
-        new ShooterState(Rotation2d.fromDegrees(70), 0, 0);
-    public static final ShooterState TRAVEL_STATE =
-        new ShooterState(Rotation2d.fromDegrees(35), 0, 0);
+    public static ShooterState STARTING_STATE = new ShooterState(Rotation2d.fromDegrees(70), 0, 0);
+    public static ShooterState TRAVEL_STATE = new ShooterState(Rotation2d.fromDegrees(35), 0, 0);
 
     @Override
     public boolean equals(Object obj) {

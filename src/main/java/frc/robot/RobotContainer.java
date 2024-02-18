@@ -8,11 +8,13 @@ import frc.robot.commands.drive.DriveCommandFactory;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.drive.*;
 import frc.robot.subsystems.shooter.*;
+import frc.robot.subsystems.indexer.*;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
   private final DriveBase m_drive;
   private final ShooterBase m_shooter;
+  private final IndexerBase m_indexer;
 
   private final CommandXboxController controller = new CommandXboxController(0);
 
@@ -32,6 +34,9 @@ public class RobotContainer {
         m_shooter =
             new ShooterBase(
                 new ErectorIOSparkMax(), new ShooterModuleIOSparkMax(), new KickupIOSparkMax());
+        m_indexer = 
+            new IndexerBase(
+                new IndexerIOSparkMax());
       }
       case SIM -> {
         m_drive =
@@ -43,6 +48,9 @@ public class RobotContainer {
                 new ModuleIOSim());
         m_shooter =
             new ShooterBase(new ErectorIOSim(), new ShooterModuleIOSim(), new KickupIOSim());
+        m_indexer = 
+            new IndexerBase(
+                new IndexerIOSparkMax());
       }
       default -> {
         m_drive =
@@ -54,6 +62,8 @@ public class RobotContainer {
                 new ModuleIO() {});
         m_shooter =
             new ShooterBase(new ErectorIO() {}, new ShooterModuleIO() {}, new KickupIO() {});
+        m_indexer = 
+            new IndexerBase(new IndexerIO() {});
       }
     }
 

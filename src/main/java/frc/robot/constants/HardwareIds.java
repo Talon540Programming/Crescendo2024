@@ -39,5 +39,6 @@ public class HardwareIds {
     public static final int kIntakeWristAbsoluteEncoderPort = 0;
     public static final int kIntakeWristRelativeEncoderAPort = 1;
     public static final int kIntakeWristRelativeEncoderBPort = 2;
+    public static final int kIndexId = 0; // TODO
   }
 }
