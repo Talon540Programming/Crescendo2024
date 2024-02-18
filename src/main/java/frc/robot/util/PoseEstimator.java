@@ -22,7 +22,7 @@ public class PoseEstimator {
 
   private Pose2d pose = new Pose2d();
   private final Matrix<N3, N1> m_q = new Matrix<>(Nat.N3(), Nat.N1());
-  private final TimeInterpolatableBuffer<OdometryUpdate> m_poseBuffer = TimeInterpolatableBuffer.createBuffer(kBufferDurationSec);
+  // private final TimeInterpolatableBuffer<OdometryUpdate> m_poseBuffer = TimeInterpolatableBuffer.createBuffer(kBufferDurationSec);
 
 
   public static PoseEstimator getInstance() {
@@ -53,29 +53,30 @@ public class PoseEstimator {
 
   public void addVisionData(
       double timestampSeconds, Pose2d pose, Matrix<N3, N1> visionMeasurementStdDevs) {
+        return;
 
-        var sampleOpt = m_poseBuffer.getSample(timestampSeconds);
+        // var sampleOpt = m_poseBuffer.getSample(timestampSeconds);
 
-        if (sampleOpt.isEmpty()) return;
+        // if (sampleOpt.isEmpty()) return;
 
-        var sample = sampleOpt.get();
-        var samplePose = sample.endPose;
+        // var sample = sampleOpt.get();
+        // var samplePose = sample.endPose;
         
       }
 
-  public record OdometryUpdate(Pose2d poseMeter, Twist2d applieTwist2d) implements Interpolatable<OdometryUpdate> {
-    @Override
-    public OdometryUpdate interpolate(OdometryUpdate endValue, double t) {
-      if (t < 0) {
-        return this;
-      } else if (t >= 1) {
-        return endValue;
-      } else {
+  // public record OdometryUpdate(Pose2d poseMeter, Twist2d applieTwist2d) implements Interpolatable<OdometryUpdate> {
+  //   @Override
+  //   public OdometryUpdate interpolate(OdometryUpdate endValue, double t) {
+  //     if (t < 0) {
+  //       return this;
+  //     } else if (t >= 1) {
+  //       return endValue;
+  //     } else {
 
-        var poseLerp = endPose.interpolate(endValue.endPose, t);
-        var twistLerp = endPose.log(poseLerp);
-        return new OdometryUpdate(poseLerp, twistLerp);
-      }
-    }
-  }
+  //       var poseLerp = endPose.interpolate(endValue.endPose, t);
+  //       var twistLerp = endPose.log(poseLerp);
+  //       return new OdometryUpdate(poseLerp, twistLerp);
+  //     }
+  //   }
+  // }
 }
