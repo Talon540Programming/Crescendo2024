@@ -6,17 +6,16 @@ import frc.robot.constants.Constants;
 public class IntakeDynamics {
     public record IntakeState(
         Rotation2d angle,
-        double intakeVelocityMetersPerSec
+        double rollerPercent
     ) {
         public static IntakeState STARTING_STATE = new IntakeState(Constants.Intake.kMaxIntakeAngle, 0);
         public static IntakeState TRAVEL_STATE = new IntakeState(Rotation2d.fromDegrees(69), 0);
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof IntakeState) {
-                return angle.equals(((IntakeState) obj).angle)
-                    && Math.abs(intakeVelocityMetersPerSec - ((IntakeState) obj).intakeVelocityMetersPerSec)
-                        <= 1e-5;
+            if (obj instanceof IntakeState other) {
+                return angle.equals(other.angle)
+                    && Math.abs(rollerPercent - other.rollerPercent) <= 1e-2;
             }
             return false;
         }

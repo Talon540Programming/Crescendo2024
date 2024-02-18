@@ -49,6 +49,5 @@ public class RollerIOSparkMax implements RollerIO {
     @Override
     public void setVoltage(double voltage) {
         m_motor.setVoltage(voltage);
-
     }
 }

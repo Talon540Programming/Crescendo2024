@@ -12,10 +12,6 @@ public class IndexerDynamics {
                     Math.abs(
                         indexerVelocityMetersPerSecond
                          - ((IndexerState) obj).indexerVelocityMetersPerSecond)
-                      <= 1e-5 
-                    && Math.abs(
-                        indexerVelocityMetersPerSecond
-                         - ((IndexerState) obj).indexerVelocityMetersPerSecond)
                       <= 1e-5;
             }
             return false;
