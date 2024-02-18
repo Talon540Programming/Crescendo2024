@@ -33,10 +33,9 @@ public class HardwareIds {
     public static final int kShooterKickupForwardBeamBreakPort = 6; // TODO
     public static final int kShooterKickupRearBeamBreakPort = 8; // TODO
 
-    public static final int kIntakeWristId = 20;
+    public static final int kIntakeWristId = 20; // TODO
     public static final int kIntakeRollersId = 21; // TODO
-
-    public static final int kIndexerId = 22;
+    public static final int kIntakeBeamBreakPort = 10; //TODO
 
     public static final int kIntakeWristAbsoluteEncoderPort = 0;
     public static final int kIntakeWristRelativeEncoderAPort = 1;

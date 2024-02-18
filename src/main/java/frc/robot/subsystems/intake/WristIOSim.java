@@ -6,15 +6,15 @@ import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.intake.IntakeDynamics.IntakeState;
 
-public class IntakeErectorIOSim implements IntakeErectorIO {
+public class WristIOSim implements WristIO {
     private final SingleJointedArmSim m_sim;
     private double appliedVoltage = 0.0;
 
-    public IntakeErectorIOSim() {
+    public WristIOSim() {
         m_sim = 
             new SingleJointedArmSim(
                 DCMotor.getNEO(2),
-                IntakeBase.ERECTOR_GEARING,
+                IntakeBase.WRIST_GEARING,
                 0.87,
                 Constants.Intake.kIntakeLengthMeters,
                 Constants.Intake.kMinIntakeAngle.getRadians(),
@@ -24,7 +24,7 @@ public class IntakeErectorIOSim implements IntakeErectorIO {
     }
 
     @Override
-    public void updateInputs(IntakeErectorIOInputs inputs) {
+    public void updateInputs(WristIOInputs inputs) {
         m_sim.update(Constants.kLoopPeriodSecs);
 
         inputs.absoluteAngle = Rotation2d.fromRadians(m_sim.getAngleRads());
