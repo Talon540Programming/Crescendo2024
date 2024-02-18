@@ -74,15 +74,10 @@ public class ShooterBase extends SubsystemBase {
   private static final LoggedTunableNumber shooterModuleKd =
       new LoggedTunableNumber("ShooterModuleKd");
 
-  private static final LoggedTunableNumber kickupKp = new LoggedTunableNumber("KickupKp");
-  private static final LoggedTunableNumber kickupKi = new LoggedTunableNumber("KickupKi");
-  private static final LoggedTunableNumber kickupKd = new LoggedTunableNumber("KickupKd");
-
   private ArmFeedforward m_erectorFeedforward = new ArmFeedforward(0, 0, 0);
   private final PIDController m_erectorFeedback = new PIDController(0, 0, 0);
   private SimpleMotorFeedforward m_shooterModuleFeedforward = new SimpleMotorFeedforward(0, 0);
   private final PIDController m_shooterModuleFeedback = new PIDController(0, 0, 0);
-  private final PIDController m_kickupFeedback = new PIDController(0, 0, 0);
 
   private final SysIdRoutine m_erectorCharacterizationRoutine;
   private final SysIdRoutine m_shooterCharacterizationRoutine;
@@ -102,9 +97,6 @@ public class ShooterBase extends SubsystemBase {
         shooterModuleKp.initDefault(0.0); // TODO
         shooterModuleKi.initDefault(0.0); // TODO
         shooterModuleKd.initDefault(0.0); // TODO
-        kickupKp.initDefault(0.0); // TODO
-        kickupKi.initDefault(0.0); // TODO
-        kickupKd.initDefault(0.0); // TODO
       }
       case ROBOT_SIMBOT -> {
         erectorKs.initDefault(0.0); // TODO
@@ -119,9 +111,6 @@ public class ShooterBase extends SubsystemBase {
         shooterModuleKp.initDefault(0.0); // TODO
         shooterModuleKi.initDefault(0.0); // TODO
         shooterModuleKd.initDefault(0.0); // TODO
-        kickupKp.initDefault(0.0); // TODO
-        kickupKi.initDefault(0.0); // TODO
-        kickupKd.initDefault(0.0); // TODO
       }
     }
   }
@@ -191,10 +180,6 @@ public class ShooterBase extends SubsystemBase {
           shooterModuleKp.get(), shooterModuleKi.get(), shooterModuleKd.get());
     }
 
-    if (kickupKp.hasChanged(0) || kickupKi.hasChanged(0) || kickupKd.hasChanged(0)) {
-      m_shooterModuleFeedback.setPID(kickupKp.get(), kickupKi.get(), kickupKd.get());
-    }
-
     // Update setpoint and command IO layers
     if (DriverStation.isDisabled()) {
       // Reset visualizer to default state when disabled
@@ -225,11 +210,7 @@ public class ShooterBase extends SubsystemBase {
               -12,
               12));
 
-      double kickupMeasurement = getKickupVelocityMetersPerSecond();
-      double kickupSetpoint = m_setpoint.kickupVelocityMetersPerSecond();
-
-      m_kickupIO.setVoltage(
-          MathUtil.clamp(m_kickupFeedback.calculate(kickupMeasurement, kickupSetpoint), -12, 12));
+      m_kickupIO.setVoltage(m_setpoint.kickupPercent() * 12.0);
     }
 
     // TODO do visualizer
