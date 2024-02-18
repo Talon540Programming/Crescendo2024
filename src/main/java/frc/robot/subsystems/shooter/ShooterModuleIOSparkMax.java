@@ -44,7 +44,7 @@ public class ShooterModuleIOSparkMax implements ShooterModuleIO {
     m_leader.burnFlash();
     m_follower.burnFlash();
 
-    m_follower.follow(m_leader, true);
+    m_follower.follow(m_leader, false);
   }
 
   @Override

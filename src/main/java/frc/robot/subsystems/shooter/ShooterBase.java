@@ -201,7 +201,6 @@ public class ShooterBase extends SubsystemBase {
     }
 
     // TODO do visualizer
-
     // m_setpointVisualizer.update(m_setpoint.angle());
     // m_measuredVisualizer.update(m_erectorInputs.absoluteAngle);
   }

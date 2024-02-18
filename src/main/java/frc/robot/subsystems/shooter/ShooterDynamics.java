@@ -22,8 +22,8 @@ public class ShooterDynamics {
 
   public static Pair<Rotation2d, ShooterState> getRobotState(
       Pose2d robotPose, Vector<N2> robotVel) {
-        return null;
-      }
+    return null;
+  }
 
   // // TODO
   // public static ShooterState calculateSpeaker(Vector<N2> robotVel, Pose2d robotPose) {
