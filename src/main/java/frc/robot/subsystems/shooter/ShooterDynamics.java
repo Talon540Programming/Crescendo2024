@@ -22,8 +22,8 @@ public class ShooterDynamics {
 
   public static Pair<Rotation2d, ShooterState> getRobotState(
       Pose2d robotPose, Vector<N2> robotVel) {
-        return null;
-      }
+    return null;
+  }
 
   // // TODO
   // public static ShooterState calculateSpeaker(Vector<N2> robotVel, Pose2d robotPose) {
@@ -79,23 +79,35 @@ public class ShooterDynamics {
                 Constants.Shooter.PIVOT_POSE.getRotation()));
   }
 
+  /**
+   * Represent the state of the shooter at a given time
+   *
+   * @param angle the angle of the shooter relative to the plane intersecting the erector parallel
+   *     to the ground.
+   * @param shooterVelocityMetersPerSecond the velocity of the shooter's flywheels in meters per
+   *     second. Positive values represent shooting the note out while negative values draw notes
+   *     in.
+   * @param kickupPercent scalar value representing the state of the kickup roller of the shooter.
+   *     Positive values represent pushing notes into the flywheels while negative values retract
+   *     the note into the shooter.
+   */
   public record ShooterState(
-      Rotation2d angle,
-      double shooterVelocityMetersPerSecond,
-      double kickupVelocityMetersPerSecond) {
-    public static ShooterState STARTING_STATE = new ShooterState(Rotation2d.fromDegrees(70), 0, 0);
-    public static ShooterState TRAVEL_STATE = new ShooterState(Rotation2d.fromDegrees(35), 0, 0);
+      Rotation2d angle, double shooterVelocityMetersPerSecond, double kickupPercent) {
+    public static final ShooterState STARTING_STATE =
+        new ShooterState(Rotation2d.fromDegrees(70), 0, 0);
+    public static final ShooterState TRAVEL_STATE =
+        new ShooterState(Rotation2d.fromDegrees(35), 0, 0);
 
     @Override
     public boolean equals(Object obj) {
       if (obj instanceof ShooterState other) {
+        // The shooter and kickup percentages don't need to have super high accuracy in precision
         return Math.hypot(
                     angle.getCos() - other.angle.getCos(), angle.getSin() - other.angle.getSin())
-                < 1.5
+                < 1e-3
             && Math.abs(shooterVelocityMetersPerSecond - other.shooterVelocityMetersPerSecond)
                 <= 1e-2
-            && Math.abs(kickupVelocityMetersPerSecond - other.kickupVelocityMetersPerSecond)
-                <= 1e-2;
+            && Math.abs(kickupPercent - other.kickupPercent) <= 1e-2;
       }
       return false;
     }

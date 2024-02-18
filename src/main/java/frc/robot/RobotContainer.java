@@ -103,6 +103,18 @@ public class RobotContainer {
     m_autoChooser.addOption(
         "ErectorQuasistaticReverse",
         m_shooter.characterizeErectorQuasistatic(SysIdRoutine.Direction.kReverse));
+    m_autoChooser.addOption(
+        "ShooterDynamicForward",
+        m_shooter.characterizeShooterDynamic(SysIdRoutine.Direction.kForward));
+    m_autoChooser.addOption(
+        "ShooterDynamicReverse",
+        m_shooter.characterizeShooterDynamic(SysIdRoutine.Direction.kReverse));
+    m_autoChooser.addOption(
+        "ShooterQuasistaticForward",
+        m_shooter.characterizeShooterQuasistatic(SysIdRoutine.Direction.kForward));
+    m_autoChooser.addOption(
+        "ShooterQuasistaticReverse",
+        m_shooter.characterizeShooterQuasistatic(SysIdRoutine.Direction.kReverse));
   }
 
   private void configureButtonBindings() {

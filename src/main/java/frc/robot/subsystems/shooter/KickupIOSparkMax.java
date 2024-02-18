@@ -16,9 +16,10 @@ public class KickupIOSparkMax implements KickupIO {
 
   public KickupIOSparkMax() {
     m_motor =
-        new CANSparkMax(HardwareIds.COMP_2024.kKickupId, CANSparkLowLevel.MotorType.kBrushless);
-    m_forwardBeamBreak = new DigitalInput(HardwareIds.COMP_2024.kKickupForwardBeamBreakPort);
-    m_rearBeamBreak = new DigitalInput(HardwareIds.COMP_2024.kKickupRearBeamBreakPort);
+        new CANSparkMax(
+            HardwareIds.COMP_2024.kShooterKickupId, CANSparkLowLevel.MotorType.kBrushless);
+    m_forwardBeamBreak = new DigitalInput(HardwareIds.COMP_2024.kShooterKickupForwardBeamBreakPort);
+    m_rearBeamBreak = new DigitalInput(HardwareIds.COMP_2024.kShooterKickupRearBeamBreakPort);
 
     m_motor.restoreFactoryDefaults();
 
