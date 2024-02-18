@@ -25,6 +25,7 @@ public class ShooterBase extends SubsystemBase {
   public static final double SHOOTER_RADIUS_METERS = Units.inchesToMeters(1.5);
   public static final double KICKUP_GEARING = (5.0 / 1.0);
   public static final double KICKUP_RADIUS_METERS = Units.inchesToMeters(1.0);
+  public static final double KICKUP_VOLTAGE = 0.0; //TODO, test voltages
 
   private final ErectorIO m_erectorIO;
   private final ErectorIOInputsAutoLogged m_erectorInputs = new ErectorIOInputsAutoLogged();
@@ -209,8 +210,6 @@ public class ShooterBase extends SubsystemBase {
                   + m_shooterModuleFeedback.calculate(shooterMeasurement, shooterSetpoint),
               -12,
               12));
-
-      m_kickupIO.setVoltage(m_setpoint.kickupPercent() * 12.0);
     }
 
     // TODO do visualizer
@@ -229,12 +228,15 @@ public class ShooterBase extends SubsystemBase {
   public ShooterState getCurrentState() {
     return new ShooterState(
         m_erectorInputs.absoluteAngle,
-        getShooterVelocityMetersPerSecond(),
-        getKickupVelocityMetersPerSecond());
+        getShooterVelocityMetersPerSecond());
   }
 
   public boolean atSetpoint() {
     return getSetpoint().equals(getCurrentState());
+  }
+
+  public void setKickupVoltage(double volts) {
+    m_kickupIO.setVoltage(MathUtil.clamp(volts, -12, 12));
   }
 
   @AutoLogOutput(key = "Shooter/VelocityMetersPerSec")

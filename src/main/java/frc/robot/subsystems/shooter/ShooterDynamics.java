@@ -87,16 +87,13 @@ public class ShooterDynamics {
    * @param shooterVelocityMetersPerSecond the velocity of the shooter's flywheels in meters per
    *     second. Positive values represent shooting the note out while negative values draw notes
    *     in.
-   * @param kickupPercent scalar value representing the state of the kickup roller of the shooter.
-   *     Positive values represent pushing notes into the flywheels while negative values retract
-   *     the note into the shooter.
    */
   public record ShooterState(
-      Rotation2d angle, double shooterVelocityMetersPerSecond, double kickupPercent) {
+      Rotation2d angle, double shooterVelocityMetersPerSecond) {
     public static final ShooterState STARTING_STATE =
-        new ShooterState(Rotation2d.fromDegrees(70), 0, 0);
+        new ShooterState(Rotation2d.fromDegrees(70), 0);
     public static final ShooterState TRAVEL_STATE =
-        new ShooterState(Rotation2d.fromDegrees(35), 0, 0);
+        new ShooterState(Rotation2d.fromDegrees(35), 0 );
 
     @Override
     public boolean equals(Object obj) {
@@ -106,8 +103,7 @@ public class ShooterDynamics {
                     angle.getCos() - other.angle.getCos(), angle.getSin() - other.angle.getSin())
                 < 1e-3
             && Math.abs(shooterVelocityMetersPerSecond - other.shooterVelocityMetersPerSecond)
-                <= 1e-2
-            && Math.abs(kickupPercent - other.kickupPercent) <= 1e-2;
+                <= 1e-2;
       }
       return false;
     }
