@@ -6,6 +6,7 @@ import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.util.Units;
 import frc.robot.constants.Constants;
+import java.util.Optional;
 
 public class ShooterDynamics {
   private static final Pose3d SPEAKER_POSE = new Pose3d();
@@ -25,10 +26,68 @@ public class ShooterDynamics {
     return null;
   }
 
-  // // TODO
-  // public static ShooterState calculateSpeaker(Vector<N2> robotVel, Pose2d robotPose) {
-  //   return null;
-  // }
+  public static Optional<Pair<Rotation2d, ShooterState>> calculateSpeaker(
+      Vector<N2> robotVel, Pose2d robotPose) {
+    // Ensure robot pose can legally shoot from there
+    if (robotPose.getX() + ROBOT_SIZE_RADIUS >= OTHER_ALLIANCE_WING_LINE) return Optional.empty();
+
+    // Calculate the position of the pivot of the robot on the field
+    var pivotPose = getPivotPoseField(robotPose);
+
+    // Calculate the distance between the pivot of the shooter and the center mark of the speaker in
+    // two-dimensional space
+    var distToTarget =
+        Math.hypot(pivotPose.getX() - pivotPose.getX(), pivotPose.getY() - robotPose.getY());
+
+    // Ensure that the shooter could possibly make the shot with a reasonable trajectory
+    if (distToTarget > MAX_SHOOTER_DISTANCE) return Optional.empty();
+
+    // TODO calculate note intersection points. Should allow for bank-shots on the inside sides of
+    // the speaker as well.
+    // If the note cant make it in at all angles within the angle bound, return empty Optional.
+
+    double x = robotPose.getX();
+    double y = robotPose.getY();
+
+    // TODO get hub coordinates
+    double hubX = 0;
+    double hubY = 0;
+
+    Translation2d pose = robotPose.getTranslation();
+
+    double d = pose.getDistance(new Translation2d(hubX, hubY));
+
+    // Calculate angle of shot based on distance - simple exponential regression
+    double a = 0; // TODO get regression params
+    double b = 0; // TODO get regression params
+    double c = 0; // TODO get regression params
+    double shotAngle = a * Math.pow(Math.E, -b * d) + c;
+
+    // Calculate velocity of shot based on distance and angle - taken from AMB Robotics
+    double SpeakerOpeningRadians = 0.244346;
+    double velocity =
+        1
+            / Math.cos(shotAngle)
+            * Math.sqrt(
+                9.80665 * d / Math.abs(Math.tan(SpeakerOpeningRadians) - Math.tan(shotAngle)));
+
+    // Calculate aim offset by multiplying robot y velocity by the airtime of the shot
+    double airTime = d / velocity;
+    double offsetY = robotVel.getData()[1] * airTime;
+    hubY -= offsetY;
+
+    // Calculate angle of robot based on robot position and aim location
+    Rotation2d botAngle = Rotation2d.fromRadians(-Math.atan(x - hubX / y - hubY));
+
+    // Offset shooter velocity by robot's x velocity
+    velocity += robotVel.getData()[0];
+
+    ShooterState shooterState = new ShooterState(Rotation2d.fromRadians(shotAngle), velocity);
+
+    Optional<Pair<Rotation2d, ShooterState>> pair = Optional.of(new Pair(botAngle, shooterState));
+
+    return pair;
+  }
 
   // /**
   //  * Calculates a scalar value of how much of a bias should be placed on a given pose to make a
@@ -44,32 +103,6 @@ public class ShooterDynamics {
   //
   //
   // }
-
-  public boolean isValidRobotState(Pose2d robotPose, Vector<N2> robotVel) {
-    // Ensure robot pose can legally shoot from there
-    if (robotPose.getX() + ROBOT_SIZE_RADIUS >= OTHER_ALLIANCE_WING_LINE) return false;
-
-    // Calculate the position of the pivot of the robot on the field
-    var pivotPose = getPivotPoseField(robotPose);
-
-    // Calculate the distance between the pivot of the shooter and the center mark of the speaker in
-    // two-dimensional space
-    var distToTarget =
-        Math.hypot(pivotPose.getX() - pivotPose.getX(), pivotPose.getY() - robotPose.getY());
-
-    // Ensure that the shooter could possibly make the shot with a reasonable trajectory
-    if (distToTarget > MAX_SHOOTER_DISTANCE) return false;
-
-    // Calculate if a note with lateral drift would make it into the speaker
-    double noteDriftLeft = 0.0; // TODO constant + function of velocity
-    double noteDriftRight = 0.0; // TODO constant + function of velocity
-
-    // TODO calculate note intersection points. Should allow for bank-shots on the inside sides of
-    // the speaker as well.
-    //  If the note cant make it in at all angles within the angle bound, return 0.
-
-    return true;
-  }
 
   private static Pose3d getPivotPoseField(Pose2d robotPose) {
     return new Pose3d(robotPose)
@@ -88,12 +121,10 @@ public class ShooterDynamics {
    *     second. Positive values represent shooting the note out while negative values draw notes
    *     in.
    */
-  public record ShooterState(
-      Rotation2d angle, double shooterVelocityMetersPerSecond) {
+  public record ShooterState(Rotation2d angle, double shooterVelocityMetersPerSecond) {
     public static final ShooterState STARTING_STATE =
         new ShooterState(Rotation2d.fromDegrees(70), 0);
-    public static final ShooterState TRAVEL_STATE =
-        new ShooterState(Rotation2d.fromDegrees(35), 0 );
+    public static final ShooterState TRAVEL_STATE = new ShooterState(Rotation2d.fromDegrees(35), 0);
 
     @Override
     public boolean equals(Object obj) {

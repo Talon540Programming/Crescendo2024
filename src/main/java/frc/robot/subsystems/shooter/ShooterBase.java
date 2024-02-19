@@ -25,7 +25,7 @@ public class ShooterBase extends SubsystemBase {
   public static final double SHOOTER_RADIUS_METERS = Units.inchesToMeters(1.5);
   public static final double KICKUP_GEARING = (5.0 / 1.0);
   public static final double KICKUP_RADIUS_METERS = Units.inchesToMeters(1.0);
-  public static final double KICKUP_VOLTAGE = 0.0; //TODO, test voltages
+  public static final double KICKUP_VOLTAGE = 0.0; // TODO, test voltages
 
   private final ErectorIO m_erectorIO;
   private final ErectorIOInputsAutoLogged m_erectorInputs = new ErectorIOInputsAutoLogged();
@@ -226,9 +226,7 @@ public class ShooterBase extends SubsystemBase {
   }
 
   public ShooterState getCurrentState() {
-    return new ShooterState(
-        m_erectorInputs.absoluteAngle,
-        getShooterVelocityMetersPerSecond());
+    return new ShooterState(m_erectorInputs.absoluteAngle, getShooterVelocityMetersPerSecond());
   }
 
   public boolean atSetpoint() {
