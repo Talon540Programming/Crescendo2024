@@ -14,6 +14,7 @@ public class ShooterDynamics {
 
   private static final double NOTE_WIDTH_METERS = Units.inchesToMeters(14.0);
   private static final double MAX_NOTE_DRIFT_RAD = Math.toRadians(2.0);
+  private static final double HUB_WIDTH_METERS = 1.05;
 
   // Max distance the shooter can physically attain with a still trackable trajectory (2D)
   private static final double MAX_SHOOTER_DISTANCE = Units.feetToMeters(25.0); // TODO
@@ -41,10 +42,6 @@ public class ShooterDynamics {
 
     // Ensure that the shooter could possibly make the shot with a reasonable trajectory
     if (distToTarget > MAX_SHOOTER_DISTANCE) return Optional.empty();
-
-    // TODO calculate note intersection points. Should allow for bank-shots on the inside sides of
-    // the speaker as well.
-    // If the note cant make it in at all angles within the angle bound, return empty Optional.
 
     double x = robotPose.getX();
     double y = robotPose.getY();
@@ -78,6 +75,11 @@ public class ShooterDynamics {
 
     // Calculate angle of robot based on robot position and aim location
     Rotation2d botAngle = Rotation2d.fromRadians(-Math.atan(x - hubX / y - hubY));
+
+    // Ensure the apparent width of the hub from the robot's vantage point is large enough for the
+    // note
+    double apparentHubWidthMeters = HUB_WIDTH_METERS * Math.cos(botAngle.getRadians());
+    if (apparentHubWidthMeters + 0.1 < NOTE_WIDTH_METERS) return Optional.empty();
 
     // Offset shooter velocity by robot's x velocity
     velocity += robotVel.getData()[0];
