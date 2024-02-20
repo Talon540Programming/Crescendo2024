@@ -24,13 +24,15 @@ public class SingleJointedMechanismVisualizer implements AutoCloseable {
       String logKey,
       double ligamentLengthMeters,
       Pose3d pivotPose,
-      Rotation2d defaultAngle) {
+      Rotation2d defaultAngle,
+      double mechanismWidth,
+      double mechanismHeight) {
     m_mechanismName = mechanismName;
     m_logKey = logKey;
 
     m_pivotPose = pivotPose;
 
-    m_mechanism = new Mechanism2d(2, 2, new Color8Bit(14, 17, 23));
+    m_mechanism = new Mechanism2d(mechanismWidth, mechanismHeight, new Color8Bit(14, 17, 23));
     MechanismRoot2d pivot = m_mechanism.getRoot("Mechanism Fulcrum", 1, pivotPose.getZ());
 
     m_mechanismLigament =
@@ -46,8 +48,6 @@ public class SingleJointedMechanismVisualizer implements AutoCloseable {
   public void update(Rotation2d mechanismAngle) {
     m_mechanismLigament.setAngle(mechanismAngle.getDegrees());
     Logger.recordOutput(m_mechanismName + "/Mechanism2d/" + m_logKey, m_mechanism);
-
-    System.out.println(Math.toDegrees(mechanismAngle.getRadians() + Math.PI / 2.0));
 
     Logger.recordOutput(
         m_mechanismName + "/Mechanism3d/" + m_logKey,

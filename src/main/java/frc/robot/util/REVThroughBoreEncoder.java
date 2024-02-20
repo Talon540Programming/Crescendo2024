@@ -9,7 +9,7 @@ import edu.wpi.first.wpilibj.Encoder;
  * ThroughBoreEncoder. Implements both the relative and absolute encoders of the device. <a
  * href="https://docs.revrobotics.com/through-bore-encoder/specifications">Datasheet</a>
  */
-public class ThroughBoreEncoder implements AutoCloseable {
+public class REVThroughBoreEncoder implements AutoCloseable {
   private final DutyCycleEncoder m_absoluteEncoder;
   private final Encoder m_relativeEncoder;
 
@@ -22,7 +22,7 @@ public class ThroughBoreEncoder implements AutoCloseable {
    * @param absoluteEncoderOffset Offset of the duty cycle encoder. This value is subtracted from
    *     the true absolute position to yield the result.
    */
-  public ThroughBoreEncoder(
+  public REVThroughBoreEncoder(
       int dutyCyclePort, int relativeAPort, int relativeBPort, Rotation2d absoluteEncoderOffset) {
     m_absoluteEncoder = new DutyCycleEncoder(dutyCyclePort);
     m_absoluteEncoder.setDutyCycleRange(1.0 / 1025.0, 1024.0 / 1025.0);

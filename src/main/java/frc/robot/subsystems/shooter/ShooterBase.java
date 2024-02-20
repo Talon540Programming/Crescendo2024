@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.shooter.ShooterDynamics.ShooterState;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.SingleJointedMechanismVisualizer;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -39,20 +40,24 @@ public class ShooterBase extends SubsystemBase {
 
   private ShooterState m_setpoint = ShooterState.STARTING_STATE;
 
-  // private final SingleJointedMechanismVisualizer m_setpointVisualizer =
-  //     new SingleJointedMechanismVisualizer(
-  //         "Shooter",
-  //         "Setpoint",
-  //         Constants.Shooter.SHOOTER_LENGTH_METERS,
-  //         Constants.Shooter.PIVOT_POSE,
-  //         ShooterState.STARTING_STATE.angle());
-  // private final SingleJointedMechanismVisualizer m_measuredVisualizer =
-  //     new SingleJointedMechanismVisualizer(
-  //         "Shooter",
-  //         "Measured",
-  //         Constants.Shooter.SHOOTER_LENGTH_METERS,
-  //         Constants.Shooter.PIVOT_POSE,
-  //         ShooterState.STARTING_STATE.angle());
+  private final SingleJointedMechanismVisualizer m_setpointVisualizer =
+      new SingleJointedMechanismVisualizer(
+          "Shooter",
+          "Setpoint",
+          Constants.Shooter.SHOOTER_LENGTH_METERS,
+          Constants.Shooter.PIVOT_POSE,
+          ShooterState.STARTING_STATE.angle(),
+          2,
+          2);
+  private final SingleJointedMechanismVisualizer m_measuredVisualizer =
+      new SingleJointedMechanismVisualizer(
+          "Shooter",
+          "Measured",
+          Constants.Shooter.SHOOTER_LENGTH_METERS,
+          Constants.Shooter.PIVOT_POSE,
+          ShooterState.STARTING_STATE.angle(),
+          2,
+          2);
 
   private static final LoggedTunableNumber erectorKs = new LoggedTunableNumber("ErectorKs");
   private static final LoggedTunableNumber erectorKg = new LoggedTunableNumber("ErectorKg");
