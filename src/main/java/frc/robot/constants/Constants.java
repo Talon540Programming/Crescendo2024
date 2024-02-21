@@ -56,9 +56,9 @@ public final class Constants {
     // Position of the pivot point of the shooter in the RCS
     public static final Pose3d PIVOT_POSE =
         new Pose3d(
-            0.0,
             Units.inchesToMeters(-2.5),
-            Units.inchesToMeters(8.25),
+            0,
+            Units.inchesToMeters(5.727224),
             new Rotation3d(0.0, 0.0, Math.toRadians(180.0)));
   }
 }
