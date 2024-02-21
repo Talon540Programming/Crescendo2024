@@ -26,7 +26,6 @@ public class ShooterBase extends SubsystemBase {
   public static final double SHOOTER_RADIUS_METERS = Units.inchesToMeters(1.5);
   public static final double KICKUP_GEARING = (5.0 / 1.0);
   public static final double KICKUP_RADIUS_METERS = Units.inchesToMeters(1.0);
-  public static final double KICKUP_VOLTAGE = 0.0; // TODO, test voltages
 
   private final ErectorIO m_erectorIO;
   private final ErectorIOInputsAutoLogged m_erectorInputs = new ErectorIOInputsAutoLogged();
@@ -189,7 +188,7 @@ public class ShooterBase extends SubsystemBase {
     // Update setpoint and command IO layers
     if (DriverStation.isDisabled()) {
       // Reset visualizer to default state when disabled
-      m_setpoint = ShooterState.TRAVEL_STATE;
+      m_setpoint = ShooterState.STARTING_STATE;
 
       // Disable the erector and shooter
       m_shooterModuleIO.setVoltage(0.0);
@@ -217,9 +216,10 @@ public class ShooterBase extends SubsystemBase {
               12));
     }
 
-    // TODO do visualizer
-    // m_setpointVisualizer.update(m_setpoint.angle());
-    // m_measuredVisualizer.update(m_erectorInputs.absoluteAngle);
+    if (m_setpoint != null) {
+      m_setpointVisualizer.update(m_setpoint.angle());
+    }
+    m_measuredVisualizer.update(m_erectorInputs.absoluteAngle);
   }
 
   public void setSetpoint(ShooterState state) {

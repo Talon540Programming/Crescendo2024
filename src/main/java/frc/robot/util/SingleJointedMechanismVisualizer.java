@@ -25,14 +25,16 @@ public class SingleJointedMechanismVisualizer implements AutoCloseable {
       double ligamentLengthMeters,
       Pose3d pivotPose,
       Rotation2d defaultAngle,
-      double mechanismWidth,
-      double mechanismHeight) {
+      double mechanismCanvasWidthMeters,
+      double mechanismCanvasHeightMeters) {
     m_mechanismName = mechanismName;
     m_logKey = logKey;
 
     m_pivotPose = pivotPose;
 
-    m_mechanism = new Mechanism2d(mechanismWidth, mechanismHeight, new Color8Bit(14, 17, 23));
+    m_mechanism =
+        new Mechanism2d(
+            mechanismCanvasWidthMeters, mechanismCanvasHeightMeters, new Color8Bit(14, 17, 23));
     MechanismRoot2d pivot = m_mechanism.getRoot("Mechanism Fulcrum", 1, pivotPose.getZ());
 
     m_mechanismLigament =
