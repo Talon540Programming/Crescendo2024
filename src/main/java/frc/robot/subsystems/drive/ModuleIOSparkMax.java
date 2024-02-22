@@ -13,6 +13,7 @@ import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareIds;
 import frc.robot.util.OdometryQueueThread;
 import frc.robot.util.PoseEstimator;
+import frc.robot.util.SparkMaxUtils;
 import frc.robot.util.TimestampedSensorMeasurement;
 import java.util.Queue;
 
@@ -92,21 +93,22 @@ public class ModuleIOSparkMax implements ModuleIO {
     this.m_driveMotor.setCANTimeout(0);
     this.m_turnMotor.setCANTimeout(0);
 
+    this.m_driveMotor.burnFlash();
+    this.m_turnMotor.burnFlash();
+
     this.m_driveMotor.setPeriodicFramePeriod(
         PeriodicFrame.kStatus2, (int) (1000.0 / PoseEstimator.ODOMETRY_FREQUENCY));
     this.m_turnMotor.setPeriodicFramePeriod(
         PeriodicFrame.kStatus2, (int) (1000.0 / PoseEstimator.ODOMETRY_FREQUENCY));
+    SparkMaxUtils.disableSensorFrames(m_driveMotor, m_turnMotor);
+
     this.m_turnAbsoluteEncoder.setUpdateFrequency(50);
+    this.m_absoluteEncoder.optimizeBusUtilization();
 
     this.drivePositionQueue =
         OdometryQueueThread.getInstance().registerSignal(m_driveEncoder::getPosition);
     this.turnPositionQueue =
         OdometryQueueThread.getInstance().registerSignal(m_turnRelativeEncoder::getPosition);
-
-    this.m_driveMotor.burnFlash();
-    this.m_turnMotor.burnFlash();
-
-    this.m_absoluteEncoder.optimizeBusUtilization();
   }
 
   @Override

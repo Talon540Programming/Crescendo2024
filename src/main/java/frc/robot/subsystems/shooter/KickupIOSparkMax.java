@@ -6,6 +6,7 @@ import com.revrobotics.RelativeEncoder;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DigitalInput;
 import frc.robot.constants.HardwareIds;
+import frc.robot.util.SparkMaxUtils;
 
 public class KickupIOSparkMax implements KickupIO {
   private final CANSparkMax m_motor;
@@ -38,6 +39,8 @@ public class KickupIOSparkMax implements KickupIO {
     m_motor.setCANTimeout(0);
 
     m_motor.burnFlash();
+
+    SparkMaxUtils.disableSensorFrames(m_motor);
   }
 
   @Override

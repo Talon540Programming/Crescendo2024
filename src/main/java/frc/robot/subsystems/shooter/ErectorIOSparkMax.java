@@ -5,6 +5,7 @@ import com.revrobotics.CANSparkMax;
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.constants.HardwareIds;
 import frc.robot.util.REVThroughBoreEncoder;
+import frc.robot.util.SparkMaxUtils;
 
 public class ErectorIOSparkMax implements ErectorIO {
   private final CANSparkMax m_leader;
@@ -39,6 +40,9 @@ public class ErectorIOSparkMax implements ErectorIO {
 
     m_leader.burnFlash();
     m_follower.burnFlash();
+
+    SparkMaxUtils.disableSensorFrames(m_leader, m_follower);
+    SparkMaxUtils.configureFollowers(m_follower);
 
     m_follower.follow(m_leader);
   }
