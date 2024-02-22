@@ -1,5 +1,6 @@
 package frc.robot.subsystems.shooter;
 
+import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import edu.wpi.first.math.util.Units;
@@ -36,6 +37,8 @@ public class ShooterModuleIOSparkMax implements ShooterModuleIO {
     m_encoder.setMeasurementPeriod(10);
     m_encoder.setAverageDepth(2);
 
+    m_follower.follow(m_leader);
+
     m_leader.setCANTimeout(0);
     m_follower.setCANTimeout(0);
 
@@ -45,9 +48,7 @@ public class ShooterModuleIOSparkMax implements ShooterModuleIO {
     SparkMaxUtils.disableSensorFrames(m_leader, m_follower);
     SparkMaxUtils.configureFollowers(m_follower);
     // Report velocity at a faster rate for PID
-    // m_leader.setPeriodicFramePeriod(PeriodicFrame.kStatus1, 10);
-
-    m_follower.follow(m_leader);
+    m_leader.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus1, 10);
   }
 
   @Override

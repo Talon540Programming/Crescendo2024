@@ -37,6 +37,8 @@ public class ErectorIOSparkMax implements ErectorIO {
     m_leader.enableVoltageCompensation(12);
     m_follower.enableVoltageCompensation(12);
 
+    m_follower.follow(m_leader);
+
     m_leader.setCANTimeout(0);
     m_follower.setCANTimeout(0);
 
@@ -45,8 +47,6 @@ public class ErectorIOSparkMax implements ErectorIO {
 
     SparkMaxUtils.disableSensorFrames(m_leader, m_follower);
     SparkMaxUtils.configureFollowers(m_follower);
-
-    m_follower.follow(m_leader);
   }
 
   @Override
