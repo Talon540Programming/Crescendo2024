@@ -4,7 +4,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import frc.robot.constants.Constants;
-import frc.robot.subsystems.shooter.ShooterDynamics.ShooterState;
 
 public class ErectorIOSim implements ErectorIO {
   private final SingleJointedArmSim m_sim;

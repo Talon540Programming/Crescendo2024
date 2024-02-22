@@ -13,7 +13,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.constants.Constants;
-import frc.robot.subsystems.shooter.ShooterDynamics.ShooterState;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.SingleJointedMechanismVisualizer;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -226,6 +225,7 @@ public class ShooterBase extends SubsystemBase {
     m_setpoint = state;
   }
 
+  @AutoLogOutput(key = "Shooter/Setpoint")
   public ShooterState getSetpoint() {
     return m_setpoint;
   }
