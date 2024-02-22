@@ -37,7 +37,7 @@ public class ShooterBase extends SubsystemBase {
   private final KickupIO m_kickupIO;
   private final KickupIOInputsAutoLogged m_kickupInputs = new KickupIOInputsAutoLogged();
 
-  private ShooterState m_setpoint = ShooterState.STARTING_STATE;
+  private ShooterState m_setpoint = ShooterState.TRAVEL_STATE;
 
   private final SingleJointedMechanismVisualizer m_setpointVisualizer =
       new SingleJointedMechanismVisualizer(
@@ -187,8 +187,8 @@ public class ShooterBase extends SubsystemBase {
 
     // Update setpoint and command IO layers
     if (DriverStation.isDisabled()) {
-      // Reset visualizer to default state when disabled
-      m_setpoint = ShooterState.STARTING_STATE;
+      // Reset visualizer to travel state when disabled
+      m_setpoint = ShooterState.TRAVEL_STATE;
 
       // Disable the erector and shooter
       m_shooterModuleIO.setVoltage(0.0);
