@@ -90,13 +90,13 @@ public class ShooterBase extends SubsystemBase {
   static {
     switch (Constants.getRobotType()) {
       case ROBOT_2024_COMP -> {
-        erectorKs.initDefault(0.0); // TODO
-        erectorKg.initDefault(0.0); // TODO
-        erectorKv.initDefault(0.0); // TODO
-        erectorKa.initDefault(0.0); // TODO
-        erectorKp.initDefault(0.0); // TODO
-        erectorKi.initDefault(0.0); // TODO
-        erectorKd.initDefault(0.0); // TODO
+        erectorKs.initDefault(0.0);
+        erectorKg.initDefault(1.7);
+        erectorKv.initDefault(0.0);
+        erectorKa.initDefault(0.0);
+        erectorKp.initDefault(40);
+        erectorKi.initDefault(0.0);
+        erectorKd.initDefault(0.5);
         shooterModuleKs.initDefault(0.0); // TODO
         shooterModuleKv.initDefault(0.0); // TODO
         shooterModuleKp.initDefault(0.0); // TODO
@@ -133,7 +133,7 @@ public class ShooterBase extends SubsystemBase {
         new SysIdRoutine(
             new SysIdRoutine.Config(
                 null,
-                null,
+                Volts.of(1),
                 null,
                 (state) -> Logger.recordOutput("Shooter/ErectorSysIdState", state.toString())),
             new SysIdRoutine.Mechanism(

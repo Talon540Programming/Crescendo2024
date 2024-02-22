@@ -30,6 +30,8 @@ public class ErectorIOSparkMax implements ErectorIO {
     m_leader.setCANTimeout(250);
     m_follower.setCANTimeout(250);
 
+    m_leader.setInverted(true);
+
     m_leader.setSmartCurrentLimit(40);
     m_follower.setSmartCurrentLimit(40);
     m_leader.enableVoltageCompensation(12);
