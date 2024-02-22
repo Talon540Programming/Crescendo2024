@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.Encoder;
 public class REVThroughBoreEncoder implements AutoCloseable {
   private final DutyCycleEncoder m_absoluteEncoder;
   private final Encoder m_relativeEncoder;
+  private final Rotation2d m_absoluteEncoderOffset;
 
   /**
    * Create a ThroughBoreEncoder
@@ -26,7 +27,7 @@ public class REVThroughBoreEncoder implements AutoCloseable {
       int dutyCyclePort, int relativeAPort, int relativeBPort, Rotation2d absoluteEncoderOffset) {
     m_absoluteEncoder = new DutyCycleEncoder(dutyCyclePort);
     m_absoluteEncoder.setDutyCycleRange(1.0 / 1025.0, 1024.0 / 1025.0);
-    m_absoluteEncoder.setPositionOffset(absoluteEncoderOffset.getRotations());
+    m_absoluteEncoderOffset = absoluteEncoderOffset;
 
     m_relativeEncoder = new Encoder(relativeAPort, relativeBPort, false);
     m_relativeEncoder.setDistancePerPulse((2 * Math.PI) / 2048);
@@ -38,7 +39,8 @@ public class REVThroughBoreEncoder implements AutoCloseable {
    * @return absolute position of the encoder.
    */
   public Rotation2d getAbsolutePosition() {
-    return Rotation2d.fromRotations(m_absoluteEncoder.getAbsolutePosition());
+    return Rotation2d.fromRotations(m_absoluteEncoder.getAbsolutePosition())
+        .minus(m_absoluteEncoderOffset);
   }
 
   /**
