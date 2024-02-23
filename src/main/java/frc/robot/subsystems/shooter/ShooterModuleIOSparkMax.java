@@ -56,6 +56,8 @@ public class ShooterModuleIOSparkMax implements ShooterModuleIO {
     inputs.velocityRadPerSec =
         Units.rotationsPerMinuteToRadiansPerSecond(m_encoder.getVelocity())
             / ShooterBase.SHOOTER_GEARING;
+    inputs.positionRad =
+        Units.rotationsToRadians(m_encoder.getPosition()) / ShooterBase.SHOOTER_GEARING;
     inputs.appliedVolts = m_leader.getAppliedOutput() * m_leader.getBusVoltage();
     inputs.currentAmps = new double[] {m_leader.getOutputCurrent(), m_follower.getOutputCurrent()};
   }
