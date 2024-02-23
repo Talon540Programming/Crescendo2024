@@ -22,7 +22,7 @@ import org.littletonrobotics.junction.Logger;
 public class ShooterBase extends SubsystemBase {
   public static final double ERECTOR_GEARING =
       (52.0 / 12.0) * (52.0 / 18.0) * (52.0 / 18.0) * (58.0 / 24.0);
-  public static final double SHOOTER_GEARING = (26.0 / 52.0);
+  public static final double SHOOTER_GEARING = (26.0 / 50.0);
   public static final double SHOOTER_RADIUS_METERS = Units.inchesToMeters(1.5);
   public static final double KICKUP_GEARING = (5.0 / 1.0);
   public static final double KICKUP_RADIUS_METERS = Units.inchesToMeters(1.0);

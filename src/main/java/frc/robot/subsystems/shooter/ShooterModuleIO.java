@@ -5,6 +5,7 @@ import org.littletonrobotics.junction.AutoLog;
 public interface ShooterModuleIO {
   @AutoLog
   class ShooterModuleIOInputs {
+    public double positionRad;
     public double velocityRadPerSec;
     public double appliedVolts = 0.0;
     public double[] currentAmps = new double[] {};
