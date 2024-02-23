@@ -15,10 +15,20 @@ public class VisionIOPhotonCamera implements VisionIO {
   protected final PhotonCamera m_camera;
   protected final Transform3d kRobotToCamera;
 
+  private static final Matrix<N3, N1> INVALID_STDDEVS =
+      MatBuilder.fill(Nat.N3(), Nat.N1(), -1.0, -1.0, -1.0);
   private static final Matrix<N3, N1> SINGLE_TARGET_STDDEVS =
       MatBuilder.fill(Nat.N3(), Nat.N1(), 0.1, 0.1, Math.toRadians(10.0)); // TODO
   private static final Matrix<N3, N1> MULTI_TARGET_STDDEVS =
       MatBuilder.fill(Nat.N3(), Nat.N1(), 0.01, 0.01, Math.toRadians(1.0)); // TODO
+
+  // Single tag the lowest ambiguity tags must be below the threshold
+  private static final double AMBIGUITY_THRESHOLD = 0.15;
+  // Robot pose estimates on the side of the field may be slightly off, this accounts for that
+  private static final double FIELD_BORDER_MARGIN = 0.5;
+  // AprilTag estimation may result in 3d estimations with poor z estimates, reject estimates with
+  // too crazy z estimates
+  private static final double Z_MARGIN = 0.75;
 
   public VisionIOPhotonCamera(String cameraName, Transform3d robotToCamera) {
     m_camera = new PhotonCamera(cameraName);
@@ -56,7 +66,8 @@ public class VisionIOPhotonCamera implements VisionIO {
 
         tagsUsed.add(target.getFiducialId());
 
-        if (targetPoseAmbiguity < lowestAmbiguityScore) {
+        if (targetPoseAmbiguity < lowestAmbiguityScore
+            && targetPoseAmbiguity <= AMBIGUITY_THRESHOLD) {
           lowestAmbiguityScore = targetPoseAmbiguity;
           lowestAmbiguityTarget = target;
         }
@@ -77,7 +88,23 @@ public class VisionIOPhotonCamera implements VisionIO {
       }
     }
 
-    if (inputs.hasResult) {
+    // Reject pose estimates outside reasonable bounds
+    if (!inputs.hasResult
+        || inputs.estimatedRobotPose.getX() < -FIELD_BORDER_MARGIN
+        || inputs.estimatedRobotPose.getX()
+            > VisionBase.m_fieldLayout.getFieldLength() + FIELD_BORDER_MARGIN
+        || inputs.estimatedRobotPose.getY() < -FIELD_BORDER_MARGIN
+        || inputs.estimatedRobotPose.getY()
+            > VisionBase.m_fieldLayout.getFieldWidth() + FIELD_BORDER_MARGIN
+        || inputs.estimatedRobotPose.getZ() < -Z_MARGIN
+        || inputs.estimatedRobotPose.getZ() > Z_MARGIN) {
+      // Record default values if no results or invalid were found
+      inputs.hasResult = false;
+      inputs.estimatedRobotPose = new Pose3d();
+      inputs.detectedTagsIds = new int[] {};
+      inputs.detectedTagPoses = new Pose3d[] {};
+      inputs.visionMeasurementStdDevs = INVALID_STDDEVS;
+    } else {
       // Calculate the average distance between the estimated pose and the pose of all detected
       // fiducial targets in three dimensions
       double totalDistance = 0.0;
@@ -96,12 +123,6 @@ public class VisionIOPhotonCamera implements VisionIO {
       // Increase std devs based on the average distance to the target
       inputs.visionMeasurementStdDevs =
           inputs.visionMeasurementStdDevs.times(1.0 + (Math.pow(averageDistance, 2.0) / numTags));
-    } else {
-      // Record default values if no results were found
-      inputs.estimatedRobotPose = new Pose3d();
-      inputs.detectedTagsIds = new int[] {};
-      inputs.detectedTagPoses = new Pose3d[] {};
-      inputs.visionMeasurementStdDevs = MatBuilder.fill(Nat.N3(), Nat.N1(), 0.0, 0.0, 0.0);
     }
   }
 }
