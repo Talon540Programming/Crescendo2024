@@ -1,4 +1,4 @@
-package frc.robot.subsystems.shooter;
+package frc.robot.subsystems.shooter.dynamics;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.util.struct.StructSerializable;
@@ -15,6 +15,7 @@ public record ShooterState(Rotation2d angle, double shooterVelocityMetersPerSeco
     implements StructSerializable {
   public static final ShooterState STARTING_STATE = new ShooterState(Rotation2d.fromDegrees(70), 0);
   public static final ShooterState TRAVEL_STATE = new ShooterState(Rotation2d.fromDegrees(35), 0);
+  public static final ShooterState SHOOTER_INTAKE = new ShooterState(Rotation2d.fromDegrees(0.0), 0.0); // TODO
 
   @Override
   public boolean equals(Object obj) {

@@ -1,4 +1,4 @@
-package frc.robot.subsystems.shooter;
+package frc.robot.subsystems.shooter.dynamics;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.util.struct.Struct;

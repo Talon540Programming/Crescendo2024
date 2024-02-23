@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.constants.Constants;
+import frc.robot.subsystems.shooter.dynamics.ShooterState;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.SingleJointedMechanismVisualizer;
 import org.littletonrobotics.junction.AutoLogOutput;
