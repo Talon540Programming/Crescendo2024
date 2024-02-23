@@ -44,16 +44,6 @@ public class Module {
 
   static {
     switch (Constants.getRobotType()) {
-      case ROBOT_2023_OFFSEASON -> {
-        driveKp.initDefault(0.1);
-        driveKi.initDefault(0.0);
-        driveKd.initDefault(0.0);
-        driveKs.initDefault(0.14085);
-        driveKv.initDefault(0.12816);
-        turnKp.initDefault(7.5);
-        turnKi.initDefault(0.0);
-        turnKd.initDefault(0.0);
-      }
       case ROBOT_2024_COMP -> {
         driveKp.initDefault(0.0); // TODO
         driveKi.initDefault(0.0); // TODO
@@ -177,17 +167,13 @@ public class Module {
     return optimizedState;
   }
 
-  public void runCharacterization(double volts) {
+  public void runCharacterizationVoltage(double volts) {
     // Closed loop turn control
     m_turnAngleSetpoint = new Rotation2d();
 
     // Open loop drive control
     m_io.setDriveVoltage(volts);
     m_driveVelocitySetpoint = null;
-  }
-
-  public double getCharacterizationVelocity() {
-    return m_inputs.driveVelocityRadPerSec;
   }
 
   /** Disables all outputs to motors. */
