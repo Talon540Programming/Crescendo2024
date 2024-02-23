@@ -13,6 +13,7 @@ import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareIds;
 import frc.robot.util.OdometryQueueThread;
 import frc.robot.util.PoseEstimator;
+import frc.robot.util.SparkMaxUtils;
 import frc.robot.util.TimestampedSensorMeasurement;
 import java.util.Queue;
 
@@ -30,40 +31,6 @@ public class ModuleIOSparkMax implements ModuleIO {
 
   public ModuleIOSparkMax(int moduleIndex) {
     switch (Constants.getRobotType()) {
-      case ROBOT_2023_OFFSEASON -> {
-        switch (moduleIndex) {
-          case 0 -> {
-            this.m_driveMotor =
-                new CANSparkMax(HardwareIds.OFFSEASON_2023.kFrontLeftDriveId, MotorType.kBrushless);
-            this.m_turnMotor =
-                new CANSparkMax(HardwareIds.OFFSEASON_2023.kFrontLeftTurnId, MotorType.kBrushless);
-            this.m_absoluteEncoder = new CANcoder(HardwareIds.OFFSEASON_2023.kFrontLeftEncoderId);
-          }
-          case 1 -> {
-            this.m_driveMotor =
-                new CANSparkMax(
-                    HardwareIds.OFFSEASON_2023.kFrontRightDriveId, MotorType.kBrushless);
-            this.m_turnMotor =
-                new CANSparkMax(HardwareIds.OFFSEASON_2023.kFrontRightTurnId, MotorType.kBrushless);
-            this.m_absoluteEncoder = new CANcoder(HardwareIds.OFFSEASON_2023.kFrontRightEncoderId);
-          }
-          case 2 -> {
-            this.m_driveMotor =
-                new CANSparkMax(HardwareIds.OFFSEASON_2023.kBackLeftDriveId, MotorType.kBrushless);
-            this.m_turnMotor =
-                new CANSparkMax(HardwareIds.OFFSEASON_2023.kBackLeftTurnId, MotorType.kBrushless);
-            this.m_absoluteEncoder = new CANcoder(HardwareIds.OFFSEASON_2023.kBackLeftEncoderId);
-          }
-          case 3 -> {
-            this.m_driveMotor =
-                new CANSparkMax(HardwareIds.OFFSEASON_2023.kBackRightDriveId, MotorType.kBrushless);
-            this.m_turnMotor =
-                new CANSparkMax(HardwareIds.OFFSEASON_2023.kBackRightTurnId, MotorType.kBrushless);
-            this.m_absoluteEncoder = new CANcoder(HardwareIds.OFFSEASON_2023.kBackRightEncoderId);
-          }
-          default -> throw new RuntimeException("Invalid module index for ModuleIOSparkMax");
-        }
-      }
       case ROBOT_2024_COMP -> {
         switch (moduleIndex) {
           case 0 -> {
@@ -126,21 +93,22 @@ public class ModuleIOSparkMax implements ModuleIO {
     this.m_driveMotor.setCANTimeout(0);
     this.m_turnMotor.setCANTimeout(0);
 
+    this.m_driveMotor.burnFlash();
+    this.m_turnMotor.burnFlash();
+
     this.m_driveMotor.setPeriodicFramePeriod(
         PeriodicFrame.kStatus2, (int) (1000.0 / PoseEstimator.ODOMETRY_FREQUENCY));
     this.m_turnMotor.setPeriodicFramePeriod(
         PeriodicFrame.kStatus2, (int) (1000.0 / PoseEstimator.ODOMETRY_FREQUENCY));
+    SparkMaxUtils.disableSensorFrames(m_driveMotor, m_turnMotor);
+
     this.m_turnAbsoluteEncoder.setUpdateFrequency(50);
+    this.m_absoluteEncoder.optimizeBusUtilization();
 
     this.drivePositionQueue =
         OdometryQueueThread.getInstance().registerSignal(m_driveEncoder::getPosition);
     this.turnPositionQueue =
         OdometryQueueThread.getInstance().registerSignal(m_turnRelativeEncoder::getPosition);
-
-    this.m_driveMotor.burnFlash();
-    this.m_turnMotor.burnFlash();
-
-    this.m_absoluteEncoder.optimizeBusUtilization();
   }
 
   @Override

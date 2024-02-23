@@ -1,5 +1,7 @@
 package frc.robot.subsystems.drive;
 
+import static edu.wpi.first.units.Units.Volts;
+
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -8,7 +10,9 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.drive.GyroIO.GyroIOInputs;
 import frc.robot.util.PoseEstimator;
@@ -35,25 +39,18 @@ public class DriveBase extends SubsystemBase {
 
   private Rotation2d m_lastGyroRotation = new Rotation2d();
 
+  private final SysIdRoutine m_driveCharacterizationRoutine;
+
   static {
     switch (Constants.getRobotType()) {
-      case ROBOT_SIMBOT, ROBOT_2023_OFFSEASON -> {
+      case ROBOT_SIMBOT, ROBOT_2024_COMP -> {
         kDriveGearing = (50.0 / 14.0) * (17.0 / 27.0) * (45.0 / 15.0);
         kTurnGearing = 12.8;
         kWheelRadiusMeters = Units.inchesToMeters(2.0);
-        kTrackWidthXMeters = Units.inchesToMeters(20.5);
-        kTrackWidthYMeters = Units.inchesToMeters(20.5);
+        kTrackWidthXMeters = Units.inchesToMeters(22.5);
+        kTrackWidthYMeters = Units.inchesToMeters(22.5);
 
         kMaxLinearVelocityMetersPerSecond = Units.feetToMeters(14.5);
-      }
-      case ROBOT_2024_COMP -> {
-        kDriveGearing = 0.0; // TODO
-        kTurnGearing = 0.0; // TODO
-        kWheelRadiusMeters = 0.0; // TODO
-        kTrackWidthXMeters = 0.0; // TODO
-        kTrackWidthYMeters = 0.0; // TODO
-
-        kMaxLinearVelocityMetersPerSecond = 0.0; // TODO
       }
       default -> throw new RuntimeException("Unknown RobotType for Drivebase");
     }
@@ -77,6 +74,22 @@ public class DriveBase extends SubsystemBase {
     m_modules[1] = new Module(1, frontRightIO);
     m_modules[2] = new Module(2, backLeftIO);
     m_modules[3] = new Module(3, backRightIO);
+
+    m_driveCharacterizationRoutine =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null,
+                null,
+                null,
+                (state) -> Logger.recordOutput("Drive/SysIdState", state.toString())),
+            new SysIdRoutine.Mechanism(
+                (voltage) -> {
+                  for (int i = 0; i < 4; i++) {
+                    m_modules[i].runCharacterizationVoltage(voltage.in(Volts));
+                  }
+                },
+                null,
+                this));
   }
 
   public void periodic() {
@@ -193,18 +206,12 @@ public class DriveBase extends SubsystemBase {
     return states;
   }
 
-  public void runCharacterizationVolts(double volts) {
-    for (var module : m_modules) {
-      module.runCharacterization(volts);
-    }
+  public Command characterizeDriveQuasistatic(SysIdRoutine.Direction direction) {
+    return m_driveCharacterizationRoutine.quasistatic(direction);
   }
 
-  public double getCharacterizationVelocity() {
-    double driveVelocityAverage = 0.0;
-    for (var module : m_modules) {
-      driveVelocityAverage += module.getCharacterizationVelocity();
-    }
-    return driveVelocityAverage / 4.0;
+  public Command characterizeDriveDynamic(SysIdRoutine.Direction direction) {
+    return m_driveCharacterizationRoutine.dynamic(direction);
   }
 
   public static Translation2d[] getModuleTranslations(double trackWidthX, double trackWidthY) {

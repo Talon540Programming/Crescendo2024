@@ -1,10 +1,14 @@
 package frc.robot.constants;
 
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 
 public final class Constants {
-  private static RobotType kRobotType = RobotType.ROBOT_2023_OFFSEASON;
+  private static RobotType kRobotType = RobotType.ROBOT_SIMBOT;
   // Allows tunable values to be changed when enabled. Also adds tunable selectors to AutoSelector
   public static final boolean TUNING_MODE = true;
   // Disable the AdvantageKit logger from running
@@ -19,7 +23,6 @@ public final class Constants {
   }
 
   public enum RobotType {
-    ROBOT_2023_OFFSEASON,
     ROBOT_2024_COMP,
     ROBOT_SIMBOT
   }
@@ -44,5 +47,18 @@ public final class Constants {
   public static RobotMode getRobotMode() {
     if (getRobotType() == RobotType.ROBOT_SIMBOT) return RobotMode.SIM;
     else return RobotBase.isReal() ? RobotMode.REAL : RobotMode.REPLAY;
+  }
+
+  public static class Shooter {
+    public static final Rotation2d MIN_SHOOTER_ANGLE = Rotation2d.fromDegrees(27.5);
+    public static final Rotation2d MAX_SHOOTER_ANGLE = Rotation2d.fromDegrees(120.0);
+    public static final double SHOOTER_LENGTH_METERS = Units.inchesToMeters(20.75);
+    // Position of the pivot point of the shooter in the RCS
+    public static final Pose3d PIVOT_POSE =
+        new Pose3d(
+            Units.inchesToMeters(-2.5),
+            0,
+            Units.inchesToMeters(5.727224),
+            new Rotation3d(0.0, 0.0, Math.toRadians(180.0)));
   }
 }

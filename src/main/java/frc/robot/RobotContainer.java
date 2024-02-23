@@ -1,34 +1,23 @@
 package frc.robot;
 
-import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.pathfinding.Pathfinding;
-import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
-import com.pathplanner.lib.util.PathPlannerLogging;
-import com.pathplanner.lib.util.ReplanningConfig;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import frc.robot.commands.FeedForwardCharacterization;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.drive.DriveCommandFactory;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.drive.*;
-import frc.robot.util.LocalADStarAK;
-import frc.robot.util.PathPlannerUtil;
-import frc.robot.util.PoseEstimator;
-import org.littletonrobotics.junction.Logger;
+import frc.robot.subsystems.shooter.*;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
-  // Subsystems
   private final DriveBase m_drive;
+  private final ShooterBase m_shooter;
 
-  // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
 
-  // Dashboard inputs
-  private final LoggedDashboardChooser<Command> autoChooser;
+  private final LoggedDashboardChooser<Command> m_autoChooser =
+      new LoggedDashboardChooser<>("AutoChooser");
 
   public RobotContainer() {
     switch (Constants.getRobotMode()) {
@@ -40,6 +29,9 @@ public class RobotContainer {
                 new ModuleIOSparkMax(1),
                 new ModuleIOSparkMax(2),
                 new ModuleIOSparkMax(3));
+        m_shooter =
+            new ShooterBase(
+                new ErectorIOSparkMax(), new ShooterModuleIOSparkMax(), new KickupIOSparkMax());
       }
       case SIM -> {
         m_drive =
@@ -49,6 +41,8 @@ public class RobotContainer {
                 new ModuleIOSim(),
                 new ModuleIOSim(),
                 new ModuleIOSim());
+        m_shooter =
+            new ShooterBase(new ErectorIOSim(), new ShooterModuleIOSim(), new KickupIOSim());
       }
       default -> {
         m_drive =
@@ -58,45 +52,59 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {},
                 new ModuleIO() {});
+        m_shooter =
+            new ShooterBase(new ErectorIO() {}, new ShooterModuleIO() {}, new KickupIO() {});
       }
     }
 
-    // Configure PathPlanner
-    AutoBuilder.configureHolonomic(
-        () -> PoseEstimator.getInstance().getPose(),
-        (pose) -> PoseEstimator.getInstance().resetPose(pose),
-        () -> DriveBase.m_kinematics.toChassisSpeeds(m_drive.getModuleStates()),
-        m_drive::runVelocity,
-        new HolonomicPathFollowerConfig(
-            DriveBase.kMaxLinearVelocityMetersPerSecond,
-            DriveBase.kDriveBaseRadiusMeters,
-            new ReplanningConfig()),
-        () ->
-            DriverStation.getAlliance().isPresent()
-                && DriverStation.getAlliance().get() == DriverStation.Alliance.Red,
-        m_drive);
-    Pathfinding.setPathfinder(new LocalADStarAK());
-    PathPlannerLogging.setLogActivePathCallback(
-        (activePath) ->
-            Logger.recordOutput("Odometry/Trajectory", activePath.toArray(new Pose2d[0])));
-    PathPlannerLogging.setLogTargetPoseCallback(
-        (targetPose) -> Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose));
-
-    autoChooser =
-        new LoggedDashboardChooser<>(
-            "Auto Choices",
-            PathPlannerUtil.configureChooserWithPaths(AutoBuilder.buildAutoChooser()));
+    configureAutos();
 
     if (Constants.TUNING_MODE) {
-      // Set up FF characterization routines
-      autoChooser.addOption(
-          "DriveBase FF Characterization",
-          new FeedForwardCharacterization(
-              m_drive, m_drive::runCharacterizationVolts, m_drive::getCharacterizationVelocity));
+      configureTunableParameters();
     }
 
-    // Configure the button bindings
     configureButtonBindings();
+  }
+
+  private void configureAutos() {
+    m_autoChooser.addDefaultOption("None", Commands.none());
+  }
+
+  private void configureTunableParameters() {
+    m_autoChooser.addOption(
+        "DriveDynamicForward", m_drive.characterizeDriveDynamic(SysIdRoutine.Direction.kForward));
+    m_autoChooser.addOption(
+        "DriveDynamicReverse", m_drive.characterizeDriveDynamic(SysIdRoutine.Direction.kReverse));
+    m_autoChooser.addOption(
+        "DriveQuasistaticForward",
+        m_drive.characterizeDriveQuasistatic(SysIdRoutine.Direction.kForward));
+    m_autoChooser.addOption(
+        "DriveQuasistaticReverse",
+        m_drive.characterizeDriveQuasistatic(SysIdRoutine.Direction.kReverse));
+    m_autoChooser.addOption(
+        "ErectorDynamicForward",
+        m_shooter.characterizeErectorDynamic(SysIdRoutine.Direction.kForward));
+    m_autoChooser.addOption(
+        "ErectorDynamicReverse",
+        m_shooter.characterizeErectorDynamic(SysIdRoutine.Direction.kReverse));
+    m_autoChooser.addOption(
+        "ErectorQuasistaticForward",
+        m_shooter.characterizeErectorQuasistatic(SysIdRoutine.Direction.kForward));
+    m_autoChooser.addOption(
+        "ErectorQuasistaticReverse",
+        m_shooter.characterizeErectorQuasistatic(SysIdRoutine.Direction.kReverse));
+    m_autoChooser.addOption(
+        "ShooterDynamicForward",
+        m_shooter.characterizeShooterDynamic(SysIdRoutine.Direction.kForward));
+    m_autoChooser.addOption(
+        "ShooterDynamicReverse",
+        m_shooter.characterizeShooterDynamic(SysIdRoutine.Direction.kReverse));
+    m_autoChooser.addOption(
+        "ShooterQuasistaticForward",
+        m_shooter.characterizeShooterQuasistatic(SysIdRoutine.Direction.kForward));
+    m_autoChooser.addOption(
+        "ShooterQuasistaticReverse",
+        m_shooter.characterizeShooterQuasistatic(SysIdRoutine.Direction.kReverse));
   }
 
   private void configureButtonBindings() {
@@ -111,6 +119,6 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    return autoChooser.get();
+    return m_autoChooser.get();
   }
 }

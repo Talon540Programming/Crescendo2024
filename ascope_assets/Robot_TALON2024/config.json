@@ -1,0 +1,43 @@
+{
+  "name": "Talon540 2024 Robot",
+  "sourceUrl": "https://henrico.onshape.com/documents/df4202a9c83c56a72d1adecd/w/8ccf000e35d84dda78f1ce66/e/47cf36d9eff734d7f1123b45?renderMode=0&uiState=65d62a4291f80f208050c3c9",
+  "rotations": [
+    {
+      "axis": "x",
+      "degrees": 90
+    },
+    {
+      "axis": "z",
+      "degrees": 270
+    }
+  ],
+  "positions": [
+    0,
+    0,
+    0
+  ],
+  "cameras": [],
+  "components": [
+    {
+      "zeroedRotations": [
+        {
+          "axis": "z",
+          "degrees": 90
+        },
+        {
+          "axis": "x",
+          "degrees": 0
+        },
+        {
+          "axis": "y",
+          "degrees": 90
+        }
+      ],
+      "zeroedPosition": [
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}
