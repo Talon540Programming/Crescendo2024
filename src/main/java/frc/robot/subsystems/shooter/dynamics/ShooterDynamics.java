@@ -1,12 +1,7 @@
 package frc.robot.subsystems.shooter.dynamics;
 
-import edu.wpi.first.math.Pair;
-import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.*;
-import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.util.Units;
-import frc.robot.constants.Constants;
-import java.util.Optional;
 
 public class ShooterDynamics {
   private static final double G = 9.80665;
@@ -33,7 +28,8 @@ public class ShooterDynamics {
   // public static Optional<Pair<Rotation2d, ShooterState>> calculateSpeaker(
   //     Vector<N2> robotVel, Pose2d robotPose) {
   //   // Ensure robot pose can legally shoot from there
-  //   if (robotPose.getX() + ROBOT_SIZE_RADIUS >= OTHER_ALLIANCE_WING_LINE) return Optional.empty();
+  //   if (robotPose.getX() + ROBOT_SIZE_RADIUS >= OTHER_ALLIANCE_WING_LINE) return
+  // Optional.empty();
   //
   //   // Calculate the position of the pivot of the shooter relative to the field
   //   var pivotPose =
@@ -43,7 +39,8 @@ public class ShooterDynamics {
   //                   Constants.Shooter.PIVOT_POSE.getTranslation(),
   //                   Constants.Shooter.PIVOT_POSE.getRotation()));
   //
-  //   // Calculate the distance between the pivot of the shooter and the center mark of the speaker in
+  //   // Calculate the distance between the pivot of the shooter and the center mark of the speaker
+  // in
   //   // two-dimensional space
   //   var distToTarget =
   //       Math.hypot(pivotPose.getX() - pivotPose.getX(), pivotPose.getY() - robotPose.getY());
@@ -73,7 +70,8 @@ public class ShooterDynamics {
   //   // Calculate angle of robot based on robot position and aim location
   //   Rotation2d botAngle = Rotation2d.fromRadians(-Math.atan(x - hubX / y - hubY));
   //
-  //   // Ensure the apparent width of the hub from the robot's vantage point is large enough for the
+  //   // Ensure the apparent width of the hub from the robot's vantage point is large enough for
+  // the
   //   // note
   //   double apparentHubWidthMeters = HUB_WIDTH_METERS * Math.cos(botAngle.getRadians());
   //   if (apparentHubWidthMeters + 0.1 < NOTE_WIDTH_METERS) return Optional.empty();
