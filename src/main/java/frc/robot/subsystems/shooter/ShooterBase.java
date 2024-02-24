@@ -22,7 +22,7 @@ import org.littletonrobotics.junction.Logger;
 public class ShooterBase extends SubsystemBase {
   public static final double ERECTOR_GEARING =
       (52.0 / 12.0) * (52.0 / 18.0) * (52.0 / 18.0) * (58.0 / 24.0);
-  public static final double SHOOTER_GEARING = (26.0 / 50.0);
+  public static final double SHOOTER_GEARING = (26.0 / 51.0);
   public static final double SHOOTER_RADIUS_METERS = Units.inchesToMeters(1.5);
   public static final double KICKUP_GEARING = (5.0 / 1.0);
   public static final double KICKUP_RADIUS_METERS = Units.inchesToMeters(1.0);
@@ -90,16 +90,16 @@ public class ShooterBase extends SubsystemBase {
   static {
     switch (Constants.getRobotType()) {
       case ROBOT_2024_COMP -> {
-        erectorKs.initDefault(0.0); // TODO
-        erectorKg.initDefault(0.0); // TODO
-        erectorKv.initDefault(0.0); // TODO
-        erectorKa.initDefault(0.0); // TODO
-        erectorKp.initDefault(0.0); // TODO
-        erectorKi.initDefault(0.0); // TODO
-        erectorKd.initDefault(0.0); // TODO
-        shooterModuleKs.initDefault(0.0); // TODO
-        shooterModuleKv.initDefault(0.0); // TODO
-        shooterModuleKp.initDefault(0.0); // TODO
+        erectorKs.initDefault(0.0);
+        erectorKg.initDefault(1.25);
+        erectorKv.initDefault(0.0);
+        erectorKa.initDefault(0.0);
+        erectorKp.initDefault(5.5);
+        erectorKi.initDefault(0.0);
+        erectorKd.initDefault(0.0);
+        shooterModuleKs.initDefault(1.6); // TODO
+        shooterModuleKv.initDefault(.125); // TODO
+        shooterModuleKp.initDefault(0.6); // TODO
         shooterModuleKi.initDefault(0.0); // TODO
         shooterModuleKd.initDefault(0.0); // TODO
       }
@@ -144,7 +144,7 @@ public class ShooterBase extends SubsystemBase {
             new SysIdRoutine.Config(
                 null,
                 null,
-                null,
+                Seconds.of(7.5),
                 (state) -> Logger.recordOutput("Shooter/ShooterSysIdState", state.toString())),
             new SysIdRoutine.Mechanism(
                 (voltage) -> m_shooterModuleIO.setVoltage(voltage.in(Volts)),
