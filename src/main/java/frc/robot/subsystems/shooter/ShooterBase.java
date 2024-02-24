@@ -244,9 +244,14 @@ public class ShooterBase extends SubsystemBase {
     m_kickupIO.setVoltage(MathUtil.clamp(volts, -12, 12));
   }
 
-  @AutoLogOutput(key = "Shooter/VelocityMetersPerSec")
+  @AutoLogOutput(key = "Shooter/ModuleVelocityMetersPerSec")
   public double getShooterVelocityMetersPerSecond() {
     return m_shooterModuleInputs.velocityRadPerSec * SHOOTER_RADIUS_METERS;
+  }
+
+  @AutoLogOutput(key = "Shooter/ModulePositionsMeters")
+  public double getShooterPositionMeters() {
+    return m_shooterModuleInputs.positionRad * SHOOTER_RADIUS_METERS;
   }
 
   @AutoLogOutput(key = "Shooter/KickupVelocityMetersPerSec")
