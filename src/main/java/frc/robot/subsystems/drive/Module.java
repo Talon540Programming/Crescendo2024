@@ -45,14 +45,14 @@ public class Module {
   static {
     switch (Constants.getRobotType()) {
       case ROBOT_2024_COMP -> {
-        driveKp.initDefault(0.0); // TODO
-        driveKi.initDefault(0.0); // TODO
-        driveKd.initDefault(0.0); // TODO
-        driveKs.initDefault(0.0); // TODO
-        driveKv.initDefault(0.0); // TODO
-        turnKp.initDefault(0.0); // TODO
-        turnKi.initDefault(0.0); // TODO
-        turnKd.initDefault(0.0); // TODO
+        driveKp.initDefault(0.1);
+        driveKi.initDefault(0.0);
+        driveKd.initDefault(0.0);
+        driveKs.initDefault(0.13); // TODO, tune this further
+        driveKv.initDefault(0.13752);
+        turnKp.initDefault(5.5);
+        turnKi.initDefault(0.0);
+        turnKd.initDefault(0.0);
       }
       case ROBOT_SIMBOT -> {
         driveKp.initDefault(0.1);
