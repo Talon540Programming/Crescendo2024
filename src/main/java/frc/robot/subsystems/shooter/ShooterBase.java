@@ -95,9 +95,9 @@ public class ShooterBase extends SubsystemBase {
         erectorKg.initDefault(1.25);
         erectorKv.initDefault(0.0);
         erectorKa.initDefault(0.0);
-        erectorKp.initDefault(5.5);
-        erectorKi.initDefault(0.0);
-        erectorKd.initDefault(0.0);
+        erectorKp.initDefault(5.5); // TODO
+        erectorKi.initDefault(0.0); // TODO
+        erectorKd.initDefault(0.0); // TODO
         shooterModuleKs.initDefault(1.6); // TODO
         shooterModuleKv.initDefault(.125); // TODO
         shooterModuleKp.initDefault(0.6); // TODO
@@ -128,8 +128,6 @@ public class ShooterBase extends SubsystemBase {
 
     m_erectorIO.setBrakeMode(true);
 
-    // TODO, determine ramp rates and step rates due to the erector having much less range to
-    //  characterize
     m_erectorCharacterizationRoutine =
         new SysIdRoutine(
             new SysIdRoutine.Config(
