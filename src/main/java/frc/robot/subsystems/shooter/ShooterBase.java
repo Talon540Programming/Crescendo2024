@@ -92,12 +92,12 @@ public class ShooterBase extends SubsystemBase {
     switch (Constants.getRobotType()) {
       case ROBOT_2024_COMP -> {
         erectorKs.initDefault(0.0);
-        erectorKg.initDefault(1.25);
+        erectorKg.initDefault(0.625);
         erectorKv.initDefault(0.0);
         erectorKa.initDefault(0.0);
-        erectorKp.initDefault(5.5); // TODO
-        erectorKi.initDefault(0.0); // TODO
-        erectorKd.initDefault(0.0); // TODO
+        erectorKp.initDefault(5.5);
+        erectorKi.initDefault(0.0);
+        erectorKd.initDefault(0.0);
         shooterModuleKs.initDefault(1.6); // TODO
         shooterModuleKv.initDefault(.125); // TODO
         shooterModuleKp.initDefault(0.6); // TODO
