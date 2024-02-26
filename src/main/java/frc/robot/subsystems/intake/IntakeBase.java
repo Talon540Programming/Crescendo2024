@@ -3,7 +3,6 @@ package frc.robot.subsystems.intake;
 import static edu.wpi.first.units.Units.Volts;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -32,16 +31,10 @@ public class IntakeBase extends SubsystemBase {
 
   private Rotation2d m_wristSetpoint = Constants.Intake.STOW_ANGLE;
 
-  private static final LoggedTunableNumber wristKs = new LoggedTunableNumber("WristKs");
-  private static final LoggedTunableNumber wristKg = new LoggedTunableNumber("WristKg");
-  private static final LoggedTunableNumber wristKv = new LoggedTunableNumber("WristKv");
-  private static final LoggedTunableNumber wristKa = new LoggedTunableNumber("WristKa");
-
   private static final LoggedTunableNumber wristKp = new LoggedTunableNumber("WristKp");
   private static final LoggedTunableNumber wristKi = new LoggedTunableNumber("WristKi");
   private static final LoggedTunableNumber wristKd = new LoggedTunableNumber("WristKd");
 
-  private ArmFeedforward m_wristFeedforward = new ArmFeedforward(0, 0, 0);
   private final PIDController m_wristFeedback = new PIDController(0, 0, 0);
 
   private final SysIdRoutine m_wristCharacterizationRoutine;
@@ -49,19 +42,11 @@ public class IntakeBase extends SubsystemBase {
   static {
     switch (Constants.getRobotType()) {
       case ROBOT_2024_COMP -> {
-        wristKs.initDefault(0.0); // TODO
-        wristKg.initDefault(0.0); // TODO
-        wristKv.initDefault(0.0); // TODO
-        wristKa.initDefault(0.0); // TODO
-        wristKp.initDefault(0.0); // TODO
-        wristKi.initDefault(0.0); // TODO
-        wristKd.initDefault(0.0); // TODO
+        wristKp.initDefault(5.5);
+        wristKi.initDefault(0.0);
+        wristKd.initDefault(0.0);
       }
       case ROBOT_SIMBOT -> {
-        wristKs.initDefault(0.0); // TODO
-        wristKg.initDefault(0.0); // TODO
-        wristKv.initDefault(0.0); // TODO
-        wristKa.initDefault(0.0); // TODO
         wristKp.initDefault(0.0); // TODO
         wristKi.initDefault(0.0); // TODO
         wristKd.initDefault(0.0); // TODO
@@ -97,13 +82,6 @@ public class IntakeBase extends SubsystemBase {
     Logger.processInputs("Intake/Roller", m_rollerInputs);
     Logger.processInputs("Intake/Indexer", m_indexerInputs);
 
-    if (wristKs.hasChanged(0)
-        || wristKg.hasChanged(0)
-        || wristKv.hasChanged(0)
-        || wristKa.hasChanged(0)) {
-      m_wristFeedforward =
-          new ArmFeedforward(wristKs.get(), wristKg.get(), wristKv.get(), wristKa.get());
-    }
     if (wristKp.hasChanged(0) || wristKi.hasChanged(0) || wristKd.hasChanged(0)) {
       m_wristFeedback.setPID(wristKp.get(), wristKi.get(), wristKd.get());
     }
@@ -119,11 +97,7 @@ public class IntakeBase extends SubsystemBase {
       double wristSetpoint = m_wristSetpoint.getRadians();
 
       m_wristIO.setVoltage(
-          MathUtil.clamp(
-              m_wristFeedforward.calculate(wristSetpoint, 0.0)
-                  + m_wristFeedback.calculate(wristMeasurement, wristSetpoint),
-              -12,
-              12));
+          MathUtil.clamp(m_wristFeedback.calculate(wristMeasurement, wristSetpoint), -12, 12));
     }
   }
 
