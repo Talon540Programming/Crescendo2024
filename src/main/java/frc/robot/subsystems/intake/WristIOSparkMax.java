@@ -40,6 +40,7 @@ public class WristIOSparkMax implements WristIO {
   @Override
   public void updateInputs(WristIOInputs inputs) {
     inputs.velocityRadPerSec = m_encoder.getVelocityRadPerSecond();
+    // Mirror the wrist angle across the y-axis due to encoder placement
     inputs.absoluteAngle = Rotation2d.fromRadians(Math.PI).minus(m_encoder.getAbsolutePosition());
     inputs.appliedVolts = m_motor.getAppliedOutput() * m_motor.getBusVoltage();
     inputs.currentAmps = new double[] {m_motor.getOutputCurrent()};
