@@ -7,12 +7,15 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.drive.DriveCommandFactory;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.drive.*;
+import frc.robot.subsystems.intake.*;
+import frc.robot.subsystems.intake.IntakeBase;
 import frc.robot.subsystems.shooter.*;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
   private final DriveBase m_drive;
   private final ShooterBase m_shooter;
+  private final IntakeBase m_intake;
 
   private final CommandXboxController controller = new CommandXboxController(0);
 
@@ -32,6 +35,8 @@ public class RobotContainer {
         m_shooter =
             new ShooterBase(
                 new ErectorIOSparkMax(), new ShooterModuleIOSparkMax(), new KickupIOSparkMax());
+        m_intake =
+            new IntakeBase(new WristIOSparkMax(), new RollerIOSparkMax(), new IndexerIOSparkMax());
       }
       case SIM -> {
         m_drive =
@@ -43,6 +48,7 @@ public class RobotContainer {
                 new ModuleIOSim());
         m_shooter =
             new ShooterBase(new ErectorIOSim(), new ShooterModuleIOSim(), new KickupIOSim());
+        m_intake = new IntakeBase(new WristIOSim(), new RollerIOSim(), new IndexerIOSim());
       }
       default -> {
         m_drive =
@@ -54,6 +60,7 @@ public class RobotContainer {
                 new ModuleIO() {});
         m_shooter =
             new ShooterBase(new ErectorIO() {}, new ShooterModuleIO() {}, new KickupIO() {});
+        m_intake = new IntakeBase(new WristIO() {}, new RollerIO() {}, new IndexerIO() {});
       }
     }
 
@@ -105,6 +112,16 @@ public class RobotContainer {
     m_autoChooser.addOption(
         "ShooterQuasistaticReverse",
         m_shooter.characterizeShooterQuasistatic(SysIdRoutine.Direction.kReverse));
+    m_autoChooser.addOption(
+        "WristDynamicForward", m_intake.characterizeWristDynamic(SysIdRoutine.Direction.kForward));
+    m_autoChooser.addOption(
+        "WristDynamicReverse", m_intake.characterizeWristDynamic(SysIdRoutine.Direction.kReverse));
+    m_autoChooser.addOption(
+        "WristQuasistaticForward",
+        m_intake.characterizeWristQuasistatic(SysIdRoutine.Direction.kForward));
+    m_autoChooser.addOption(
+        "WristQuasistaticReverse",
+        m_intake.characterizeWristQuasistatic(SysIdRoutine.Direction.kReverse));
   }
 
   private void configureButtonBindings() {
