@@ -97,11 +97,11 @@ public class ShooterBase extends SubsystemBase {
         erectorKp.initDefault(5.5);
         erectorKi.initDefault(0.0);
         erectorKd.initDefault(0.0);
-        shooterModuleKs.initDefault(0.0); // TODO
-        shooterModuleKv.initDefault(0.0); // TODO
-        shooterModuleKp.initDefault(0.0); // TODO
-        shooterModuleKi.initDefault(0.0); // TODO
-        shooterModuleKd.initDefault(0.0); // TODO
+        shooterModuleKs.initDefault(0.5);
+        shooterModuleKv.initDefault(0.0094048);
+        shooterModuleKp.initDefault(0.0001);
+        shooterModuleKi.initDefault(0.0);
+        shooterModuleKd.initDefault(0.0);
       }
       case ROBOT_SIMBOT -> {
         erectorKs.initDefault(0.0); // TODO
