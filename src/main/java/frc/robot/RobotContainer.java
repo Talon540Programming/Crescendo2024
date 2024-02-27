@@ -8,7 +8,6 @@ import frc.robot.commands.drive.DriveCommandFactory;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.drive.*;
 import frc.robot.subsystems.intake.*;
-import frc.robot.subsystems.intake.IntakeBase;
 import frc.robot.subsystems.shooter.*;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 

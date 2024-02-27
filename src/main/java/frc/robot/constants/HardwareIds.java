@@ -30,12 +30,12 @@ public class HardwareIds {
     public static final int kShooterFollowerId = 18;
 
     public static final int kShooterKickupId = 19;
-    public static final int kShooterKickupForwardBeamBreakPort = 6; // TODO
-    public static final int kShooterKickupRearBeamBreakPort = 7; // TODO
+    public static final int kShooterKickupForwardBeamBreakPort = 7; // TODO
+    public static final int kShooterKickupRearBeamBreakPort = 8; // TODO
 
     public static final int kIntakeWristId = 20;
     public static final int kIntakeRollersId = 21;
-    public static final int kIntakeBeamBreakPort = 8;
+    public static final int kIntakeBeamBreakPort = 6;
 
     public static final int kIndexerId = 22;
 

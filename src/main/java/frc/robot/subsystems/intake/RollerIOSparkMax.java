@@ -22,7 +22,7 @@ public class RollerIOSparkMax implements RollerIO {
 
     m_motor.setInverted(true);
 
-    m_motor.setSmartCurrentLimit(20);
+    m_motor.setSmartCurrentLimit(30);
     m_motor.enableVoltageCompensation(12);
 
     m_encoder = m_motor.getEncoder();
