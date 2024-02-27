@@ -119,8 +119,7 @@ public class IntakeBase extends SubsystemBase {
     var a = getWristSetpoint();
     var b = getWristAngle();
 
-    return Math.hypot(a.getCos() - b.getCos(), a.getSin() - b.getSin())
-        < 1e3; // TODO, determine steady state position error
+    return Math.hypot(a.getCos() - b.getCos(), a.getSin() - b.getSin()) < 5e-3;
   }
 
   public void setRollersVoltage(double volts) {
