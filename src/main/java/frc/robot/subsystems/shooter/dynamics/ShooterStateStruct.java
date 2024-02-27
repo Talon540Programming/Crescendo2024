@@ -17,12 +17,12 @@ public class ShooterStateStruct implements Struct<ShooterState> {
 
   @Override
   public int getSize() {
-    return Rotation2d.struct.getSize() + kSizeDouble;
+    return Rotation2d.struct.getSize() + (2 * kSizeDouble);
   }
 
   @Override
   public String getSchema() {
-    return "Rotation2d angle;double velocity";
+    return "Rotation2d angle;double topVelocity;double bottomVelocity";
   }
 
   @Override
@@ -33,13 +33,15 @@ public class ShooterStateStruct implements Struct<ShooterState> {
   @Override
   public ShooterState unpack(ByteBuffer byteBuffer) {
     var angle = Rotation2d.struct.unpack(byteBuffer);
-    var speed = byteBuffer.getDouble();
-    return new ShooterState(angle, speed);
+    var topVelocity = byteBuffer.getDouble();
+    var bottomVelocity = byteBuffer.getDouble();
+    return new ShooterState(angle, topVelocity, bottomVelocity);
   }
 
   @Override
   public void pack(ByteBuffer byteBuffer, ShooterState shooterState) {
     Rotation2d.struct.pack(byteBuffer, shooterState.angle());
-    byteBuffer.putDouble(shooterState.shooterVelocityMetersPerSecond());
+    byteBuffer.putDouble(shooterState.shooterTopVelocityMetersPerSecond());
+    byteBuffer.putDouble(shooterState.shooterBottomVelocityMetersPerSecond());
   }
 }
