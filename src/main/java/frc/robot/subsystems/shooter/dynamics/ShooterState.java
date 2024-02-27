@@ -43,10 +43,10 @@ public record ShooterState(
                   angle.getCos() - other.angle.getCos(), angle.getSin() - other.angle.getSin())
               < 5e-3
           && Math.abs(shooterTopVelocityMetersPerSecond - other.shooterTopVelocityMetersPerSecond)
-              <= 0.5
+              <= 5e-1
           && Math.abs(
                   shooterBottomVelocityMetersPerSecond - other.shooterBottomVelocityMetersPerSecond)
-              <= 0.5;
+              <= 5e-1;
     }
     return false;
   }
