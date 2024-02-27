@@ -29,6 +29,7 @@ public class ShooterModuleIOSparkMax implements ShooterModuleIO {
     m_bottom.setCANTimeout(250);
 
     m_top.setInverted(true);
+    m_bottom.setInverted(true);
 
     m_top.setSmartCurrentLimit(40);
     m_bottom.setSmartCurrentLimit(40);
