@@ -39,15 +39,14 @@ public record ShooterState(
   @Override
   public boolean equals(Object obj) {
     if (obj instanceof ShooterState other) {
-      // The shooter and kickup percentages don't need to have super high accuracy in precision
       return Math.hypot(
                   angle.getCos() - other.angle.getCos(), angle.getSin() - other.angle.getSin())
-              < 1e-3 // TODO, determine angle steady state error
+              < 5e-3
           && Math.abs(shooterTopVelocityMetersPerSecond - other.shooterTopVelocityMetersPerSecond)
-              <= 1e-2 // TODO, determine velocity steady state error
+              <= 0.5
           && Math.abs(
                   shooterBottomVelocityMetersPerSecond - other.shooterBottomVelocityMetersPerSecond)
-              <= 1e-2; // TODO, determine velocity steady state error
+              <= 0.5;
     }
     return false;
   }
