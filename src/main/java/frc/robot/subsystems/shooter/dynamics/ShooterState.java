@@ -8,13 +8,33 @@ import edu.wpi.first.util.struct.StructSerializable;
  *
  * @param angle the angle of the shooter relative to the plane intersecting the erector parallel to
  *     the ground.
- * @param shooterVelocityMetersPerSecond the velocity of the shooter's flywheels in meters per
- *     second. Positive values represent shooting the note out while negative values draw notes in.
+ * @param shooterTopVelocityMetersPerSecond the velocity of the shooter's top flywheels in meters
+ *     per second. Positive values represent shooting the note out while negative values draw notes
+ *     in.
+ * @param shooterBottomVelocityMetersPerSecond the velocity of the shooter's bottom flywheels in
+ *     meters per second. Positive values represent shooting the note out while negative values draw
+ *     notes in.
  */
-public record ShooterState(Rotation2d angle, double shooterVelocityMetersPerSecond)
+public record ShooterState(
+    Rotation2d angle,
+    double shooterTopVelocityMetersPerSecond,
+    double shooterBottomVelocityMetersPerSecond)
     implements StructSerializable {
   public static final ShooterState STARTING_STATE = new ShooterState(Rotation2d.fromDegrees(70), 0);
   public static final ShooterState TRAVEL_STATE = new ShooterState(Rotation2d.fromDegrees(35), 0);
+
+  /**
+   * Represent the state of the shooter at a given time
+   *
+   * @param angle the angle of the shooter relative to the plane intersecting the erector parallel
+   *     to the ground.
+   * @param shooterVelocityMetersPerSecond the velocity of the shooter's flywheels in meters per
+   *     second. Positive values represent shooting the note out while negative values draw notes
+   *     in.
+   */
+  public ShooterState(Rotation2d angle, double shooterVelocityMetersPerSecond) {
+    this(angle, shooterVelocityMetersPerSecond, shooterVelocityMetersPerSecond);
+  }
 
   @Override
   public boolean equals(Object obj) {
@@ -22,9 +42,12 @@ public record ShooterState(Rotation2d angle, double shooterVelocityMetersPerSeco
       // The shooter and kickup percentages don't need to have super high accuracy in precision
       return Math.hypot(
                   angle.getCos() - other.angle.getCos(), angle.getSin() - other.angle.getSin())
-              < 1e-3
-          && Math.abs(shooterVelocityMetersPerSecond - other.shooterVelocityMetersPerSecond)
-              <= 1e-2;
+              < 1e-3 // TODO, determine angle steady state error
+          && Math.abs(shooterTopVelocityMetersPerSecond - other.shooterTopVelocityMetersPerSecond)
+              <= 1e-2 // TODO, determine velocity steady state error
+          && Math.abs(
+                  shooterBottomVelocityMetersPerSecond - other.shooterBottomVelocityMetersPerSecond)
+              <= 1e-2; // TODO, determine velocity steady state error
     }
     return false;
   }
