@@ -74,10 +74,24 @@ public final class Constants {
 
     public static final List<CameraConfig> configs =
         List.of(
-            new CameraConfig("Cam1", new Transform3d(), CameraType.AprilTagCamera), // TODO
-            new CameraConfig("Cam2", new Transform3d(), CameraType.AprilTagCamera), // TODO
-            new CameraConfig("Cam3", new Transform3d(), CameraType.AprilTagCamera), // TODO
-            new CameraConfig("Cam4", new Transform3d(), CameraType.AprilTagCamera) // TODO
+            new CameraConfig("Cam1", new Transform3d(), CameraType.AprilTagCamera),
+            // TODO
+            new CameraConfig("Cam2", new Transform3d(), CameraType.AprilTagCamera),
+            // TODO
+            new CameraConfig("Cam3", new Transform3d(), CameraType.AprilTagCamera),
+            // TODO
+            new CameraConfig("Cam4", new Transform3d(), CameraType.AprilTagCamera)
+            // TODO
             );
+  }
+
+  public static class Intake {
+    public static final Rotation2d MIN_ANGLE = Rotation2d.fromRadians(0.635);
+    public static final Rotation2d MAX_ANGLE = Rotation2d.fromDegrees(125);
+
+    public static final Rotation2d GROUND_INTAKE_ANGLE = Rotation2d.fromRadians(0.635);
+    public static final Rotation2d STOW_ANGLE = Rotation2d.fromDegrees(125);
+
+    public static final double kIntakeLengthMeters = Units.inchesToMeters(13.5); // TODO
   }
 }

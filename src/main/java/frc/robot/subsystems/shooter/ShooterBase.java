@@ -1,5 +1,6 @@
 package frc.robot.subsystems.shooter;
 
+import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
 import edu.wpi.first.math.MathUtil;
@@ -22,7 +23,7 @@ import org.littletonrobotics.junction.Logger;
 public class ShooterBase extends SubsystemBase {
   public static final double ERECTOR_GEARING =
       (52.0 / 12.0) * (52.0 / 18.0) * (52.0 / 18.0) * (58.0 / 24.0);
-  public static final double SHOOTER_GEARING = (26.0 / 50.0);
+  public static final double SHOOTER_GEARING = (26.0 / 51.0);
   public static final double SHOOTER_RADIUS_METERS = Units.inchesToMeters(1.5);
   public static final double KICKUP_GEARING = (5.0 / 1.0);
   public static final double KICKUP_RADIUS_METERS = Units.inchesToMeters(1.0);
@@ -82,7 +83,6 @@ public class ShooterBase extends SubsystemBase {
   private ArmFeedforward m_erectorFeedforward = new ArmFeedforward(0, 0, 0);
   private final PIDController m_erectorFeedback = new PIDController(0, 0, 0);
   private SimpleMotorFeedforward m_shooterModuleFeedforward = new SimpleMotorFeedforward(0, 0);
-  private final PIDController m_shooterModuleFeedback = new PIDController(0, 0, 0);
 
   private final SysIdRoutine m_erectorCharacterizationRoutine;
   private final SysIdRoutine m_shooterCharacterizationRoutine;
@@ -90,18 +90,18 @@ public class ShooterBase extends SubsystemBase {
   static {
     switch (Constants.getRobotType()) {
       case ROBOT_2024_COMP -> {
-        erectorKs.initDefault(0.0); // TODO
-        erectorKg.initDefault(0.0); // TODO
-        erectorKv.initDefault(0.0); // TODO
-        erectorKa.initDefault(0.0); // TODO
-        erectorKp.initDefault(0.0); // TODO
-        erectorKi.initDefault(0.0); // TODO
-        erectorKd.initDefault(0.0); // TODO
-        shooterModuleKs.initDefault(0.0); // TODO
-        shooterModuleKv.initDefault(0.0); // TODO
-        shooterModuleKp.initDefault(0.0); // TODO
-        shooterModuleKi.initDefault(0.0); // TODO
-        shooterModuleKd.initDefault(0.0); // TODO
+        erectorKs.initDefault(0.0);
+        erectorKg.initDefault(0.625);
+        erectorKv.initDefault(0.0);
+        erectorKa.initDefault(0.0);
+        erectorKp.initDefault(5.5);
+        erectorKi.initDefault(0.0);
+        erectorKd.initDefault(0.0);
+        shooterModuleKs.initDefault(0.5);
+        shooterModuleKv.initDefault(0.0094048);
+        shooterModuleKp.initDefault(0.0001);
+        shooterModuleKi.initDefault(0.0);
+        shooterModuleKd.initDefault(0.0);
       }
       case ROBOT_SIMBOT -> {
         erectorKs.initDefault(0.0); // TODO
@@ -127,8 +127,6 @@ public class ShooterBase extends SubsystemBase {
 
     m_erectorIO.setBrakeMode(true);
 
-    // TODO, determine ramp rates and step rates due to the erector having much less range to
-    //  characterize
     m_erectorCharacterizationRoutine =
         new SysIdRoutine(
             new SysIdRoutine.Config(
@@ -144,10 +142,10 @@ public class ShooterBase extends SubsystemBase {
             new SysIdRoutine.Config(
                 null,
                 null,
-                null,
+                Seconds.of(7.5),
                 (state) -> Logger.recordOutput("Shooter/ShooterSysIdState", state.toString())),
             new SysIdRoutine.Mechanism(
-                (voltage) -> m_shooterModuleIO.setVoltage(voltage.in(Volts)),
+                (voltage) -> m_shooterModuleIO.runCharacterizationVoltage(voltage.in(Volts)),
                 null,
                 this,
                 "Shooter"));
@@ -181,8 +179,7 @@ public class ShooterBase extends SubsystemBase {
     if (shooterModuleKp.hasChanged(0)
         || shooterModuleKi.hasChanged(0)
         || shooterModuleKd.hasChanged(0)) {
-      m_shooterModuleFeedback.setPID(
-          shooterModuleKp.get(), shooterModuleKi.get(), shooterModuleKd.get());
+      m_shooterModuleIO.setPID(shooterModuleKp.get(), shooterModuleKi.get(), shooterModuleKd.get());
     }
 
     // Update setpoint and command IO layers
@@ -191,7 +188,7 @@ public class ShooterBase extends SubsystemBase {
       m_setpoint = ShooterState.TRAVEL_STATE;
 
       // Disable the erector and shooter
-      m_shooterModuleIO.setVoltage(0.0);
+      m_shooterModuleIO.stop();
       m_erectorIO.setVoltage(0.0);
       m_kickupIO.setVoltage(0.0);
     } else if (m_setpoint != null) {
@@ -205,15 +202,15 @@ public class ShooterBase extends SubsystemBase {
               -12,
               12));
 
-      double shooterMeasurement = getShooterVelocityMetersPerSecond();
-      double shooterSetpoint = m_setpoint.shooterVelocityMetersPerSecond();
+      double topSetpoint = m_setpoint.shooterTopVelocityMetersPerSecond() / SHOOTER_RADIUS_METERS;
+      double bottomSetpoint =
+          m_setpoint.shooterBottomVelocityMetersPerSecond() / SHOOTER_RADIUS_METERS;
 
-      m_shooterModuleIO.setVoltage(
-          MathUtil.clamp(
-              m_shooterModuleFeedforward.calculate(shooterSetpoint)
-                  + m_shooterModuleFeedback.calculate(shooterMeasurement, shooterSetpoint),
-              -12,
-              12));
+      m_shooterModuleIO.runSetpoint(
+          topSetpoint,
+          bottomSetpoint,
+          m_shooterModuleFeedforward.calculate(topSetpoint),
+          m_shooterModuleFeedforward.calculate(bottomSetpoint));
     }
 
     if (m_setpoint != null) {
@@ -231,8 +228,12 @@ public class ShooterBase extends SubsystemBase {
     return m_setpoint;
   }
 
+  @AutoLogOutput(key = "Shooter/CurrentState")
   public ShooterState getCurrentState() {
-    return new ShooterState(m_erectorInputs.absoluteAngle, getShooterVelocityMetersPerSecond());
+    return new ShooterState(
+        m_erectorInputs.absoluteAngle,
+        m_shooterModuleInputs.topVelocityRadPerSecond * SHOOTER_RADIUS_METERS,
+        m_shooterModuleInputs.bottomVelocityRadPerSecond * SHOOTER_RADIUS_METERS);
   }
 
   public boolean atSetpoint() {
@@ -241,16 +242,6 @@ public class ShooterBase extends SubsystemBase {
 
   public void setKickupVoltage(double volts) {
     m_kickupIO.setVoltage(MathUtil.clamp(volts, -12, 12));
-  }
-
-  @AutoLogOutput(key = "Shooter/VelocityMetersPerSec")
-  public double getShooterVelocityMetersPerSecond() {
-    return m_shooterModuleInputs.velocityRadPerSec * SHOOTER_RADIUS_METERS;
-  }
-
-  @AutoLogOutput(key = "Shooter/KickupVelocityMetersPerSec")
-  public double getKickupVelocityMetersPerSecond() {
-    return m_kickupInputs.velocityRadPerSec * KICKUP_RADIUS_METERS;
   }
 
   public boolean holdingNote() {
@@ -287,7 +278,7 @@ public class ShooterBase extends SubsystemBase {
           m_setpoint = null;
           m_erectorIO.setVoltage(0);
           m_kickupIO.setVoltage(0);
-          m_shooterModuleIO.setVoltage(0);
+          m_shooterModuleIO.stop();
         },
         this);
   }
