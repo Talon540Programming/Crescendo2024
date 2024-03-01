@@ -245,7 +245,7 @@ public class ShooterBase extends SubsystemBase {
   }
 
   public boolean holdingNote() {
-    return m_kickupInputs.forwardBeamBreakBroken && m_kickupInputs.rearBeamBreakBroken;
+    return m_kickupInputs.beamBreakBroken;
   }
 
   public Command characterizeErectorQuasistatic(SysIdRoutine.Direction direction) {

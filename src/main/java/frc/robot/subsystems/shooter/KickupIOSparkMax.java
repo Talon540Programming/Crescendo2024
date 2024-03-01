@@ -12,15 +12,13 @@ public class KickupIOSparkMax implements KickupIO {
   private final CANSparkMax m_motor;
   private final RelativeEncoder m_encoder;
 
-  private final DigitalInput m_forwardBeamBreak;
-  private final DigitalInput m_rearBeamBreak;
+  private final DigitalInput m_beamBreak;
 
   public KickupIOSparkMax() {
     m_motor =
         new CANSparkMax(
             HardwareIds.COMP_2024.kShooterKickupId, CANSparkLowLevel.MotorType.kBrushless);
-    m_forwardBeamBreak = new DigitalInput(HardwareIds.COMP_2024.kShooterKickupForwardBeamBreakPort);
-    m_rearBeamBreak = new DigitalInput(HardwareIds.COMP_2024.kShooterKickupRearBeamBreakPort);
+    m_beamBreak = new DigitalInput(HardwareIds.COMP_2024.kShooterKickupBeamBreakPort);
 
     m_motor.restoreFactoryDefaults();
 
@@ -45,8 +43,7 @@ public class KickupIOSparkMax implements KickupIO {
 
   @Override
   public void updateInputs(KickupIOInputs inputs) {
-    inputs.forwardBeamBreakBroken = !m_forwardBeamBreak.get();
-    inputs.rearBeamBreakBroken = !m_rearBeamBreak.get();
+    inputs.beamBreakBroken = !m_beamBreak.get();
     inputs.velocityRadPerSec =
         Units.rotationsPerMinuteToRadiansPerSecond(m_encoder.getVelocity())
             / ShooterBase.KICKUP_GEARING;

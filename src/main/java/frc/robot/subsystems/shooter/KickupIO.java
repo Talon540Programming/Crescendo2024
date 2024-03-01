@@ -5,8 +5,7 @@ import org.littletonrobotics.junction.AutoLog;
 public interface KickupIO {
   @AutoLog
   class KickupIOInputs {
-    public boolean forwardBeamBreakBroken;
-    public boolean rearBeamBreakBroken;
+    public boolean beamBreakBroken;
     public double velocityRadPerSec = 0.0;
     public double appliedVolts = 0.0;
     public double[] currentAmps = new double[] {};
