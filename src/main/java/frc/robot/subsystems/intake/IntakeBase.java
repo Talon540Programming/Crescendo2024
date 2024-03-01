@@ -111,7 +111,14 @@ public class IntakeBase extends SubsystemBase {
   }
 
   public void setWristSetpoint(Rotation2d setpoint) {
-    m_wristSetpoint = setpoint;
+    m_wristSetpoint =
+        Rotation2d.fromRadians(
+            MathUtil.clamp(
+                setpoint.getRadians(),
+                Constants.Intake.MIN_ANGLE.getRadians(),
+                Constants.Intake.MAX_ANGLE.getRadians()));
+
+    System.out.println(m_wristSetpoint.getRadians());
   }
 
   @AutoLogOutput(key = "Intake/AtWristSetpoint")

@@ -236,6 +236,7 @@ public class ShooterBase extends SubsystemBase {
         m_shooterModuleInputs.bottomVelocityRadPerSecond * SHOOTER_RADIUS_METERS);
   }
 
+  @AutoLogOutput(key = "Shooter/AtSetpoint")
   public boolean atSetpoint() {
     return getSetpoint().equals(getCurrentState());
   }

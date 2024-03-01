@@ -1,7 +1,9 @@
 package frc.robot.subsystems.shooter.dynamics;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.util.struct.StructSerializable;
+import frc.robot.constants.Constants;
 
 /**
  * Represent the state of the shooter at a given time
@@ -33,7 +35,14 @@ public record ShooterState(
    *     in.
    */
   public ShooterState(Rotation2d angle, double shooterVelocityMetersPerSecond) {
-    this(angle, shooterVelocityMetersPerSecond, shooterVelocityMetersPerSecond);
+    this(
+        Rotation2d.fromRadians(
+            MathUtil.clamp(
+                angle.getRadians(),
+                Constants.Shooter.MIN_SHOOTER_ANGLE.getRadians(),
+                Constants.Shooter.MAX_SHOOTER_ANGLE.getRadians())),
+        shooterVelocityMetersPerSecond,
+        shooterVelocityMetersPerSecond);
   }
 
   @Override
