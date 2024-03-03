@@ -24,6 +24,8 @@ public record ShooterState(
     implements StructSerializable {
   public static final ShooterState STARTING_STATE = new ShooterState(Rotation2d.fromDegrees(70), 0);
   public static final ShooterState TRAVEL_STATE = new ShooterState(Rotation2d.fromDegrees(35), 0);
+  public static final ShooterState FEEDER_STATION_INTAKE =
+      new ShooterState(Rotation2d.fromDegrees(71.740899), -10);
 
   /**
    * Represent the state of the shooter at a given time
@@ -50,12 +52,12 @@ public record ShooterState(
     if (obj instanceof ShooterState other) {
       return Math.hypot(
                   angle.getCos() - other.angle.getCos(), angle.getSin() - other.angle.getSin())
-              < 5e-3
+              < 1e-1
           && Math.abs(shooterTopVelocityMetersPerSecond - other.shooterTopVelocityMetersPerSecond)
-              <= 5e-1
+              <= 7e-1
           && Math.abs(
                   shooterBottomVelocityMetersPerSecond - other.shooterBottomVelocityMetersPerSecond)
-              <= 5e-1;
+              <= 7e-1;
     }
     return false;
   }

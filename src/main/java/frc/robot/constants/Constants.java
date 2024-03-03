@@ -10,7 +10,7 @@ import edu.wpi.first.wpilibj.RobotBase;
 public final class Constants {
   private static RobotType kRobotType = RobotType.ROBOT_SIMBOT;
   // Allows tunable values to be changed when enabled. Also adds tunable selectors to AutoSelector
-  public static final boolean TUNING_MODE = true;
+  public static final boolean TUNING_MODE = false;
   // Disable the AdvantageKit logger from running
   public static final boolean ENABLE_LOGGING = true;
 
@@ -51,7 +51,7 @@ public final class Constants {
 
   public static class Shooter {
     public static final Rotation2d MIN_SHOOTER_ANGLE = Rotation2d.fromDegrees(27.5);
-    public static final Rotation2d MAX_SHOOTER_ANGLE = Rotation2d.fromDegrees(120.0);
+    public static final Rotation2d MAX_SHOOTER_ANGLE = Rotation2d.fromDegrees(95.0);
     public static final double SHOOTER_LENGTH_METERS = Units.inchesToMeters(20.75);
     // Position of the pivot point of the shooter in the RCS
     public static final Pose3d PIVOT_POSE =
