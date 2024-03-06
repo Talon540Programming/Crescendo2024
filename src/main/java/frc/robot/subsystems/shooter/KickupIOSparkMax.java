@@ -24,8 +24,6 @@ public class KickupIOSparkMax implements KickupIO {
 
     m_motor.setCANTimeout(250);
 
-    m_motor.setInverted(true);
-
     m_motor.setSmartCurrentLimit(40);
     m_motor.enableVoltageCompensation(12);
 
