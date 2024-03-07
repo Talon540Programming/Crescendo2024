@@ -19,7 +19,7 @@ public class WristIOSparkMax implements WristIO {
             HardwareIds.COMP_2024.kIntakeWristAbsoluteEncoderPort,
             HardwareIds.COMP_2024.kIntakeWristRelativeEncoderAPort,
             HardwareIds.COMP_2024.kIntakeWristRelativeEncoderBPort,
-            Rotation2d.fromRadians(4.269934417744533 - (Math.PI / 2.0)));
+            Rotation2d.fromRadians(1.0256719630056133 - Math.PI / 2.0));
 
     m_motor.restoreFactoryDefaults();
 
