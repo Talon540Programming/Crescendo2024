@@ -15,7 +15,7 @@ public class WristIOSim implements WristIO {
             DCMotor.getNEO(2),
             IntakeBase.WRIST_GEARING,
             0.43901184,
-            Constants.Intake.kIntakeLengthMeters,
+            Constants.Intake.INTAKE_LENGTH_METERS,
             Constants.Intake.MIN_ANGLE.getRadians(),
             Constants.Intake.MAX_ANGLE.getRadians(),
             true,
