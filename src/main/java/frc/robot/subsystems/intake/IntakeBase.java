@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.constants.Constants;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.SingleJointedMechanismVisualizer;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -30,6 +31,28 @@ public class IntakeBase extends SubsystemBase {
   private final RollerIOInputsAutoLogged m_rollerInputs = new RollerIOInputsAutoLogged();
 
   private Rotation2d m_wristSetpoint = Constants.Intake.STOW_ANGLE;
+
+  private final SingleJointedMechanismVisualizer m_setpointVisualizer =
+      new SingleJointedMechanismVisualizer(
+          "Intake",
+          "Setpoint",
+          Constants.Intake.INTAKE_LENGTH_METERS,
+          Constants.Intake.PIVOT_POSE,
+          Constants.Intake.GROUND_INTAKE_ANGLE,
+          2, // TODO
+          2 // TODO
+          );
+
+  private final SingleJointedMechanismVisualizer m_measuredVisualizer =
+      new SingleJointedMechanismVisualizer(
+          "Intake",
+          "Measured",
+          Constants.Intake.INTAKE_LENGTH_METERS,
+          Constants.Intake.PIVOT_POSE,
+          Constants.Intake.GROUND_INTAKE_ANGLE,
+          2, // TODO
+          2 // TODO
+          );
 
   private static final LoggedTunableNumber wristKp = new LoggedTunableNumber("WristKp");
   private static final LoggedTunableNumber wristKi = new LoggedTunableNumber("WristKi");
@@ -99,6 +122,11 @@ public class IntakeBase extends SubsystemBase {
       m_wristIO.setVoltage(
           MathUtil.clamp(m_wristFeedback.calculate(wristMeasurement, wristSetpoint), -12, 12));
     }
+
+    if (m_wristSetpoint != null) {
+      m_setpointVisualizer.update(m_wristSetpoint);
+    }
+    m_measuredVisualizer.update(m_wristInputs.absoluteAngle);
   }
 
   public Rotation2d getWristAngle() {
