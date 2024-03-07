@@ -69,12 +69,12 @@ public final class Constants {
     public static final Rotation2d GROUND_INTAKE_ANGLE = Rotation2d.fromRadians(0.635);
     public static final Rotation2d STOW_ANGLE = Rotation2d.fromDegrees(125);
 
-    public static final double INTAKE_LENGTH_METERS = Units.inchesToMeters(11.902977); // TODO
+    public static final double INTAKE_LENGTH_METERS = Units.inchesToMeters(11.902977);
     public static final Pose3d PIVOT_POSE =
         new Pose3d(
             Units.inchesToMeters(8.849581),
             0,
             Units.inchesToMeters(7.414499),
-            new Rotation3d(0.0, 0.0, Math.toRadians(180.0))); // TODO
+            new Rotation3d(0.0, 0.0, 0.0));
   }
 }
