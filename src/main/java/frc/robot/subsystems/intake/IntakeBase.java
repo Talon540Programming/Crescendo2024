@@ -131,6 +131,8 @@ public class IntakeBase extends SubsystemBase {
     if (DriverStation.isDisabled()) {
       m_wristGoal = Constants.Intake.STOW_ANGLE;
 
+      m_wristFeedback.reset(m_wristInputs.absoluteAngle.getRadians());
+
       m_wristIO.setVoltage(0);
       m_rollerIO.setVoltage(0);
       m_indexerIO.setVoltage(0);
