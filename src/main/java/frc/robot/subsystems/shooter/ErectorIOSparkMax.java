@@ -22,7 +22,7 @@ public class ErectorIOSparkMax implements ErectorIO {
             HardwareIds.COMP_2024.kErectorAbsoluteEncoderPort,
             HardwareIds.COMP_2024.kErectorRelativeEncoderAPort,
             HardwareIds.COMP_2024.kErectorRelativeEncoderBPort,
-            Rotation2d.fromRadians(1.3583448640659204 - (Math.PI / 2.0)));
+            Rotation2d.fromRadians(0.41767709933636676 - Math.PI / 2.0));
 
     m_leader.restoreFactoryDefaults();
     m_follower.restoreFactoryDefaults();

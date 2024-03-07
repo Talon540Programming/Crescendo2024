@@ -18,9 +18,9 @@ public class ShooterModuleIOSparkMax implements ShooterModuleIO {
 
   public ShooterModuleIOSparkMax() {
     m_top =
-        new CANSparkMax(HardwareIds.COMP_2024.kShooterLeaderId, CANSparkMax.MotorType.kBrushless);
+        new CANSparkMax(HardwareIds.COMP_2024.kShooterTopId, CANSparkMax.MotorType.kBrushless);
     m_bottom =
-        new CANSparkMax(HardwareIds.COMP_2024.kShooterFollowerId, CANSparkMax.MotorType.kBrushless);
+        new CANSparkMax(HardwareIds.COMP_2024.kShooterBottomId, CANSparkMax.MotorType.kBrushless);
 
     m_top.restoreFactoryDefaults();
     m_bottom.restoreFactoryDefaults();
