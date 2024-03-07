@@ -17,8 +17,7 @@ public class ShooterModuleIOSparkMax implements ShooterModuleIO {
   private final SparkPIDController m_bottomController;
 
   public ShooterModuleIOSparkMax() {
-    m_top =
-        new CANSparkMax(HardwareIds.COMP_2024.kShooterTopId, CANSparkMax.MotorType.kBrushless);
+    m_top = new CANSparkMax(HardwareIds.COMP_2024.kShooterTopId, CANSparkMax.MotorType.kBrushless);
     m_bottom =
         new CANSparkMax(HardwareIds.COMP_2024.kShooterBottomId, CANSparkMax.MotorType.kBrushless);
 
