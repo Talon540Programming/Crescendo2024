@@ -33,6 +33,9 @@ public class IntakeBase extends SubsystemBase {
   private Rotation2d m_wristSetpoint = Constants.Intake.STOW_ANGLE;
 
   private final SingleJointedMechanismVisualizer m_setpointVisualizer =
+  private static final LoggedTunableNumber wristTolerance =
+      new LoggedTunableNumber("WristTolerance");
+
       new SingleJointedMechanismVisualizer(
           "Intake",
           "Setpoint",
@@ -68,11 +71,13 @@ public class IntakeBase extends SubsystemBase {
         wristKp.initDefault(5.5);
         wristKi.initDefault(0.0);
         wristKd.initDefault(0.0);
+        wristTolerance.initDefault(5e-3);
       }
       case ROBOT_SIMBOT -> {
         wristKp.initDefault(0.0); // TODO
         wristKi.initDefault(0.0); // TODO
         wristKd.initDefault(0.0); // TODO
+        wristTolerance.initDefault(0.0); // TODO
       }
     }
   }
@@ -145,8 +150,6 @@ public class IntakeBase extends SubsystemBase {
                 setpoint.getRadians(),
                 Constants.Intake.MIN_ANGLE.getRadians(),
                 Constants.Intake.MAX_ANGLE.getRadians()));
-
-    System.out.println(m_wristSetpoint.getRadians());
   }
 
   @AutoLogOutput(key = "Intake/AtWristSetpoint")
@@ -154,7 +157,7 @@ public class IntakeBase extends SubsystemBase {
     var a = getWristSetpoint();
     var b = getWristAngle();
 
-    return Math.hypot(a.getCos() - b.getCos(), a.getSin() - b.getSin()) < 5e-3;
+    return Math.hypot(a.getCos() - b.getCos(), a.getSin() - b.getSin()) < wristTolerance.get();
   }
 
   public void setRollersVoltage(double volts) {
