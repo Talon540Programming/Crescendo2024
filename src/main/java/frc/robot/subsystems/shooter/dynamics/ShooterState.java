@@ -4,6 +4,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.util.struct.StructSerializable;
 import frc.robot.constants.Constants;
+import frc.robot.util.LoggedTunableNumber;
 
 /**
  * Represent the state of the shooter at a given time
@@ -26,6 +27,24 @@ public record ShooterState(
   public static final ShooterState TRAVEL_STATE = new ShooterState(Rotation2d.fromDegrees(35), 0);
   public static final ShooterState FEEDER_STATION_INTAKE =
       new ShooterState(Rotation2d.fromDegrees(71.740899), -10);
+
+  private static final LoggedTunableNumber velocityTolerance =
+      new LoggedTunableNumber("Shooter/VelocityTolerance");
+  private static final LoggedTunableNumber angleTolerance =
+      new LoggedTunableNumber("Shooter/AngleTolerance");
+
+  static {
+    switch (Constants.getRobotType()) {
+      case ROBOT_SIMBOT -> {
+        velocityTolerance.initDefault(0.01);
+        angleTolerance.initDefault(0.01);
+      }
+      case ROBOT_2024_COMP -> {
+        velocityTolerance.initDefault(0.7);
+        angleTolerance.initDefault(0.1);
+      }
+    }
+  }
 
   /**
    * Represent the state of the shooter at a given time
@@ -52,12 +71,12 @@ public record ShooterState(
     if (obj instanceof ShooterState other) {
       return Math.hypot(
                   angle.getCos() - other.angle.getCos(), angle.getSin() - other.angle.getSin())
-              < 1e-1
+              < angleTolerance.get()
           && Math.abs(shooterTopVelocityMetersPerSecond - other.shooterTopVelocityMetersPerSecond)
-              <= 7e-1
+              <= velocityTolerance.get()
           && Math.abs(
                   shooterBottomVelocityMetersPerSecond - other.shooterBottomVelocityMetersPerSecond)
-              <= 7e-1;
+              <= velocityTolerance.get();
     }
     return false;
   }

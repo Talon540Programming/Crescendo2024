@@ -3,8 +3,9 @@ package frc.robot.subsystems.intake;
 import static edu.wpi.first.units.Units.Volts;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -30,18 +31,32 @@ public class IntakeBase extends SubsystemBase {
   private final RollerIO m_rollerIO;
   private final RollerIOInputsAutoLogged m_rollerInputs = new RollerIOInputsAutoLogged();
 
-  private Rotation2d m_wristSetpoint = Constants.Intake.STOW_ANGLE;
+  private Rotation2d m_wristGoal = Constants.Intake.STOW_ANGLE;
 
-  private final SingleJointedMechanismVisualizer m_setpointVisualizer =
+  private final ProfiledPIDController m_wristFeedback =
+      new ProfiledPIDController(0, 0, 0, new TrapezoidProfile.Constraints(0, 0));
+
+  private static final LoggedTunableNumber wristKp = new LoggedTunableNumber("WristKp");
+  private static final LoggedTunableNumber wristKi = new LoggedTunableNumber("WristKi");
+  private static final LoggedTunableNumber wristKd = new LoggedTunableNumber("WristKd");
+
+  private static final LoggedTunableNumber wristMaxVelocity =
+      new LoggedTunableNumber("WristMaxVelocity");
+  private static final LoggedTunableNumber wristMaxAcceleration =
+      new LoggedTunableNumber("WristMaxAcceleration");
+
+  private static final LoggedTunableNumber wristTolerance =
+      new LoggedTunableNumber("WristTolerance");
+
+  private final SingleJointedMechanismVisualizer m_goalVisualizer =
       new SingleJointedMechanismVisualizer(
           "Intake",
-          "Setpoint",
+          "Goal",
           Constants.Intake.INTAKE_LENGTH_METERS,
           Constants.Intake.PIVOT_POSE,
           Constants.Intake.GROUND_INTAKE_ANGLE,
-          2, // TODO
-          2 // TODO
-          );
+          2,
+          2);
 
   private final SingleJointedMechanismVisualizer m_measuredVisualizer =
       new SingleJointedMechanismVisualizer(
@@ -50,29 +65,28 @@ public class IntakeBase extends SubsystemBase {
           Constants.Intake.INTAKE_LENGTH_METERS,
           Constants.Intake.PIVOT_POSE,
           Constants.Intake.GROUND_INTAKE_ANGLE,
-          2, // TODO
-          2 // TODO
-          );
-
-  private static final LoggedTunableNumber wristKp = new LoggedTunableNumber("WristKp");
-  private static final LoggedTunableNumber wristKi = new LoggedTunableNumber("WristKi");
-  private static final LoggedTunableNumber wristKd = new LoggedTunableNumber("WristKd");
-
-  private final PIDController m_wristFeedback = new PIDController(0, 0, 0);
+          2,
+          2);
 
   private final SysIdRoutine m_wristCharacterizationRoutine;
 
   static {
     switch (Constants.getRobotType()) {
       case ROBOT_2024_COMP -> {
-        wristKp.initDefault(5.5);
-        wristKi.initDefault(0.0);
-        wristKd.initDefault(0.0);
+        wristKp.initDefault(0.0); // TODO
+        wristKi.initDefault(0.0); // TODO
+        wristKd.initDefault(0.0); // TODO
+        wristMaxVelocity.initDefault(0.0); // TODO
+        wristMaxAcceleration.initDefault(0.0); // TODO
+        wristTolerance.initDefault(5e-3); // TODO
       }
       case ROBOT_SIMBOT -> {
         wristKp.initDefault(0.0); // TODO
         wristKi.initDefault(0.0); // TODO
         wristKd.initDefault(0.0); // TODO
+        wristMaxVelocity.initDefault(0.0); // TODO
+        wristMaxAcceleration.initDefault(0.0); // TODO
+        wristTolerance.initDefault(0.0); // TODO
       }
     }
   }
@@ -109,52 +123,58 @@ public class IntakeBase extends SubsystemBase {
       m_wristFeedback.setPID(wristKp.get(), wristKi.get(), wristKd.get());
     }
 
+    if (wristMaxVelocity.hasChanged(0) || wristMaxAcceleration.hasChanged(0)) {
+      m_wristFeedback.setConstraints(
+          new TrapezoidProfile.Constraints(wristMaxVelocity.get(), wristMaxAcceleration.get()));
+    }
+
     if (DriverStation.isDisabled()) {
-      m_wristSetpoint = Constants.Intake.STOW_ANGLE;
+      m_wristGoal = Constants.Intake.STOW_ANGLE;
+
+      m_wristFeedback.reset(m_wristInputs.absoluteAngle.getRadians());
 
       m_wristIO.setVoltage(0);
       m_rollerIO.setVoltage(0);
       m_indexerIO.setVoltage(0);
-    } else if (m_wristSetpoint != null) {
+    } else if (m_wristGoal != null) {
       double wristMeasurement = m_wristInputs.absoluteAngle.getRadians();
-      double wristSetpoint = m_wristSetpoint.getRadians();
+      double wristGoal = m_wristGoal.getRadians();
 
       m_wristIO.setVoltage(
-          MathUtil.clamp(m_wristFeedback.calculate(wristMeasurement, wristSetpoint), -12, 12));
+          MathUtil.clamp(m_wristFeedback.calculate(wristMeasurement, wristGoal), -12, 12));
     }
 
-    if (m_wristSetpoint != null) {
-      m_setpointVisualizer.update(m_wristSetpoint);
+    if (m_wristGoal != null) {
+      m_goalVisualizer.update(m_wristGoal);
     }
-    m_measuredVisualizer.update(m_wristInputs.absoluteAngle);
+
+    m_measuredVisualizer.update(getWristAngle());
   }
 
   public Rotation2d getWristAngle() {
     return m_wristInputs.absoluteAngle;
   }
 
-  @AutoLogOutput(key = "Intake/WristAngleSetpoint")
-  public Rotation2d getWristSetpoint() {
-    return m_wristSetpoint;
+  @AutoLogOutput(key = "Intake/WristAngleGoal")
+  public Rotation2d getWristGoal() {
+    return m_wristGoal;
   }
 
-  public void setWristSetpoint(Rotation2d setpoint) {
-    m_wristSetpoint =
+  public void setWristGoal(Rotation2d setpoint) {
+    m_wristGoal =
         Rotation2d.fromRadians(
             MathUtil.clamp(
                 setpoint.getRadians(),
                 Constants.Intake.MIN_ANGLE.getRadians(),
                 Constants.Intake.MAX_ANGLE.getRadians()));
-
-    System.out.println(m_wristSetpoint.getRadians());
   }
 
   @AutoLogOutput(key = "Intake/AtWristSetpoint")
-  public boolean atWristSetpoint() {
-    var a = getWristSetpoint();
+  public boolean atWristGoal() {
+    var a = getWristGoal();
     var b = getWristAngle();
 
-    return Math.hypot(a.getCos() - b.getCos(), a.getSin() - b.getSin()) < 5e-3;
+    return Math.hypot(a.getCos() - b.getCos(), a.getSin() - b.getSin()) < wristTolerance.get();
   }
 
   public void setRollersVoltage(double volts) {
@@ -176,7 +196,7 @@ public class IntakeBase extends SubsystemBase {
   private Command handleCharacterization() {
     return Commands.runOnce(
         () -> {
-          m_wristSetpoint = null;
+          m_wristGoal = null;
           m_wristIO.setVoltage(0);
           m_indexerIO.setVoltage(0);
           m_rollerIO.setVoltage(0);
