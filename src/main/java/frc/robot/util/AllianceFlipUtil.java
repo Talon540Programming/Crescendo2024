@@ -7,7 +7,7 @@ import java.util.function.Function;
 
 public class AllianceFlipUtil {
   private static double flipX(double x) {
-    return FieldConstants.FIELD_LAYOUT.getFieldWidth() - x;
+    return FieldConstants.FIELD_LAYOUT.getFieldLength() - x;
   }
 
   private static Translation2d flipTranslation(Translation2d translation2d) {
