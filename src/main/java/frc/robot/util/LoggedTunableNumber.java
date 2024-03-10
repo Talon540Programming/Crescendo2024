@@ -1,6 +1,7 @@
 package frc.robot.util;
 
 import frc.robot.constants.Constants;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
@@ -93,5 +94,41 @@ public class LoggedTunableNumber {
     }
 
     return false;
+  }
+
+  /**
+   * Checks whether the number has changed since the last time this method was called. Returns true
+   * the first time this method is called.
+   *
+   * @apiNote This method assumes that there is only a single object is calling this method. For
+   *     that use case, see {@link #hasChanged(int)}.
+   * @return Whether the value has changed since the last time this method was called
+   */
+  public boolean hasChanged() {
+    return hasChanged(0);
+  }
+
+  /**
+   * Run callback if any tunable number has changed. See {@link #hasChanged(int)} for usage.
+   *
+   * @param action action to run
+   * @param tunableNumbers tunable numbers to check
+   */
+  public static void ifChanged(int id, Runnable action, LoggedTunableNumber... tunableNumbers) {
+    if (Arrays.stream(tunableNumbers).anyMatch(v -> v.hasChanged(id))) {
+      action.run();
+    }
+  }
+
+  /**
+   * Run callback if any tunable number has changed. See {@link #hasChanged()} for usage.
+   *
+   * @param action action to run
+   * @param tunableNumbers tunable numbers to check
+   */
+  public static void ifChanged(Runnable action, LoggedTunableNumber... tunableNumbers) {
+    if (Arrays.stream(tunableNumbers).anyMatch(LoggedTunableNumber::hasChanged)) {
+      action.run();
+    }
   }
 }

@@ -161,26 +161,36 @@ public class ShooterBase extends SubsystemBase {
     Logger.processInputs("Shooter/Module", m_shooterModuleInputs);
     Logger.processInputs("Shooter/Kickup", m_kickupInputs);
 
-    if (erectorKs.hasChanged(0)
-        || erectorKg.hasChanged(0)
-        || erectorKv.hasChanged(0)
-        || erectorKa.hasChanged(0)) {
-      m_erectorFeedforward =
-          new ArmFeedforward(erectorKs.get(), erectorKg.get(), erectorKv.get(), erectorKa.get());
-    }
-    if (erectorKp.hasChanged(0) || erectorKi.hasChanged(0) || erectorKd.hasChanged(0)) {
-      m_erectorFeedback.setPID(erectorKp.get(), erectorKi.get(), erectorKd.get());
-    }
+    LoggedTunableNumber.ifChanged(
+        () ->
+            m_erectorFeedforward =
+                new ArmFeedforward(
+                    erectorKs.get(), erectorKg.get(), erectorKv.get(), erectorKa.get()),
+        erectorKs,
+        erectorKg,
+        erectorKv,
+        erectorKa);
 
-    if (shooterModuleKs.hasChanged(0) || shooterModuleKv.hasChanged(0)) {
-      m_shooterModuleFeedforward =
-          new SimpleMotorFeedforward(shooterModuleKs.get(), shooterModuleKv.get());
-    }
-    if (shooterModuleKp.hasChanged(0)
-        || shooterModuleKi.hasChanged(0)
-        || shooterModuleKd.hasChanged(0)) {
-      m_shooterModuleIO.setPID(shooterModuleKp.get(), shooterModuleKi.get(), shooterModuleKd.get());
-    }
+    LoggedTunableNumber.ifChanged(
+        () -> m_erectorFeedback.setPID(erectorKp.get(), erectorKi.get(), erectorKd.get()),
+        erectorKp,
+        erectorKi,
+        erectorKd);
+
+    LoggedTunableNumber.ifChanged(
+        () ->
+            m_shooterModuleFeedforward =
+                new SimpleMotorFeedforward(shooterModuleKs.get(), shooterModuleKv.get()),
+        shooterModuleKs,
+        shooterModuleKv);
+
+    LoggedTunableNumber.ifChanged(
+        () ->
+            m_shooterModuleIO.setPID(
+                shooterModuleKp.get(), shooterModuleKi.get(), shooterModuleKd.get()),
+        shooterModuleKp,
+        shooterModuleKi,
+        shooterModuleKd);
 
     // Update setpoint and command IO layers
     if (DriverStation.isDisabled()) {

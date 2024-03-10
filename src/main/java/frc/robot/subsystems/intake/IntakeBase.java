@@ -119,14 +119,19 @@ public class IntakeBase extends SubsystemBase {
     Logger.processInputs("Intake/Roller", m_rollerInputs);
     Logger.processInputs("Intake/Indexer", m_indexerInputs);
 
-    if (wristKp.hasChanged(0) || wristKi.hasChanged(0) || wristKd.hasChanged(0)) {
-      m_wristFeedback.setPID(wristKp.get(), wristKi.get(), wristKd.get());
-    }
+    LoggedTunableNumber.ifChanged(
+        () -> m_wristFeedback.setPID(wristKp.get(), wristKi.get(), wristKd.get()),
+        wristKp,
+        wristKi,
+        wristKd);
 
-    if (wristMaxVelocity.hasChanged(0) || wristMaxAcceleration.hasChanged(0)) {
-      m_wristFeedback.setConstraints(
-          new TrapezoidProfile.Constraints(wristMaxVelocity.get(), wristMaxAcceleration.get()));
-    }
+    LoggedTunableNumber.ifChanged(
+        () ->
+            m_wristFeedback.setConstraints(
+                new TrapezoidProfile.Constraints(
+                    wristMaxVelocity.get(), wristMaxAcceleration.get())),
+        wristMaxVelocity,
+        wristMaxAcceleration);
 
     if (DriverStation.isDisabled()) {
       m_wristGoal = Constants.Intake.STOW_ANGLE;

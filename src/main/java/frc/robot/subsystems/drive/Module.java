@@ -83,19 +83,25 @@ public class Module {
   public void periodic() {
     Logger.processInputs("Drive/Module" + kModuleIndex, m_inputs);
 
-    if (driveKs.hasChanged(kModuleIndex) || driveKv.hasChanged(kModuleIndex)) {
-      m_driveFeedforward = new SimpleMotorFeedforward(driveKs.get(), driveKv.get());
-    }
-    if (driveKp.hasChanged(kModuleIndex)
-        || driveKi.hasChanged(kModuleIndex)
-        || driveKd.hasChanged(kModuleIndex)) {
-      m_driveController.setPID(driveKp.get(), driveKi.get(), driveKd.get());
-    }
-    if (turnKp.hasChanged(kModuleIndex)
-        || turnKi.hasChanged(kModuleIndex)
-        || turnKd.hasChanged(kModuleIndex)) {
-      m_turnController.setPID(turnKp.get(), turnKi.get(), turnKd.get());
-    }
+    LoggedTunableNumber.ifChanged(
+        kModuleIndex,
+        () -> m_driveFeedforward = new SimpleMotorFeedforward(driveKs.get(), driveKv.get()),
+        driveKs,
+        driveKv);
+
+    LoggedTunableNumber.ifChanged(
+        kModuleIndex,
+        () -> m_driveController.setPID(driveKp.get(), driveKi.get(), driveKd.get()),
+        driveKp,
+        driveKi,
+        driveKd);
+
+    LoggedTunableNumber.ifChanged(
+        kModuleIndex,
+        () -> m_turnController.setPID(turnKp.get(), turnKi.get(), turnKd.get()),
+        turnKp,
+        turnKi,
+        turnKd);
 
     // On first cycle, reset relative turn encoder
     // Wait until absolute angle is nonzero in case it wasn't initialized yet
