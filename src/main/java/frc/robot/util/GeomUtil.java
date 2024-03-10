@@ -115,6 +115,10 @@ public class GeomUtil {
     return new Pose3d(transform.getTranslation(), transform.getRotation());
   }
 
+  public static Pose3d toPose3d(Translation3d translation) {
+    return new Pose3d(translation, new Rotation3d());
+  }
+
   /**
    * Converts a ChassisSpeeds to a Twist2d by extracting two dimensions (Y and Z). chain
    *

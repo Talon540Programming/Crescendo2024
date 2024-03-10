@@ -3,6 +3,8 @@ package frc.robot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.commands.DriveTeleop;
+import frc.robot.commands.ShooterTeleop;
 import frc.robot.constants.Constants;
 import frc.robot.oi.ControlsInterface;
 import frc.robot.oi.SrimanXbox;
@@ -138,6 +140,26 @@ public class RobotContainer {
   }
 
   private void configureButtonBindings() {
+    m_drive.setDefaultCommand(new DriveTeleop(m_drive, controlsInterface));
+
+    controlsInterface.moduleLock().onTrue(Commands.runOnce(m_drive::stopWithX, m_drive));
+
+    // Drive teleop override button
+    controlsInterface
+        .trajectoryOverride()
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  m_drive.getCurrentCommand().cancel();
+                  m_drive.stop();
+                }));
+
+    m_shooter.setDefaultCommand(
+        new ShooterTeleop(
+            m_shooter,
+            () -> PoseEstimator.getInstance().getPose(),
+            m_drive::getVelocity,
+            controlsInterface));
   }
 
   public Command getAutonomousCommand() {
