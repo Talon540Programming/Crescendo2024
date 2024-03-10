@@ -9,6 +9,8 @@ import frc.robot.constants.Constants;
 import frc.robot.subsystems.drive.*;
 import frc.robot.subsystems.intake.*;
 import frc.robot.subsystems.shooter.*;
+import frc.robot.subsystems.vision.*;
+import frc.robot.util.PoseEstimator;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
@@ -17,6 +19,7 @@ public class RobotContainer {
   private final IntakeBase m_intake;
 
   private final CommandXboxController controller = new CommandXboxController(0);
+  private final VisionBase m_vision;
 
   private final LoggedDashboardChooser<Command> m_autoChooser =
       new LoggedDashboardChooser<>("AutoChooser");
@@ -36,6 +39,11 @@ public class RobotContainer {
                 new ErectorIOSparkMax(), new ShooterModuleIOSparkMax(), new KickupIOSparkMax());
         m_intake =
             new IntakeBase(new WristIOSparkMax(), new RollerIOSparkMax(), new IndexerIOSparkMax());
+        m_vision =
+            new VisionBase(
+                Constants.Vision.configs.stream()
+                    .map(v -> new VisionIOPhotonCamera(v.cameraName(), v.robotToCamera()))
+                    .toArray(VisionIOPhotonCamera[]::new));
       }
       case SIM -> {
         m_drive =
@@ -48,6 +56,11 @@ public class RobotContainer {
         m_shooter =
             new ShooterBase(new ErectorIOSim(), new ShooterModuleIOSim(), new KickupIOSim());
         m_intake = new IntakeBase(new WristIOSim(), new RollerIOSim(), new IndexerIOSim());
+        m_vision =
+            new VisionBase(
+                Constants.Vision.configs.stream()
+                    .map(v -> new VisionIOSim(v.cameraName(), v.robotToCamera()))
+                    .toArray(VisionIOSim[]::new));
       }
       default -> {
         m_drive =
@@ -60,6 +73,7 @@ public class RobotContainer {
         m_shooter =
             new ShooterBase(new ErectorIO() {}, new ShooterModuleIO() {}, new KickupIO() {});
         m_intake = new IntakeBase(new WristIO() {}, new RollerIO() {}, new IndexerIO() {});
+        m_vision = new VisionBase(new VisionIO[Constants.Vision.configs.size()]);
       }
     }
 
