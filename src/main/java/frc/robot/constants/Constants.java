@@ -3,9 +3,11 @@ package frc.robot.constants;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
+import java.util.List;
 
 public final class Constants {
   private static RobotType kRobotType = RobotType.ROBOT_SIMBOT;
@@ -60,6 +62,27 @@ public final class Constants {
             0,
             Units.inchesToMeters(5.727224),
             new Rotation3d(0.0, 0.0, Math.toRadians(180.0)));
+  }
+
+  public static class Vision {
+    public enum CameraType {
+      AprilTagCamera
+    }
+
+    public record CameraConfig(
+        String cameraName, Transform3d robotToCamera, CameraType cameraType) {}
+
+    public static final List<CameraConfig> configs =
+        List.of(
+            new CameraConfig("Cam1", new Transform3d(), CameraType.AprilTagCamera),
+            // TODO
+            new CameraConfig("Cam2", new Transform3d(), CameraType.AprilTagCamera),
+            // TODO
+            new CameraConfig("Cam3", new Transform3d(), CameraType.AprilTagCamera),
+            // TODO
+            new CameraConfig("Cam4", new Transform3d(), CameraType.AprilTagCamera)
+            // TODO
+            );
   }
 
   public static class Intake {
