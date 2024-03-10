@@ -52,6 +52,7 @@ public final class Constants {
   }
 
   public static class Shooter {
+    public static final double MAX_SHOOTER_SPEED_METERS_PER_SECOND = 43.5;
     public static final Rotation2d MIN_SHOOTER_ANGLE = Rotation2d.fromDegrees(27.5);
     public static final Rotation2d MAX_SHOOTER_ANGLE = Rotation2d.fromDegrees(95.0);
     public static final double SHOOTER_LENGTH_METERS = Units.inchesToMeters(20.75);
