@@ -5,7 +5,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class CommandUtils {
+public class CommandUtil {
   public static <T> Command conditional(
       Function<T, Command> conditionalSupplier,
       Supplier<Command> backupSupplier,
