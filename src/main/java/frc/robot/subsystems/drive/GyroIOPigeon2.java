@@ -25,10 +25,6 @@ public class GyroIOPigeon2 implements GyroIO {
   private final StatusSignal<Double> m_pitchVelocity;
   private final StatusSignal<Double> m_yawVelocity;
 
-  private final StatusSignal<Double> m_accelX;
-  private final StatusSignal<Double> m_accelY;
-  private final StatusSignal<Double> m_accelZ;
-
   private final Queue<TimestampedSensorMeasurement<Double>> yawPositionQueue;
 
   public GyroIOPigeon2() {
@@ -47,15 +43,11 @@ public class GyroIOPigeon2 implements GyroIO {
     this.m_pitchVelocity = this.m_gyro.getAngularVelocityYWorld();
     this.m_yawVelocity = this.m_gyro.getAngularVelocityZWorld();
 
-    this.m_accelX = this.m_gyro.getAccelerationX();
-    this.m_accelY = this.m_gyro.getAccelerationY();
-    this.m_accelZ = this.m_gyro.getAccelerationZ();
-
     // Faster rate for Yaw for Odometry
     this.m_yaw.setUpdateFrequency(PoseEstimator.ODOMETRY_FREQUENCY);
     this.m_yawVelocity.setUpdateFrequency(100);
     BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0, m_roll, m_pitch, m_rollVelocity, m_pitchVelocity, m_accelX, m_accelY, m_accelZ);
+        50.0, m_roll, m_pitch, m_rollVelocity, m_pitchVelocity);
 
     this.yawPositionQueue =
         OdometryQueueThread.getInstance().registerSignal(() -> m_gyro.getYaw().getValueAsDouble());
@@ -68,15 +60,7 @@ public class GyroIOPigeon2 implements GyroIO {
     // Only check yaw and yaw velocity as they are needed for odometry
     inputs.connected =
         BaseStatusSignal.refreshAll(
-                m_roll,
-                m_pitch,
-                m_yaw,
-                m_rollVelocity,
-                m_pitchVelocity,
-                m_yawVelocity,
-                m_accelX,
-                m_accelY,
-                m_accelZ)
+                m_roll, m_pitch, m_yaw, m_rollVelocity, m_pitchVelocity, m_yawVelocity)
             .equals(StatusCode.OK);
 
     inputs.rollPosition = Rotation2d.fromDegrees(m_roll.getValueAsDouble());
@@ -86,10 +70,6 @@ public class GyroIOPigeon2 implements GyroIO {
     inputs.rollVelocityRadPerSec = Units.degreesToRadians(m_rollVelocity.getValueAsDouble());
     inputs.pitchVelocityRadPerSec = Units.degreesToRadians(m_pitchVelocity.getValueAsDouble());
     inputs.yawVelocityRadPerSec = Units.degreesToRadians(m_yawVelocity.getValueAsDouble());
-
-    inputs.accelX = m_accelX.getValueAsDouble();
-    inputs.accelY = m_accelY.getValueAsDouble();
-    inputs.accelZ = m_accelZ.getValueAsDouble();
 
     inputs.odometryYawPositions =
         yawPositionQueue.stream()

@@ -21,10 +21,6 @@ public interface GyroIO {
     public double pitchVelocityRadPerSec = 0.0;
     public double yawVelocityRadPerSec = 0.0;
 
-    public double accelX = 0.0;
-    public double accelY = 0.0;
-    public double accelZ = 0.0;
-
     @Override
     public void toLog(LogTable table) {
       table.put("Connected", connected);
@@ -45,9 +41,6 @@ public interface GyroIO {
       table.put("RollVelocityRadPerSec", rollVelocityRadPerSec);
       table.put("PitchVelocityRadPerSec", pitchVelocityRadPerSec);
       table.put("YawVelocityRadPerSec", yawVelocityRadPerSec);
-      table.put("AccelX", accelX);
-      table.put("AccelY", accelY);
-      table.put("AccelZ", accelZ);
     }
 
     @Override
@@ -77,9 +70,6 @@ public interface GyroIO {
       rollVelocityRadPerSec = table.get("RollVelocityRadPerSec", rollVelocityRadPerSec);
       pitchVelocityRadPerSec = table.get("PitchVelocityRadPerSec", pitchVelocityRadPerSec);
       yawVelocityRadPerSec = table.get("YawVelocityRadPerSec", yawVelocityRadPerSec);
-      accelX = table.get("AccelX", accelX);
-      accelY = table.get("AccelY", accelY);
-      accelZ = table.get("AccelZ", accelZ);
     }
 
     public GyroIOInputs clone() {
@@ -92,9 +82,6 @@ public interface GyroIO {
       copy.rollVelocityRadPerSec = this.rollVelocityRadPerSec;
       copy.pitchVelocityRadPerSec = this.pitchVelocityRadPerSec;
       copy.yawVelocityRadPerSec = this.yawVelocityRadPerSec;
-      copy.accelX = this.accelX;
-      copy.accelY = this.accelY;
-      copy.accelZ = this.accelZ;
       return copy;
     }
   }
