@@ -46,7 +46,7 @@ public class ShooterBase extends SubsystemBase {
           "Setpoint",
           Constants.Shooter.SHOOTER_LENGTH_METERS,
           Constants.Shooter.PIVOT_POSE,
-          ShooterState.STARTING_STATE.angle(),
+          ShooterState.STARTING_STATE.angle,
           2,
           2);
   private final SingleJointedMechanismVisualizer m_measuredVisualizer =
@@ -55,7 +55,7 @@ public class ShooterBase extends SubsystemBase {
           "Measured",
           Constants.Shooter.SHOOTER_LENGTH_METERS,
           Constants.Shooter.PIVOT_POSE,
-          ShooterState.STARTING_STATE.angle(),
+          ShooterState.STARTING_STATE.angle,
           2,
           2);
 
@@ -203,7 +203,7 @@ public class ShooterBase extends SubsystemBase {
       m_kickupIO.setVoltage(0.0);
     } else if (m_setpoint != null) {
       double erectorMeasurement = m_erectorInputs.absoluteAngle.getRadians();
-      double erectorSetpoint = m_setpoint.angle().getRadians();
+      double erectorSetpoint = m_setpoint.angle.getRadians();
 
       m_erectorIO.setVoltage(
           MathUtil.clamp(
@@ -212,9 +212,9 @@ public class ShooterBase extends SubsystemBase {
               -12,
               12));
 
-      double topSetpoint = m_setpoint.shooterTopVelocityMetersPerSecond() / SHOOTER_RADIUS_METERS;
+      double topSetpoint = m_setpoint.shooterTopVelocityMetersPerSecond / SHOOTER_RADIUS_METERS;
       double bottomSetpoint =
-          m_setpoint.shooterBottomVelocityMetersPerSecond() / SHOOTER_RADIUS_METERS;
+          m_setpoint.shooterBottomVelocityMetersPerSecond / SHOOTER_RADIUS_METERS;
 
       m_shooterModuleIO.runSetpoint(
           topSetpoint,
@@ -224,7 +224,7 @@ public class ShooterBase extends SubsystemBase {
     }
 
     if (m_setpoint != null) {
-      m_setpointVisualizer.update(m_setpoint.angle());
+      m_setpointVisualizer.update(m_setpoint.angle);
     }
     m_measuredVisualizer.update(m_erectorInputs.absoluteAngle);
   }

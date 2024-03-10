@@ -20,7 +20,7 @@ public class ErectorIOSim implements ErectorIO {
             Constants.Shooter.MIN_SHOOTER_ANGLE.getRadians(),
             Constants.Shooter.MAX_SHOOTER_ANGLE.getRadians(),
             true,
-            ShooterState.STARTING_STATE.angle().getRadians());
+            ShooterState.STARTING_STATE.angle.getRadians());
   }
 
   @Override
