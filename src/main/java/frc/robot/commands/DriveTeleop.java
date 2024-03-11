@@ -13,9 +13,10 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.constants.Constants;
 import frc.robot.oi.DriveOI;
 import frc.robot.subsystems.drive.DriveBase;
-import frc.robot.subsystems.shooter.dynamics.ShooterDynamics;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.PoseEstimator;
+import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
@@ -62,7 +63,8 @@ public class DriveTeleop extends Command {
   private final DoubleSupplier ySupplier;
   private final DoubleSupplier thetaSupplier;
   private final BooleanSupplier robotRelativeSupplier;
-  private final BooleanSupplier speakerLockSupplier;
+  private final BiFunction<Pose2d, ChassisSpeeds, Optional<Rotation2d>> headingSupplier;
+  private final BooleanSupplier headingLockSupplier;
 
   private final ProfiledPIDController headingController =
       new ProfiledPIDController(0, 0, 0, new TrapezoidProfile.Constraints(0, 0));
@@ -73,7 +75,8 @@ public class DriveTeleop extends Command {
       DoubleSupplier ySupplier,
       DoubleSupplier thetaSupplier,
       BooleanSupplier robotRelativeSupplier,
-      BooleanSupplier speakerLockSupplier) {
+      BiFunction<Pose2d, ChassisSpeeds, Optional<Rotation2d>> headingSupplier,
+      BooleanSupplier headingLockSupplier) {
     addRequirements(driveBase);
 
     this.driveBase = driveBase;
@@ -81,18 +84,23 @@ public class DriveTeleop extends Command {
     this.ySupplier = ySupplier;
     this.thetaSupplier = thetaSupplier;
     this.robotRelativeSupplier = robotRelativeSupplier;
-    this.speakerLockSupplier = speakerLockSupplier;
+    this.headingSupplier = headingSupplier;
+    this.headingLockSupplier = headingLockSupplier;
 
     headingController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
-  public DriveTeleop(DriveBase driveBase, DriveOI oi) {
+  public DriveTeleop(
+      DriveBase driveBase,
+      DriveOI oi,
+      BiFunction<Pose2d, ChassisSpeeds, Optional<Rotation2d>> headingSupplier) {
     this(
         driveBase,
         oi::getDriveX,
         oi::getDriveY,
         oi::getDriveTheta,
         () -> oi.robotRelativeOverride().getAsBoolean(),
+        headingSupplier,
         () -> oi.shooterAngleLock().getAsBoolean());
   }
 
@@ -175,13 +183,14 @@ public class DriveTeleop extends Command {
     }
 
     // Replace omega velocity component with calculated speaker lock value using heading controller
-    if (speakerLockSupplier.getAsBoolean() && ShooterDynamics.inShooterZone(currentPose)) {
-      speeds.omegaRadiansPerSecond =
-          headingController.calculate(
-              currentPose.getRotation().getRadians(),
-              ShooterDynamics.calculateRobotSpeakerAngle(
-                      currentPose.getTranslation(), driveBase.getVelocity())
-                  .getRadians());
+    if (headingLockSupplier.getAsBoolean()) {
+      headingSupplier
+          .apply(currentPose, driveBase.getVelocity())
+          .ifPresent(
+              v ->
+                  speeds.omegaRadiansPerSecond =
+                      headingController.calculate(
+                          currentPose.getRotation().getRadians(), v.getRadians()));
     }
 
     driveBase.runVelocity(speeds);

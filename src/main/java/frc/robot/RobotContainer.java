@@ -11,8 +11,10 @@ import frc.robot.oi.SrimanXbox;
 import frc.robot.subsystems.drive.*;
 import frc.robot.subsystems.intake.*;
 import frc.robot.subsystems.shooter.*;
+import frc.robot.subsystems.shooter.dynamics.ShooterDynamics;
 import frc.robot.subsystems.vision.*;
 import frc.robot.util.PoseEstimator;
+import java.util.Optional;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
@@ -140,7 +142,21 @@ public class RobotContainer {
   }
 
   private void configureButtonBindings() {
-    m_drive.setDefaultCommand(new DriveTeleop(m_drive, controlsInterface));
+    m_drive.setDefaultCommand(
+        new DriveTeleop(
+            m_drive,
+            controlsInterface,
+            (var pose, var speeds) -> {
+              if (ShooterDynamics.inShooterZone(pose)) {
+                return Optional.of(
+                    ShooterDynamics.calculateRobotSpeakerAngle(pose.getTranslation(), speeds));
+              } else if (ShooterDynamics.inIntakeZone(pose)) {
+                return Optional.of(
+                    ShooterDynamics.calculateRobotIntakeAngle(pose.getTranslation()));
+              }
+
+              return Optional.empty();
+            }));
 
     controlsInterface.moduleLock().onTrue(Commands.runOnce(m_drive::stopWithX, m_drive));
 

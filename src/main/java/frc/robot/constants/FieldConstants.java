@@ -104,5 +104,8 @@ public class FieldConstants {
                 Units.inchesToMeters(593.817769),
                 Units.inchesToMeters(8.401835),
                 Units.inchesToMeters(39.664118)));
+
+    public static final AllianceRelative<Rotation2d> SOURCE_WALL_ANGLE =
+        AllianceRelative.from(Rotation2d.fromDegrees(120));
   }
 }

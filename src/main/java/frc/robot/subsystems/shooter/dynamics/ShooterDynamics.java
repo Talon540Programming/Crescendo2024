@@ -22,16 +22,6 @@ public class ShooterDynamics {
         .getTranslation();
   }
 
-  private static Rotation2d calculatePitchToTarget(
-      Translation3d pivotTranslation, Translation3d targetTranslation) {
-    return Rotation2d.fromRadians(
-        Math.atan(
-            (targetTranslation.getZ() - pivotTranslation.getZ())
-                / pivotTranslation
-                    .toTranslation2d()
-                    .getDistance(targetTranslation.toTranslation2d())));
-  }
-
   public static Optional<ShooterState> calculateSpeakerState(
       Pose2d robotPose, ChassisSpeeds robotVel) {
     // Ensure shot is within legal limits
@@ -50,7 +40,13 @@ public class ShooterDynamics {
     var targetTranslation = FieldConstants.Speaker.centerSpeaker.get();
 
     // Calculate the pitch angle to the target
-    var pivotToTargetAngle = calculatePitchToTarget(pivotTranslation, targetTranslation);
+    var pivotToTargetAngle =
+        Rotation2d.fromRadians(
+            Math.atan(
+                (targetTranslation.getZ() - pivotTranslation.getZ())
+                    / pivotTranslation
+                        .toTranslation2d()
+                        .getDistance(targetTranslation.toTranslation2d())));
 
     return Optional.of(new ShooterState(pivotToTargetAngle, SHOOTER_YEET_VELOCITY));
   }
@@ -62,10 +58,22 @@ public class ShooterDynamics {
     }
 
     var pivotTranslation = calculatePivotTranslation(robotPose);
-    var targetTranslation = FieldConstants.Source.SOURCE_RIGHT_OPENING.get();
+
+    // Determine distance to the source wall
+    var upperPoint = FieldConstants.Source.SOURCE_LEFT_OPENING.get();
+    var lowerPoint = FieldConstants.Source.SOURCE_RIGHT_OPENING.get();
+    double a = lowerPoint.getY() - upperPoint.getY();
+    double b = upperPoint.getX() - lowerPoint.getX();
+    double c = upperPoint.getY() * lowerPoint.getX() - upperPoint.getX() * lowerPoint.getY();
+
+    double distance2d =
+        Math.abs(a * pivotTranslation.getX() + b * pivotTranslation.getY() + c) / Math.hypot(a, b);
 
     // TODO determine if this needs to be higher to account for initial note velocity
-    var pivotToTargetAngle = calculatePitchToTarget(pivotTranslation, targetTranslation);
+    double sourceHeight = upperPoint.getZ();
+
+    var pivotToTargetAngle =
+        Rotation2d.fromRadians(Math.atan((sourceHeight - pivotTranslation.getZ()) / distance2d));
 
     return Optional.of(new ShooterState(pivotToTargetAngle, SHOOTER_INTAKE_VELOCITY));
   }
@@ -89,6 +97,10 @@ public class ShooterDynamics {
 
     // Shooter faces the back, flip the angle
     return robotToTargetTranslation.getAngle().plus(Rotation2d.fromRadians(Math.PI));
+  }
+
+  public static Rotation2d calculateRobotIntakeAngle(Translation2d translation) {
+    return FieldConstants.Source.SOURCE_WALL_ANGLE.get();
   }
 
   /**
