@@ -4,6 +4,7 @@ import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import org.littletonrobotics.junction.LogTable;
@@ -19,6 +20,7 @@ public interface VisionIO {
         MatBuilder.fill(Nat.N3(), Nat.N1(), 0.0, 0.0, 0.0);
     public int[] detectedTagsIds = new int[] {};
     public Pose3d[] detectedTagPoses = new Pose3d[] {};
+    // public Pose3d camPose;
 
     @Override
     public void toLog(LogTable table) {
@@ -29,6 +31,7 @@ public interface VisionIO {
       table.put("DetectedTagsIds", detectedTagsIds);
       table.put("DetectedTagPoses", detectedTagPoses);
       table.put("VisionMeasurementStdDevs", visionMeasurementStdDevs.getData());
+      // table.put("cameraPose", camPose);
     }
 
     @Override
@@ -44,6 +47,7 @@ public interface VisionIO {
               Nat.N3(),
               Nat.N1(),
               table.get("VisionMeasurementStdDevs", visionMeasurementStdDevs.getData()));
+    // camPose = table.get("cameraPose", camPose);
     }
 
     public VisionIOInputs clone() {
@@ -55,6 +59,7 @@ public interface VisionIO {
       copy.detectedTagsIds = this.detectedTagsIds.clone();
       copy.detectedTagPoses = this.detectedTagPoses.clone();
       copy.visionMeasurementStdDevs = this.visionMeasurementStdDevs.copy();
+      // copy.camPose = this.camPose;
       return copy;
     }
   }

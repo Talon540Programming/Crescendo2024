@@ -4,6 +4,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -74,15 +75,42 @@ public final class Constants {
 
     public static final List<CameraConfig> configs =
         List.of(
-            new CameraConfig("Cam1", new Transform3d(), CameraType.AprilTagCamera),
-            // TODO
-            new CameraConfig("Cam2", new Transform3d(), CameraType.AprilTagCamera),
-            // TODO
-            new CameraConfig("Cam3", new Transform3d(), CameraType.AprilTagCamera),
-            // TODO
-            new CameraConfig("Cam4", new Transform3d(), CameraType.AprilTagCamera)
-            // TODO
-            );
+            new CameraConfig(
+                "Cam0",
+                new Transform3d(
+                    new Translation3d(0.279, 0.281, 0.272),
+                    new Rotation3d(
+                        Units.degreesToRadians(0), //TODO
+                        Units.degreesToRadians(45),
+                        Units.degreesToRadians(22.5))),
+                CameraType.AprilTagCamera),
+            new CameraConfig(
+                "Cam1",
+                new Transform3d(
+                    new Translation3d(0.281, -0.279, 0.272),
+                    new Rotation3d(
+                        Units.degreesToRadians(0),//TODO
+                        Units.degreesToRadians(45),
+                        Units.degreesToRadians(67.5))),
+                CameraType.AprilTagCamera),
+            new CameraConfig(
+                "Cam2",
+                new Transform3d(
+                    new Translation3d(-0.285, 0.284, 0.273),
+                    new Rotation3d(
+                        Units.degreesToRadians(0),//TODO
+                        Units.degreesToRadians(20),
+                        Units.degreesToRadians(-45))),
+                CameraType.AprilTagCamera),
+            new CameraConfig(
+                "Cam3",
+                new Transform3d(
+                    new Translation3d(-0.33, 0.139, 0.157),
+                    new Rotation3d(
+                        Units.degreesToRadians(0),//TODO
+                        Units.degreesToRadians(30),
+                        Units.degreesToRadians(0))),
+                CameraType.AprilTagCamera));
   }
 
   public static class Intake {
