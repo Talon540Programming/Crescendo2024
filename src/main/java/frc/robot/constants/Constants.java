@@ -50,7 +50,7 @@ public final class Constants {
   }
 
   public static class Shooter {
-    public static final Rotation2d MIN_SHOOTER_ANGLE = Rotation2d.fromDegrees(27.5);
+    public static final Rotation2d MIN_SHOOTER_ANGLE = Rotation2d.fromDegrees(17.5);
     public static final Rotation2d MAX_SHOOTER_ANGLE = Rotation2d.fromDegrees(95.0);
     public static final double SHOOTER_LENGTH_METERS = Units.inchesToMeters(20.75);
     // Position of the pivot point of the shooter in the RCS
