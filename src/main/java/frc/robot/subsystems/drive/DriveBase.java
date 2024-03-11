@@ -29,9 +29,11 @@ public class DriveBase extends SubsystemBase {
   public static final double kDriveBaseRadiusMeters;
 
   public static final double kMaxLinearVelocityMetersPerSecond;
+  public static final double kMaxLinearAccelerationMetersPerSecondSquared;
   public static final double kMaxAngularVelocityRadiansPerSecond;
+  public static final double kMaxAngularAccelerationRadiansPerSecondSquared;
 
-  public static final SwerveDriveKinematics m_kinematics;
+  private static final SwerveDriveKinematics m_kinematics;
 
   private final GyroIO m_gyroIO;
   private final GyroIOInputs m_gyroInputs = new GyroIOInputs();
@@ -51,6 +53,7 @@ public class DriveBase extends SubsystemBase {
         kTrackWidthYMeters = Units.inchesToMeters(22.5);
 
         kMaxLinearVelocityMetersPerSecond = Units.feetToMeters(14.5);
+        kMaxLinearAccelerationMetersPerSecondSquared = Units.feetToMeters(25.0);
       }
       default -> throw new RuntimeException("Unknown RobotType for Drivebase");
     }
@@ -58,6 +61,9 @@ public class DriveBase extends SubsystemBase {
     kDriveBaseRadiusMeters = Math.hypot(kTrackWidthXMeters / 2.0, kTrackWidthYMeters / 2.0);
     kMaxAngularVelocityRadiansPerSecond =
         kMaxLinearVelocityMetersPerSecond / kDriveBaseRadiusMeters;
+    kMaxAngularAccelerationRadiansPerSecondSquared =
+        kMaxLinearAccelerationMetersPerSecondSquared / kDriveBaseRadiusMeters;
+
     m_kinematics =
         new SwerveDriveKinematics(getModuleTranslations(kTrackWidthXMeters, kTrackWidthYMeters));
   }
@@ -175,6 +181,15 @@ public class DriveBase extends SubsystemBase {
     // Log setpoint states
     Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
     Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
+  }
+
+  public ChassisSpeeds getVelocity() {
+    var speeds = m_kinematics.toChassisSpeeds(getModuleStates());
+    if (m_gyroInputs.connected) {
+      speeds.omegaRadiansPerSecond = m_gyroInputs.yawVelocityRadPerSec;
+    }
+
+    return speeds;
   }
 
   /** Stops the drive. */
