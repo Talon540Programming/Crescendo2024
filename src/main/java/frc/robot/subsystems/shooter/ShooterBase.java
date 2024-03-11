@@ -119,7 +119,7 @@ public class ShooterBase extends SubsystemBase {
           "Setpoint",
           Constants.Shooter.SHOOTER_LENGTH_METERS,
           Constants.Shooter.PIVOT_POSE,
-          ShooterState.STARTING_STATE.angle(),
+          ShooterState.STARTING_STATE.angle,
           2,
           2);
   private final SingleJointedMechanismVisualizer m_measuredVisualizer =
@@ -128,7 +128,7 @@ public class ShooterBase extends SubsystemBase {
           "Measured",
           Constants.Shooter.SHOOTER_LENGTH_METERS,
           Constants.Shooter.PIVOT_POSE,
-          ShooterState.STARTING_STATE.angle(),
+          ShooterState.STARTING_STATE.angle,
           2,
           2);
 
@@ -188,7 +188,7 @@ public class ShooterBase extends SubsystemBase {
         erectorKp,
         erectorKi,
         erectorKd);
-    
+
     LoggedTunableNumber.ifChanged(
         () ->
             m_erectorFeedback.setConstraints(
@@ -196,7 +196,6 @@ public class ShooterBase extends SubsystemBase {
                     erectorMaxVelocity.get(), erectorMaxAcceleration.get())),
         erectorMaxVelocity,
         erectorMaxAcceleration);
-    
 
     LoggedTunableNumber.ifChanged(
         () ->
@@ -228,7 +227,7 @@ public class ShooterBase extends SubsystemBase {
           m_erectorInputs.absoluteAngle.getRadians(), m_erectorInputs.velocityRadPerSec);
     } else if (m_setpoint != null) {
       double erectorMeasurement = m_erectorInputs.absoluteAngle.getRadians();
-      double erectorGoal = m_setpoint.angle().getRadians();
+      double erectorGoal = m_setpoint.angle.getRadians();
 
       m_erectorIO.setVoltage(
           MathUtil.clamp(
