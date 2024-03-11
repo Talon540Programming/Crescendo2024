@@ -5,8 +5,9 @@ import static edu.wpi.first.units.Units.Volts;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
-import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -26,38 +27,6 @@ public class ShooterBase extends SubsystemBase {
   public static final double SHOOTER_GEARING = (26.0 / 51.0);
   public static final double SHOOTER_RADIUS_METERS = Units.inchesToMeters(1.5);
   public static final double KICKUP_GEARING = (5.0 / 1.0);
-  public static final double KICKUP_RADIUS_METERS = Units.inchesToMeters(1.0);
-
-  private final ErectorIO m_erectorIO;
-  private final ErectorIOInputsAutoLogged m_erectorInputs = new ErectorIOInputsAutoLogged();
-
-  private final ShooterModuleIO m_shooterModuleIO;
-  private final ShooterModuleIOInputsAutoLogged m_shooterModuleInputs =
-      new ShooterModuleIOInputsAutoLogged();
-
-  private final KickupIO m_kickupIO;
-  private final KickupIOInputsAutoLogged m_kickupInputs = new KickupIOInputsAutoLogged();
-
-  private ShooterState m_setpoint = ShooterState.TRAVEL_STATE;
-
-  private final SingleJointedMechanismVisualizer m_setpointVisualizer =
-      new SingleJointedMechanismVisualizer(
-          "Shooter",
-          "Setpoint",
-          Constants.Shooter.SHOOTER_LENGTH_METERS,
-          Constants.Shooter.PIVOT_POSE,
-          ShooterState.STARTING_STATE.angle,
-          2,
-          2);
-  private final SingleJointedMechanismVisualizer m_measuredVisualizer =
-      new SingleJointedMechanismVisualizer(
-          "Shooter",
-          "Measured",
-          Constants.Shooter.SHOOTER_LENGTH_METERS,
-          Constants.Shooter.PIVOT_POSE,
-          ShooterState.STARTING_STATE.angle,
-          2,
-          2);
 
   private static final LoggedTunableNumber erectorKs = new LoggedTunableNumber("ErectorKs");
   private static final LoggedTunableNumber erectorKg = new LoggedTunableNumber("ErectorKg");
@@ -67,6 +36,11 @@ public class ShooterBase extends SubsystemBase {
   private static final LoggedTunableNumber erectorKp = new LoggedTunableNumber("ErectorKp");
   private static final LoggedTunableNumber erectorKi = new LoggedTunableNumber("ErectorKi");
   private static final LoggedTunableNumber erectorKd = new LoggedTunableNumber("ErectorKd");
+
+  private static final LoggedTunableNumber erectorMaxVelocity =
+      new LoggedTunableNumber("ErectorMaxVelocity");
+  private static final LoggedTunableNumber erectorMaxAcceleration =
+      new LoggedTunableNumber("ErectorMaxAcceleration");
 
   private static final LoggedTunableNumber shooterModuleKs =
       new LoggedTunableNumber("ShooterModuleKs");
@@ -80,23 +54,20 @@ public class ShooterBase extends SubsystemBase {
   private static final LoggedTunableNumber shooterModuleKd =
       new LoggedTunableNumber("ShooterModuleKd");
 
-  private ArmFeedforward m_erectorFeedforward = new ArmFeedforward(0, 0, 0);
-  private final PIDController m_erectorFeedback = new PIDController(0, 0, 0);
-  private SimpleMotorFeedforward m_shooterModuleFeedforward = new SimpleMotorFeedforward(0, 0);
-
-  private final SysIdRoutine m_erectorCharacterizationRoutine;
-  private final SysIdRoutine m_shooterCharacterizationRoutine;
-
   static {
     switch (Constants.getRobotType()) {
       case ROBOT_2024_COMP -> {
-        erectorKs.initDefault(0.0); // TODO
-        erectorKg.initDefault(0.0); // TODO
-        erectorKv.initDefault(0.0); // TODO
-        erectorKa.initDefault(0.0); // TODO
-        erectorKp.initDefault(0.0); // TODO
-        erectorKi.initDefault(0.0); // TODO
-        erectorKd.initDefault(0.0); // TODO
+        erectorKs.initDefault(0.0);
+        erectorKg.initDefault(0.485);
+        erectorKv.initDefault(0.0);
+        erectorKa.initDefault(0.0);
+        erectorKp.initDefault(5.5);
+        erectorKi.initDefault(0.0);
+        erectorKd.initDefault(0.0);
+
+        erectorMaxVelocity.initDefault(Math.PI);
+        erectorMaxAcceleration.initDefault(1.5 * Math.PI);
+
         shooterModuleKs.initDefault(0.5);
         shooterModuleKv.initDefault(0.0094048);
         shooterModuleKp.initDefault(0.0001);
@@ -111,6 +82,8 @@ public class ShooterBase extends SubsystemBase {
         erectorKp.initDefault(0.0); // TODO
         erectorKi.initDefault(0.0); // TODO
         erectorKd.initDefault(0.0); // TODO
+        erectorMaxVelocity.initDefault(0.0); // TODO
+        erectorMaxAcceleration.initDefault(0.0); // TODO
         shooterModuleKs.initDefault(0.0); // TODO
         shooterModuleKv.initDefault(0.0); // TODO
         shooterModuleKp.initDefault(0.0); // TODO
@@ -119,6 +92,45 @@ public class ShooterBase extends SubsystemBase {
       }
     }
   }
+
+  private final ErectorIO m_erectorIO;
+  private final ErectorIOInputsAutoLogged m_erectorInputs = new ErectorIOInputsAutoLogged();
+
+  private final ShooterModuleIO m_shooterModuleIO;
+  private final ShooterModuleIOInputsAutoLogged m_shooterModuleInputs =
+      new ShooterModuleIOInputsAutoLogged();
+
+  private final KickupIO m_kickupIO;
+  private final KickupIOInputsAutoLogged m_kickupInputs = new KickupIOInputsAutoLogged();
+
+  private ShooterState m_setpoint = ShooterState.TRAVEL_STATE;
+
+  private ArmFeedforward m_erectorFeedforward = new ArmFeedforward(0, 0, 0);
+  private final ProfiledPIDController m_erectorFeedback =
+      new ProfiledPIDController(0, 0, 0, new TrapezoidProfile.Constraints(0, 0));
+  private SimpleMotorFeedforward m_shooterModuleFeedforward = new SimpleMotorFeedforward(0, 0);
+
+  private final SysIdRoutine m_erectorCharacterizationRoutine;
+  private final SysIdRoutine m_shooterCharacterizationRoutine;
+
+  private final SingleJointedMechanismVisualizer m_setpointVisualizer =
+      new SingleJointedMechanismVisualizer(
+          "Shooter",
+          "Setpoint",
+          Constants.Shooter.SHOOTER_LENGTH_METERS,
+          Constants.Shooter.PIVOT_POSE,
+          ShooterState.STARTING_STATE.angle(),
+          2,
+          2);
+  private final SingleJointedMechanismVisualizer m_measuredVisualizer =
+      new SingleJointedMechanismVisualizer(
+          "Shooter",
+          "Measured",
+          Constants.Shooter.SHOOTER_LENGTH_METERS,
+          Constants.Shooter.PIVOT_POSE,
+          ShooterState.STARTING_STATE.angle(),
+          2,
+          2);
 
   public ShooterBase(ErectorIO erectorIO, ShooterModuleIO shooterModuleIO, KickupIO kickupIO) {
     this.m_erectorIO = erectorIO;
@@ -176,6 +188,15 @@ public class ShooterBase extends SubsystemBase {
         erectorKp,
         erectorKi,
         erectorKd);
+    
+    LoggedTunableNumber.ifChanged(
+        () ->
+            m_erectorFeedback.setConstraints(
+                new TrapezoidProfile.Constraints(
+                    erectorMaxVelocity.get(), erectorMaxAcceleration.get())),
+        erectorMaxVelocity,
+        erectorMaxAcceleration);
+    
 
     LoggedTunableNumber.ifChanged(
         () ->
@@ -201,14 +222,18 @@ public class ShooterBase extends SubsystemBase {
       m_shooterModuleIO.stop();
       m_erectorIO.setVoltage(0.0);
       m_kickupIO.setVoltage(0.0);
+
+      // Reset controllers
+      m_erectorFeedback.reset(
+          m_erectorInputs.absoluteAngle.getRadians(), m_erectorInputs.velocityRadPerSec);
     } else if (m_setpoint != null) {
       double erectorMeasurement = m_erectorInputs.absoluteAngle.getRadians();
-      double erectorSetpoint = m_setpoint.angle.getRadians();
+      double erectorGoal = m_setpoint.angle().getRadians();
 
       m_erectorIO.setVoltage(
           MathUtil.clamp(
-              m_erectorFeedforward.calculate(erectorSetpoint, 0.0)
-                  + m_erectorFeedback.calculate(erectorMeasurement, erectorSetpoint),
+              m_erectorFeedforward.calculate(erectorGoal, 0.0)
+                  + m_erectorFeedback.calculate(erectorMeasurement, erectorGoal),
               -12,
               12));
 
