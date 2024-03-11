@@ -20,7 +20,7 @@ import org.littletonrobotics.junction.Logger;
 public class IntakeBase extends SubsystemBase {
   public static final double WRIST_GEARING = (36.0 / 1.0);
   public static final double ROLLER_GEARING = (5.0 / 1.0);
-  public static final double INDEXER_GEARING = (1.0 / 1.0);
+  public static final double INDEXER_GEARING = (5.0 / 1.0);
 
   private final IndexerIO m_indexerIO;
   private final IndexerIOInputsAutoLogged m_indexerInputs = new IndexerIOInputsAutoLogged();
@@ -73,12 +73,12 @@ public class IntakeBase extends SubsystemBase {
   static {
     switch (Constants.getRobotType()) {
       case ROBOT_2024_COMP -> {
-        wristKp.initDefault(0.0); // TODO
-        wristKi.initDefault(0.0); // TODO
-        wristKd.initDefault(0.0); // TODO
-        wristMaxVelocity.initDefault(0.0); // TODO
-        wristMaxAcceleration.initDefault(0.0); // TODO
-        wristTolerance.initDefault(5e-3); // TODO
+        wristKp.initDefault(5.5);
+        wristKi.initDefault(0.0);
+        wristKd.initDefault(0.0);
+        wristMaxVelocity.initDefault(Math.toRadians(90));
+        wristMaxAcceleration.initDefault(Math.toRadians(180));
+        wristTolerance.initDefault(Math.toRadians(4));
       }
       case ROBOT_SIMBOT -> {
         wristKp.initDefault(0.0); // TODO
@@ -128,14 +128,22 @@ public class IntakeBase extends SubsystemBase {
           new TrapezoidProfile.Constraints(wristMaxVelocity.get(), wristMaxAcceleration.get()));
     }
 
+    if (wristTolerance.hasChanged(0)) {
+      m_wristFeedback.setTolerance(wristTolerance.get());
+    }
+
     if (DriverStation.isDisabled()) {
       m_wristGoal = Constants.Intake.STOW_ANGLE;
 
-      m_wristFeedback.reset(m_wristInputs.absoluteAngle.getRadians());
-
+      // Disable mechanism
       m_wristIO.setVoltage(0);
       m_rollerIO.setVoltage(0);
       m_indexerIO.setVoltage(0);
+
+      // Reset controllers
+      m_wristFeedback.reset(
+          m_wristInputs.absoluteAngle.getRadians(), m_wristInputs.velocityRadPerSec);
+
     } else if (m_wristGoal != null) {
       double wristMeasurement = m_wristInputs.absoluteAngle.getRadians();
       double wristGoal = m_wristGoal.getRadians();
@@ -171,10 +179,7 @@ public class IntakeBase extends SubsystemBase {
 
   @AutoLogOutput(key = "Intake/AtWristSetpoint")
   public boolean atWristGoal() {
-    var a = getWristGoal();
-    var b = getWristAngle();
-
-    return Math.hypot(a.getCos() - b.getCos(), a.getSin() - b.getSin()) < wristTolerance.get();
+    return m_wristFeedback.atGoal();
   }
 
   public void setRollersVoltage(double volts) {
