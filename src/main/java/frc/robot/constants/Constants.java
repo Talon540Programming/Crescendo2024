@@ -67,24 +67,17 @@ public final class Constants {
   }
 
   public static class Vision {
-    public enum CameraType {
-      AprilTagCamera
-    }
-
-    public record CameraConfig(
-        String cameraName, Transform3d robotToCamera, CameraType cameraType) {}
+    public record CameraConfig(String cameraName, Transform3d robotToCamera) {}
 
     public static final List<CameraConfig> configs =
         List.of(
-            new CameraConfig("Cam1", new Transform3d(), CameraType.AprilTagCamera),
-            // TODO
-            new CameraConfig("Cam2", new Transform3d(), CameraType.AprilTagCamera),
-            // TODO
-            new CameraConfig("Cam3", new Transform3d(), CameraType.AprilTagCamera),
-            // TODO
-            new CameraConfig("Cam4", new Transform3d(), CameraType.AprilTagCamera)
-            // TODO
-            );
+            new CameraConfig(
+                "UNDER_SHOOTER",
+                new Transform3d(
+                    -0.330312,
+                    0.138773,
+                    0.157061,
+                    new Rotation3d(0, Math.toRadians(-30), Math.PI))));
   }
 
   public static class Intake {
