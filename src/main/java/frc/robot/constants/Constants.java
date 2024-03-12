@@ -65,14 +65,17 @@ public final class Constants {
   }
 
   public static class Vision {
-    public enum CameraType {
-      AprilTagCamera
-    }
-
     public record CameraConfig(String cameraName, Transform3d robotToCamera) {}
 
     public static final List<CameraConfig> configs =
         List.of(
+            new CameraConfig(
+                "UNDER_SHOOTER",
+                new Transform3d(
+                    -0.330312,
+                    0.138773,
+                    0.157061,
+                    new Rotation3d(0, Math.toRadians(-30), Math.PI))),
             new CameraConfig(
                 "BACK_LEFT",
                 new Transform3d(
