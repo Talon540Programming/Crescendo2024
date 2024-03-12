@@ -23,10 +23,10 @@ public class Robot extends LoggedRobot {
     // Set up data receivers & replay source
     switch (Constants.getRobotMode()) {
       case REAL:
-        if(Constants.LOGGER_PARAMETERS.enableUSBLogging()) {
+        if (Constants.LOGGER_PARAMETERS.enableUSBLogging()) {
           // Running on a real robot, log to a USB stick
           LoggerUtil.getLogPath()
-                  .ifPresent(p -> Logger.addDataReceiver(new WPILOGWriter(p.toString())));
+              .ifPresent(p -> Logger.addDataReceiver(new WPILOGWriter(p.toString())));
         }
         Logger.addDataReceiver(new NT4Publisher());
         break;

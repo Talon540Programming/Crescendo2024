@@ -66,6 +66,8 @@ public class ShooterTeleop extends Command {
                 // Ensure we are at the shooter setpoint and yaw is aligned before ejecting the note
                 if (eject && shooterBase.atSetpoint() && withinTolerance) {
                   shooterBase.setKickupVoltage(12.0);
+                } else {
+                  shooterBase.setKickupVoltage(0.0);
                 }
               });
     } else if (ShooterDynamics.inIntakeZone(currentPose)) {
