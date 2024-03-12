@@ -7,14 +7,21 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.util.LoggerUtil.LogParameters;
 import java.util.List;
 
 public final class Constants {
   private static RobotType kRobotType = RobotType.ROBOT_SIMBOT;
+  public static final LogParameters LOGGER_PARAMETERS =
+      LogParameters.builder()
+          .enableLogger(true)
+          .enableUSBLogging(true)
+          .enable2dMechanismVisualizer(false)
+          .enable3dMechanismVisualizer(true)
+          .build();
+
   // Allows tunable values to be changed when enabled. Also adds tunable selectors to AutoSelector
   public static final boolean TUNING_MODE = false;
-  // Disable the AdvantageKit logger from running
-  public static final boolean ENABLE_LOGGING = true;
 
   public static final double kLoopPeriodSecs = 0.02;
 

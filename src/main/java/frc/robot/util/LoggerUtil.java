@@ -5,6 +5,7 @@ import frc.generated.BuildConstants;
 import frc.robot.constants.Constants;
 import java.nio.file.Path;
 import java.util.Optional;
+import lombok.Builder;
 import org.littletonrobotics.junction.Logger;
 
 public class LoggerUtil {
@@ -43,4 +44,11 @@ public class LoggerUtil {
 
     return Optional.empty();
   }
+
+  @Builder
+  public record LogParameters(
+      boolean enableLogger,
+      boolean enable2dMechanismVisualizer,
+      boolean enable3dMechanismVisualizer,
+      boolean enableUSBLogging) {}
 }

@@ -23,9 +23,11 @@ public class Robot extends LoggedRobot {
     // Set up data receivers & replay source
     switch (Constants.getRobotMode()) {
       case REAL:
-        // Running on a real robot, log to a USB stick
-        LoggerUtil.getLogPath()
-            .ifPresent(p -> Logger.addDataReceiver(new WPILOGWriter(p.toString())));
+        if(Constants.LOGGER_PARAMETERS.enableUSBLogging()) {
+          // Running on a real robot, log to a USB stick
+          LoggerUtil.getLogPath()
+                  .ifPresent(p -> Logger.addDataReceiver(new WPILOGWriter(p.toString())));
+        }
         Logger.addDataReceiver(new NT4Publisher());
         break;
       case SIM:
@@ -41,7 +43,7 @@ public class Robot extends LoggedRobot {
         break;
     }
 
-    if (Constants.ENABLE_LOGGING) Logger.start();
+    if (Constants.LOGGER_PARAMETERS.enableLogger()) Logger.start();
 
     if (Constants.getRobotMode() == Constants.RobotMode.SIM) {
       DriverStation.silenceJoystickConnectionWarning(true);
