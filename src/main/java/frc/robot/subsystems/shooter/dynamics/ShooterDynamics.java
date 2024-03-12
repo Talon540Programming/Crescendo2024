@@ -5,6 +5,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import frc.robot.constants.Constants;
 import frc.robot.constants.FieldConstants;
+import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.GeomUtil;
 import java.util.Optional;
 
@@ -25,7 +26,7 @@ public class ShooterDynamics {
   public static Optional<ShooterState> calculateSpeakerState(
       Pose2d robotPose, ChassisSpeeds robotVel) {
     // Ensure shot is within legal limits
-    if (robotPose.getX() > FieldConstants.Field.WING_LINE_X) {
+    if (AllianceFlipUtil.apply(robotPose.getX()) > FieldConstants.Field.WING_LINE_X) {
       return Optional.empty();
     }
 
