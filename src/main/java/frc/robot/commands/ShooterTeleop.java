@@ -9,6 +9,7 @@ import frc.robot.subsystems.shooter.dynamics.ShooterDynamics;
 import frc.robot.subsystems.shooter.dynamics.ShooterState;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
+import org.littletonrobotics.junction.Logger;
 
 public class ShooterTeleop extends Command {
   private static final double SHOOTING_LOW_VELOCITY = 12.5;
@@ -57,10 +58,13 @@ public class ShooterTeleop extends Command {
                 shooterBase.setSetpoint(
                     eject ? v : new ShooterState(v.angle, SHOOTING_LOW_VELOCITY));
 
+                boolean withinTolerance =
+                    ShooterDynamics.withinSpeakerYawTolerance(currentPose, currentSpeeds);
+                Logger.recordOutput("ShooterTeleop/Eject", eject);
+                Logger.recordOutput("ShooterTeleop/WithinYawTolerance", withinTolerance);
+
                 // Ensure we are at the shooter setpoint and yaw is aligned before ejecting the note
-                if (eject
-                    && shooterBase.atSetpoint()
-                    && ShooterDynamics.withinSpeakerYawTolerance(currentPose, currentSpeeds)) {
+                if (eject && shooterBase.atSetpoint() && withinTolerance) {
                   shooterBase.setKickupVoltage(12.0);
                 }
               });

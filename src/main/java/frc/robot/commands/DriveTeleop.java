@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
+import org.littletonrobotics.junction.Logger;
 
 public class DriveTeleop extends Command {
   private static final LoggedTunableNumber controllerDeadband =
@@ -40,14 +41,7 @@ public class DriveTeleop extends Command {
 
   static {
     switch (Constants.getRobotType()) {
-      case ROBOT_2024_COMP -> {
-        headingKp.initDefault(0.0); // TODO
-        headingKd.initDefault(0.0); // TODO
-        headingToleranceDegrees.initDefault(1.0);
-        headingMaxVelocityScalar.initDefault(0.8);
-        headingMaxAccelerationScalar.initDefault(0.8);
-      }
-      case ROBOT_SIMBOT -> {
+      case ROBOT_SIMBOT, ROBOT_2024_COMP -> {
         headingKp.initDefault(5.0);
         headingKd.initDefault(0.0);
         headingToleranceDegrees.initDefault(1.0);
@@ -187,10 +181,16 @@ public class DriveTeleop extends Command {
       headingSupplier
           .apply(currentPose, driveBase.getVelocity())
           .ifPresent(
-              v ->
-                  speeds.omegaRadiansPerSecond =
-                      headingController.calculate(
-                          currentPose.getRotation().getRadians(), v.getRadians()));
+              v -> {
+                speeds.omegaRadiansPerSecond =
+                    headingController.calculate(
+                        currentPose.getRotation().getRadians(), v.getRadians());
+                Logger.recordOutput(
+                    "TeleopDrive/HeadingControllerPose",
+                    new Pose2d(currentPose.getTranslation(), v));
+                Logger.recordOutput(
+                    "TeleopDrive/HeadingError", headingController.getPositionError());
+              });
     }
 
     driveBase.runVelocity(speeds);
