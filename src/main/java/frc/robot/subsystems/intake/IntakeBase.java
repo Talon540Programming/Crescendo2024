@@ -1,16 +1,11 @@
 package frc.robot.subsystems.intake;
 
-import static edu.wpi.first.units.Units.Volts;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.constants.Constants;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.SingleJointedMechanismVisualizer;
@@ -68,8 +63,6 @@ public class IntakeBase extends SubsystemBase {
           2,
           2);
 
-  private final SysIdRoutine m_wristCharacterizationRoutine;
-
   static {
     switch (Constants.getRobotType()) {
       case ROBOT_2024_COMP -> {
@@ -97,16 +90,6 @@ public class IntakeBase extends SubsystemBase {
     this.m_indexerIO = indexerIO;
 
     m_wristIO.setBrakeMode(true);
-
-    m_wristCharacterizationRoutine =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(
-                null,
-                null,
-                null,
-                (state) -> Logger.recordOutput("Intake/WristSysIdState", state.toString())),
-            new SysIdRoutine.Mechanism(
-                (voltage) -> m_wristIO.setVoltage(voltage.in(Volts)), null, this, "Wrist"));
   }
 
   @Override
@@ -193,24 +176,5 @@ public class IntakeBase extends SubsystemBase {
 
   public void setIndexerVoltage(double volts) {
     m_indexerIO.setVoltage(MathUtil.clamp(volts, -12, 12));
-  }
-
-  public Command characterizeWristQuasistatic(SysIdRoutine.Direction direction) {
-    return handleCharacterization().andThen(m_wristCharacterizationRoutine.quasistatic(direction));
-  }
-
-  public Command characterizeWristDynamic(SysIdRoutine.Direction direction) {
-    return handleCharacterization().andThen(m_wristCharacterizationRoutine.dynamic(direction));
-  }
-
-  private Command handleCharacterization() {
-    return Commands.runOnce(
-        () -> {
-          m_wristGoal = null;
-          m_wristIO.setVoltage(0);
-          m_indexerIO.setVoltage(0);
-          m_rollerIO.setVoltage(0);
-        },
-        this);
   }
 }

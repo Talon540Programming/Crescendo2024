@@ -2,7 +2,6 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveTeleop;
 import frc.robot.commands.ShooterTeleop;
 import frc.robot.constants.Constants;
@@ -94,52 +93,7 @@ public class RobotContainer {
     m_autoChooser.addDefaultOption("None", Commands.none());
   }
 
-  private void configureTunableParameters() {
-    m_autoChooser.addOption(
-        "DriveDynamicForward", m_drive.characterizeDriveDynamic(SysIdRoutine.Direction.kForward));
-    m_autoChooser.addOption(
-        "DriveDynamicReverse", m_drive.characterizeDriveDynamic(SysIdRoutine.Direction.kReverse));
-    m_autoChooser.addOption(
-        "DriveQuasistaticForward",
-        m_drive.characterizeDriveQuasistatic(SysIdRoutine.Direction.kForward));
-    m_autoChooser.addOption(
-        "DriveQuasistaticReverse",
-        m_drive.characterizeDriveQuasistatic(SysIdRoutine.Direction.kReverse));
-    m_autoChooser.addOption(
-        "ErectorDynamicForward",
-        m_shooter.characterizeErectorDynamic(SysIdRoutine.Direction.kForward));
-    m_autoChooser.addOption(
-        "ErectorDynamicReverse",
-        m_shooter.characterizeErectorDynamic(SysIdRoutine.Direction.kReverse));
-    m_autoChooser.addOption(
-        "ErectorQuasistaticForward",
-        m_shooter.characterizeErectorQuasistatic(SysIdRoutine.Direction.kForward));
-    m_autoChooser.addOption(
-        "ErectorQuasistaticReverse",
-        m_shooter.characterizeErectorQuasistatic(SysIdRoutine.Direction.kReverse));
-    m_autoChooser.addOption(
-        "ShooterDynamicForward",
-        m_shooter.characterizeShooterDynamic(SysIdRoutine.Direction.kForward));
-    m_autoChooser.addOption(
-        "ShooterDynamicReverse",
-        m_shooter.characterizeShooterDynamic(SysIdRoutine.Direction.kReverse));
-    m_autoChooser.addOption(
-        "ShooterQuasistaticForward",
-        m_shooter.characterizeShooterQuasistatic(SysIdRoutine.Direction.kForward));
-    m_autoChooser.addOption(
-        "ShooterQuasistaticReverse",
-        m_shooter.characterizeShooterQuasistatic(SysIdRoutine.Direction.kReverse));
-    m_autoChooser.addOption(
-        "WristDynamicForward", m_intake.characterizeWristDynamic(SysIdRoutine.Direction.kForward));
-    m_autoChooser.addOption(
-        "WristDynamicReverse", m_intake.characterizeWristDynamic(SysIdRoutine.Direction.kReverse));
-    m_autoChooser.addOption(
-        "WristQuasistaticForward",
-        m_intake.characterizeWristQuasistatic(SysIdRoutine.Direction.kForward));
-    m_autoChooser.addOption(
-        "WristQuasistaticReverse",
-        m_intake.characterizeWristQuasistatic(SysIdRoutine.Direction.kReverse));
-  }
+  private void configureTunableParameters() {}
 
   private void configureButtonBindings() {
     m_drive.setDefaultCommand(

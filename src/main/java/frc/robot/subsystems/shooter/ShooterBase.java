@@ -1,8 +1,5 @@
 package frc.robot.subsystems.shooter;
 
-import static edu.wpi.first.units.Units.Seconds;
-import static edu.wpi.first.units.Units.Volts;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -10,10 +7,7 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.shooter.dynamics.ShooterState;
 import frc.robot.util.LoggedTunableNumber;
@@ -111,9 +105,6 @@ public class ShooterBase extends SubsystemBase {
       new ProfiledPIDController(0, 0, 0, new TrapezoidProfile.Constraints(0, 0));
   private SimpleMotorFeedforward m_shooterModuleFeedforward = new SimpleMotorFeedforward(0, 0);
 
-  private final SysIdRoutine m_erectorCharacterizationRoutine;
-  private final SysIdRoutine m_shooterCharacterizationRoutine;
-
   private final SingleJointedMechanismVisualizer m_setpointVisualizer =
       new SingleJointedMechanismVisualizer(
           "Shooter",
@@ -139,29 +130,6 @@ public class ShooterBase extends SubsystemBase {
     this.m_kickupIO = kickupIO;
 
     m_erectorIO.setBrakeMode(true);
-
-    m_erectorCharacterizationRoutine =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(
-                null,
-                Volts.of(1),
-                null,
-                (state) -> Logger.recordOutput("Shooter/ErectorSysIdState", state.toString())),
-            new SysIdRoutine.Mechanism(
-                (voltage) -> m_erectorIO.setVoltage(voltage.in(Volts)), null, this, "Erector"));
-
-    m_shooterCharacterizationRoutine =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(
-                null,
-                null,
-                Seconds.of(7.5),
-                (state) -> Logger.recordOutput("Shooter/ShooterSysIdState", state.toString())),
-            new SysIdRoutine.Mechanism(
-                (voltage) -> m_shooterModuleIO.runCharacterizationVoltage(voltage.in(Volts)),
-                null,
-                this,
-                "Shooter"));
   }
 
   @Override
@@ -282,40 +250,5 @@ public class ShooterBase extends SubsystemBase {
 
   public boolean holdingNote() {
     return m_kickupInputs.beamBreakBroken;
-  }
-
-  public Command characterizeErectorQuasistatic(SysIdRoutine.Direction direction) {
-    return handleCharacterization()
-        .andThen(m_erectorCharacterizationRoutine.quasistatic(direction));
-  }
-
-  public Command characterizeErectorDynamic(SysIdRoutine.Direction direction) {
-    return handleCharacterization().andThen(m_erectorCharacterizationRoutine.dynamic(direction));
-  }
-
-  public Command characterizeShooterQuasistatic(SysIdRoutine.Direction direction) {
-    return handleCharacterization()
-        .andThen(m_shooterCharacterizationRoutine.quasistatic(direction));
-  }
-
-  public Command characterizeShooterDynamic(SysIdRoutine.Direction direction) {
-    return handleCharacterization().andThen(m_shooterCharacterizationRoutine.dynamic(direction));
-  }
-
-  /**
-   * Stops the subsystem from going to the setpoint
-   *
-   * @return Command that sets up the subsystem for characterization. This should be run before the
-   *     characterization command.
-   */
-  private Command handleCharacterization() {
-    return Commands.runOnce(
-        () -> {
-          m_setpoint = null;
-          m_erectorIO.setVoltage(0);
-          m_kickupIO.setVoltage(0);
-          m_shooterModuleIO.stop();
-        },
-        this);
   }
 }

@@ -1,7 +1,5 @@
 package frc.robot.subsystems.drive;
 
-import static edu.wpi.first.units.Units.Volts;
-
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -10,9 +8,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.drive.GyroIO.GyroIOInputs;
 import frc.robot.util.PoseEstimator;
@@ -40,8 +36,6 @@ public class DriveBase extends SubsystemBase {
   private final Module[] m_modules = new Module[4]; // FL, FR, BL, BR
 
   private Rotation2d m_lastGyroRotation = new Rotation2d();
-
-  private final SysIdRoutine m_driveCharacterizationRoutine;
 
   static {
     switch (Constants.getRobotType()) {
@@ -80,22 +74,6 @@ public class DriveBase extends SubsystemBase {
     m_modules[1] = new Module(1, frontRightIO);
     m_modules[2] = new Module(2, backLeftIO);
     m_modules[3] = new Module(3, backRightIO);
-
-    m_driveCharacterizationRoutine =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(
-                null,
-                null,
-                null,
-                (state) -> Logger.recordOutput("Drive/SysIdState", state.toString())),
-            new SysIdRoutine.Mechanism(
-                (voltage) -> {
-                  for (int i = 0; i < 4; i++) {
-                    m_modules[i].runCharacterizationVoltage(voltage.in(Volts));
-                  }
-                },
-                null,
-                this));
   }
 
   public void periodic() {
@@ -219,14 +197,6 @@ public class DriveBase extends SubsystemBase {
       states[i] = m_modules[i].getState();
     }
     return states;
-  }
-
-  public Command characterizeDriveQuasistatic(SysIdRoutine.Direction direction) {
-    return m_driveCharacterizationRoutine.quasistatic(direction);
-  }
-
-  public Command characterizeDriveDynamic(SysIdRoutine.Direction direction) {
-    return m_driveCharacterizationRoutine.dynamic(direction);
   }
 
   public static Translation2d[] getModuleTranslations(double trackWidthX, double trackWidthY) {
