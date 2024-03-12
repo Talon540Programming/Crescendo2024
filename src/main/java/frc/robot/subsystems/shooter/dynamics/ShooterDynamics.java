@@ -34,11 +34,11 @@ public class ShooterDynamics {
       return Optional.empty();
     }
 
-    // TODO, determine if linear approximation is enough or if regression is needed to determine the
-    //  shooter angle
     var pivotTranslation = calculatePivotTranslation(robotPose);
     var targetTranslation = FieldConstants.Speaker.centerSpeaker.get();
 
+    // TODO, determine if linear approximation is enough or if regression is needed to determine the
+    //  shooter angle
     // Calculate the pitch angle to the target
     var pivotToTargetAngle =
         Rotation2d.fromRadians(
@@ -133,6 +133,6 @@ public class ShooterDynamics {
     var currentAngle = robotPose.getRotation();
     var requiredRobotAngle = calculateRobotSpeakerAngle(robotPose.getTranslation(), speeds);
     return Math.abs(requiredRobotAngle.getDegrees() - currentAngle.getDegrees())
-        >= SHOOTER_SPEAKER_YAW_ANGLE_TOLERANCE_DEGREES;
+        <= SHOOTER_SPEAKER_YAW_ANGLE_TOLERANCE_DEGREES;
   }
 }
