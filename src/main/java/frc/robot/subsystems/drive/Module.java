@@ -11,6 +11,7 @@ import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.TimestampedSensorMeasurement;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 import org.littletonrobotics.junction.Logger;
 
 public class Module {
@@ -24,6 +25,8 @@ public class Module {
   private Rotation2d m_turnRelativeOffset = null;
   private double m_lastPositionMeters;
 
+  /** Returns the module position deltas received this cycle. */
+  @Getter
   private List<TimestampedSensorMeasurement<SwerveModulePosition>> positionDeltas = List.of();
 
   private static final LoggedTunableNumber driveKp = new LoggedTunableNumber("DriveKp");
@@ -218,10 +221,5 @@ public class Module {
   /** Returns the module state (turn angle and drive velocity). */
   public SwerveModuleState getState() {
     return new SwerveModuleState(getVelocityMetersPerSec(), getAngle());
-  }
-
-  /** Returns the module position deltas received this cycle. */
-  public List<TimestampedSensorMeasurement<SwerveModulePosition>> getPositionDeltas() {
-    return positionDeltas;
   }
 }

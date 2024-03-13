@@ -1,9 +1,10 @@
 package frc.robot.util;
 
 import edu.wpi.first.math.MathSharedStore;
+import lombok.Getter;
 
 public class TimestampedSensorMeasurement<T> {
-  private final double timestampSeconds;
+  @Getter private final double timestampSeconds;
   private final T measurementValue;
 
   public TimestampedSensorMeasurement(double timestampSeconds, T measurementValue) {
@@ -13,10 +14,6 @@ public class TimestampedSensorMeasurement<T> {
 
   public TimestampedSensorMeasurement(T measurementValue) {
     this(MathSharedStore.getTimestamp(), measurementValue);
-  }
-
-  public double getTimestampSeconds() {
-    return timestampSeconds;
   }
 
   public T getMeasurement() {

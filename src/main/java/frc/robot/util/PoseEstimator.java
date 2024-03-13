@@ -12,6 +12,7 @@ import edu.wpi.first.math.numbers.N3;
 import java.util.NoSuchElementException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import lombok.Getter;
 
 public class PoseEstimator {
   // Standard deviations of the pose estimate (x position in meters, y position in meters, and
@@ -23,7 +24,7 @@ public class PoseEstimator {
 
   private static PoseEstimator instance;
 
-  private Pose2d pose = new Pose2d();
+  @Getter private Pose2d pose = new Pose2d();
   private final Matrix<N3, N1> m_q = new Matrix<>(Nat.N3(), Nat.N1());
   private static final double kBufferDurationSec = 0.3;
   private final TimeInterpolatableBuffer<OdometryUpdate> m_poseBuffer =
@@ -40,10 +41,6 @@ public class PoseEstimator {
     for (int i = 0; i < 3; ++i) {
       m_q.set(i, 0, stateStdDevs.get(i, 0) * stateStdDevs.get(i, 0));
     }
-  }
-
-  public Pose2d getPose() {
-    return pose;
   }
 
   public void resetPose(Pose2d pose) {
