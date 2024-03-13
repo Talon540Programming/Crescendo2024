@@ -22,25 +22,24 @@ public class HardwareIds {
 
     public static final int kErectorLeaderId = 15;
     public static final int kErectorFollowerId = 16;
-    public static final int kErectorAbsoluteEncoderPort = 3;
-    public static final int kErectorRelativeEncoderAPort = 4;
-    public static final int kErectorRelativeEncoderBPort = 5;
+    public static final int kErectorAbsoluteEncoderPort = 5;
+    public static final int kErectorRelativeEncoderAPort = 6;
+    public static final int kErectorRelativeEncoderBPort = 7;
 
-    public static final int kShooterLeaderId = 17;
-    public static final int kShooterFollowerId = 18;
+    public static final int kShooterTopId = 17;
+    public static final int kShooterBottomId = 18;
 
     public static final int kShooterKickupId = 19;
-    public static final int kShooterKickupForwardBeamBreakPort = 7; // TODO
-    public static final int kShooterKickupRearBeamBreakPort = 8; // TODO
+    public static final int kShooterKickupBeamBreakPort = 1;
 
     public static final int kIntakeWristId = 20;
     public static final int kIntakeRollersId = 21;
-    public static final int kIntakeBeamBreakPort = 6;
+    public static final int kIntakeBeamBreakPort = 0;
 
     public static final int kIndexerId = 22;
 
-    public static final int kIntakeWristAbsoluteEncoderPort = 0;
-    public static final int kIntakeWristRelativeEncoderAPort = 1;
-    public static final int kIntakeWristRelativeEncoderBPort = 2;
+    public static final int kIntakeWristAbsoluteEncoderPort = 2;
+    public static final int kIntakeWristRelativeEncoderAPort = 3;
+    public static final int kIntakeWristRelativeEncoderBPort = 4;
   }
 }

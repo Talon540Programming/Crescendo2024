@@ -16,8 +16,7 @@ public class KickupIOSim implements KickupIO {
   public void updateInputs(KickupIOInputs inputs) {
     m_sim.update(Constants.kLoopPeriodSecs);
 
-    inputs.forwardBeamBreakBroken = false;
-    inputs.rearBeamBreakBroken = false;
+    inputs.beamBreakBroken = false;
     inputs.velocityRadPerSec = m_sim.getAngularVelocityRadPerSec();
     inputs.appliedVolts = appliedVoltage;
     inputs.currentAmps = new double[] {m_sim.getCurrentDrawAmps()};

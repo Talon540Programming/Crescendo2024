@@ -15,7 +15,7 @@ public class ErectorIOSim implements ErectorIO {
         new SingleJointedArmSim(
             DCMotor.getNEO(2),
             ShooterBase.ERECTOR_GEARING,
-            0.87,
+            1.02725633,
             Constants.Shooter.SHOOTER_LENGTH_METERS,
             Constants.Shooter.MIN_SHOOTER_ANGLE.getRadians(),
             Constants.Shooter.MAX_SHOOTER_ANGLE.getRadians(),
