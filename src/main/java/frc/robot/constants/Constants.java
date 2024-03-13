@@ -7,6 +7,7 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
+import java.nio.file.Path;
 import java.util.List;
 
 public final class Constants {
@@ -65,38 +66,40 @@ public final class Constants {
   }
 
   public static class Vision {
-    public record CameraConfig(String cameraName, Transform3d robotToCamera) {}
+    public record CameraConfig(
+        String cameraName, Transform3d robotToCamera, Path calibrationPath) {}
 
     public static final List<CameraConfig> configs =
         List.of(
             new CameraConfig(
                 "UNDER_SHOOTER",
                 new Transform3d(
-                    -0.330312,
-                    0.138773,
-                    0.157061,
-                    new Rotation3d(0, Math.toRadians(-30), Math.PI))),
+                    -0.330312, 0.138773, 0.157061, new Rotation3d(0, Math.toRadians(-30), Math.PI)),
+                Path.of("camera_calibrations/photon_calibration_UNDER_SHOOTER_1280x720.json")),
             new CameraConfig(
                 "BACK_LEFT",
                 new Transform3d(
                     -0.285206,
                     0.283806,
                     0.272624,
-                    new Rotation3d(0, Math.toRadians(-20), Math.toRadians(135)))),
+                    new Rotation3d(0, Math.toRadians(-20), Math.toRadians(135))),
+                Path.of("camera_calibrations/photon_calibration_BACK_LEFT_1280x720.json")),
             new CameraConfig(
                 "FRONT_LEFT",
                 new Transform3d(
                     0.278740,
                     0.280968,
                     0.272098,
-                    new Rotation3d(0, Math.toRadians(-45), Math.toRadians(-22.5)))),
+                    new Rotation3d(0, Math.toRadians(-45), Math.toRadians(-22.5))),
+                Path.of("camera_calibrations/photon_calibration_FRONT_LEFT_1280x720.json")),
             new CameraConfig(
                 "FRONT_RIGHT",
                 new Transform3d(
                     0.281034,
                     -0.278751,
                     0.272098,
-                    new Rotation3d(0, Math.toRadians(-45), Math.toRadians(67.5)))));
+                    new Rotation3d(0, Math.toRadians(-45), Math.toRadians(67.5))),
+                Path.of("camera_calibrations/photon_calibration_FRONT_RIGHT_1280x720.json")));
   }
 
   public static class Intake {
