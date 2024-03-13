@@ -16,7 +16,116 @@
     0,
     0
   ],
-  "cameras": [],
+  "cameras": [
+    {
+      "name": "UNDER_SHOOTER",
+      "position": [
+        -0.330312,
+        0.138773,
+        0.157061
+      ],
+      "rotations": [
+        {
+          "axis": "x",
+          "degrees": 0
+        },
+        {
+          "axis": "y",
+          "degrees": -30
+        },
+        {
+          "axis": "z",
+          "degrees": 180
+        }
+      ],
+      "resolution": [
+        1280,
+        720
+      ],
+      "fov": 75
+    },
+    {
+      "name": "BACK_LEFT",
+      "position": [
+        -0.285206,
+        0.283806,
+        0.272624
+      ],
+      "rotations": [
+        {
+          "axis": "x",
+          "degrees": 0
+        },
+        {
+          "axis": "y",
+          "degrees": -20
+        },
+        {
+          "axis": "z",
+          "degrees": 135
+        }
+      ],
+      "resolution": [
+        1280,
+        720
+      ],
+      "fov": 75
+    },
+    {
+      "name": "FRONT_LEFT",
+      "position": [
+        0.278740,
+        0.280968,
+        0.272098
+      ],
+      "rotations": [
+        {
+          "axis": "x",
+          "degrees": 0
+        },
+        {
+          "axis": "y",
+          "degrees": -45
+        },
+        {
+          "axis": "z",
+          "degrees": -22.5
+        }
+      ],
+      "resolution": [
+        1280,
+        720
+      ],
+      "fov": 75
+    },
+    {
+      "name": "FRONT_RIGHT",
+      "position": [
+        0.281034,
+        -0.278751,
+        0.272098
+      ],
+      "rotations": [
+        {
+          "axis": "x",
+          "degrees": 0
+        },
+        {
+          "axis": "y",
+          "degrees": -45
+        },
+        {
+          "axis": "z",
+          "degrees": 67.5
+        }
+      ],
+      "resolution": [
+        1280,
+        720
+      ],
+      "fov": 75
+    }
+  ],
   "components": [
     {
       "zeroedRotations": [
@@ -43,21 +152,21 @@
       "zeroedRotations": [
         {
           "axis": "z",
-          "degrees": 0
+          "degrees": 90
         },
         {
           "axis": "x",
-          "degrees": 180
+          "degrees": 0
         },
         {
           "axis": "y",
-          "degrees": 55
+          "degrees": 90
         }
       ],
       "zeroedPosition": [
-        0.1512,
         0,
-        0.0365
+        0,
+        0
       ]
     }
   ]
