@@ -153,10 +153,10 @@ public class IntakeBase extends SubsystemBase {
     }
 
     if (m_wristGoal != null) {
-      m_goalVisualizer.update(m_wristGoal);
+      m_goalVisualizer.update(Rotation2d.fromRadians(Math.PI).minus(m_wristGoal));
     }
 
-    m_measuredVisualizer.update(getWristAngle());
+    m_measuredVisualizer.update(Rotation2d.fromRadians(Math.PI).minus(getWristAngle()));
   }
 
   public Rotation2d getWristAngle() {
