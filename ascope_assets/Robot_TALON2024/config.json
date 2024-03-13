@@ -131,7 +131,7 @@
       "zeroedRotations": [
         {
           "axis": "z",
-          "degrees": 90
+          "degrees": 0
         },
         {
           "axis": "x",
@@ -139,7 +139,7 @@
         },
         {
           "axis": "y",
-          "degrees": 90
+          "degrees": -90
         }
       ],
       "zeroedPosition": [
@@ -152,15 +152,15 @@
       "zeroedRotations": [
         {
           "axis": "z",
-          "degrees": 90
-        },
-        {
-          "axis": "x",
           "degrees": 0
         },
         {
+          "axis": "x",
+          "degrees": -90
+        },
+        {
           "axis": "y",
-          "degrees": 90
+          "degrees": 0
         }
       ],
       "zeroedPosition": [

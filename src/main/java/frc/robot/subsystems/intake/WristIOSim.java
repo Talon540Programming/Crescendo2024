@@ -12,7 +12,7 @@ public class WristIOSim implements WristIO {
   public WristIOSim() {
     m_sim =
         new SingleJointedArmSim(
-            DCMotor.getNEO(2),
+            DCMotor.getNEO(1),
             IntakeBase.WRIST_GEARING,
             0.43901184,
             Constants.Intake.INTAKE_LENGTH_METERS,
