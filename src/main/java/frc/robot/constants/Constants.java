@@ -1,14 +1,19 @@
 package frc.robot.constants;
 
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import java.nio.file.Path;
 import java.util.List;
+import lombok.Builder;
 
 public final class Constants {
   private static RobotType kRobotType = RobotType.ROBOT_SIMBOT;
@@ -66,40 +71,63 @@ public final class Constants {
   }
 
   public static class Vision {
+    @Builder
     public record CameraConfig(
-        String cameraName, Transform3d robotToCamera, Path calibrationPath) {}
+        String cameraName,
+        Transform3d robotToCamera,
+        Matrix<N3, N1> cameraBias,
+        Path calibrationPath) {}
 
     public static final List<CameraConfig> configs =
         List.of(
-            new CameraConfig(
-                "UNDER_SHOOTER",
-                new Transform3d(
-                    -0.330312, 0.138773, 0.157061, new Rotation3d(0, Math.toRadians(-30), Math.PI)),
-                Path.of("camera_calibrations/photon_calibration_UNDER_SHOOTER_1280x720.json")),
-            new CameraConfig(
-                "BACK_LEFT",
-                new Transform3d(
-                    -0.285206,
-                    0.283806,
-                    0.272624,
-                    new Rotation3d(0, Math.toRadians(-20), Math.toRadians(135))),
-                Path.of("camera_calibrations/photon_calibration_BACK_LEFT_1280x720.json")),
-            new CameraConfig(
-                "FRONT_LEFT",
-                new Transform3d(
-                    0.278740,
-                    0.280968,
-                    0.272098,
-                    new Rotation3d(0, Math.toRadians(-45), Math.toRadians(-22.5))),
-                Path.of("camera_calibrations/photon_calibration_FRONT_LEFT_1280x720.json")),
-            new CameraConfig(
-                "FRONT_RIGHT",
-                new Transform3d(
-                    0.281034,
-                    -0.278751,
-                    0.272098,
-                    new Rotation3d(0, Math.toRadians(-45), Math.toRadians(67.5))),
-                Path.of("camera_calibrations/photon_calibration_FRONT_RIGHT_1280x720.json")));
+            CameraConfig.builder()
+                .cameraName("UNDER_SHOOTER")
+                .robotToCamera(
+                    new Transform3d(
+                        -0.330312,
+                        0.138773,
+                        0.157061,
+                        new Rotation3d(0, Math.toRadians(-30), Math.PI)))
+                .cameraBias(VecBuilder.fill(1.0, 1.0, 1.0))
+                .calibrationPath(
+                    Path.of("camera_calibrations/photon_calibration_UNDER_SHOOTER_1280x720.json"))
+                .build(),
+            CameraConfig.builder()
+                .cameraName("BACK_LEFT")
+                .robotToCamera(
+                    new Transform3d(
+                        -0.285206,
+                        0.283806,
+                        0.272624,
+                        new Rotation3d(0, Math.toRadians(-20), Math.toRadians(135))))
+                .cameraBias(VecBuilder.fill(1.0, 1.0, 1.0))
+                .calibrationPath(
+                    Path.of("camera_calibrations/photon_calibration_BACK_LEFT_1280x720.json"))
+                .build(),
+            CameraConfig.builder()
+                .cameraName("FRONT_LEFT")
+                .robotToCamera(
+                    new Transform3d(
+                        0.278740,
+                        0.280968,
+                        0.272098,
+                        new Rotation3d(0, Math.toRadians(-45), Math.toRadians(-22.5))))
+                .cameraBias(VecBuilder.fill(1.0, 1.0, 1.0))
+                .calibrationPath(
+                    Path.of("camera_calibrations/photon_calibration_FRONT_LEFT_1280x720.json"))
+                .build(),
+            CameraConfig.builder()
+                .cameraName("FRONT_RIGHT")
+                .robotToCamera(
+                    new Transform3d(
+                        0.281034,
+                        -0.278751,
+                        0.272098,
+                        new Rotation3d(0, Math.toRadians(-45), Math.toRadians(67.5))))
+                .cameraBias(VecBuilder.fill(1.0, 1.0, 1.0))
+                .calibrationPath(
+                    Path.of("camera_calibrations/photon_calibration_FRONT_RIGHT_1280x720.json"))
+                .build());
   }
 
   public static class Intake {

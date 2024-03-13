@@ -2,8 +2,11 @@ package frc.robot.subsystems.vision;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.wpi.first.math.MatBuilder;
+import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import frc.robot.constants.Constants;
 import frc.robot.util.PoseEstimator;
 import java.io.IOException;
@@ -22,8 +25,12 @@ public class VisionIOSim extends VisionIOPhotonCamera {
     }
   }
 
-  public VisionIOSim(String cameraName, Transform3d robotToCamera, Path calibrationPath) {
-    super(cameraName, robotToCamera);
+  public VisionIOSim(
+      String cameraName,
+      Transform3d robotToCamera,
+      Matrix<N3, N1> cameraBias,
+      Path calibrationPath) {
+    super(cameraName, robotToCamera, cameraBias);
     var cameraProps = new SimCameraProperties();
     // Photon camera sim is currently out of date with the calibration export model, so we can only
     // pull the camera intrinsics and distortion from it
