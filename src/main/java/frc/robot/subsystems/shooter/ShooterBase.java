@@ -75,20 +75,20 @@ public class ShooterBase extends SubsystemBase {
         shooterModuleKd.initDefault(0.0);
       }
       case ROBOT_SIMBOT -> {
-        erectorKs.initDefault(0.0); // TODO
-        erectorKg.initDefault(0.0); // TODO
-        erectorKv.initDefault(0.0); // TODO
-        erectorKa.initDefault(0.0); // TODO
-        erectorKp.initDefault(0.0); // TODO
-        erectorKi.initDefault(0.0); // TODO
-        erectorKd.initDefault(0.0); // TODO
-        erectorMaxVelocity.initDefault(0.0); // TODO
-        erectorMaxAcceleration.initDefault(0.0); // TODO
-        shooterModuleKs.initDefault(0.0); // TODO
-        shooterModuleKv.initDefault(0.0); // TODO
-        shooterModuleKp.initDefault(0.0); // TODO
-        shooterModuleKi.initDefault(0.0); // TODO
-        shooterModuleKd.initDefault(0.0); // TODO
+        erectorKs.initDefault(0.0);
+        erectorKg.initDefault(.8);
+        erectorKv.initDefault(0.0);
+        erectorKa.initDefault(0.0);
+        erectorKp.initDefault(5.5);
+        erectorKi.initDefault(0.0);
+        erectorKd.initDefault(0.0);
+        erectorMaxVelocity.initDefault(Math.PI);
+        erectorMaxAcceleration.initDefault(1.5 * Math.PI);
+        shooterModuleKs.initDefault(0.0);
+        shooterModuleKv.initDefault(0.0);
+        shooterModuleKp.initDefault(9.5);
+        shooterModuleKi.initDefault(0.0);
+        shooterModuleKd.initDefault(0.0);
       }
     }
   }
