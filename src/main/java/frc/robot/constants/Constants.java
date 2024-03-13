@@ -88,7 +88,7 @@ public final class Constants {
                         0.138773,
                         0.157061,
                         new Rotation3d(0, Math.toRadians(-30), Math.PI)))
-                .cameraBias(VecBuilder.fill(1.0, 1.0, 1.0))
+                .cameraBias(VecBuilder.fill(1.0, 1.0, 1.0)) // TODO
                 .calibrationPath(
                     Path.of("camera_calibrations/photon_calibration_UNDER_SHOOTER_1280x720.json"))
                 .build(),
@@ -100,7 +100,7 @@ public final class Constants {
                         0.283806,
                         0.272624,
                         new Rotation3d(0, Math.toRadians(-20), Math.toRadians(135))))
-                .cameraBias(VecBuilder.fill(1.0, 1.0, 1.0))
+                .cameraBias(VecBuilder.fill(1.0, 1.0, 1.0)) // TODO
                 .calibrationPath(
                     Path.of("camera_calibrations/photon_calibration_BACK_LEFT_1280x720.json"))
                 .build(),
@@ -112,7 +112,7 @@ public final class Constants {
                         0.280968,
                         0.272098,
                         new Rotation3d(0, Math.toRadians(-45), Math.toRadians(-22.5))))
-                .cameraBias(VecBuilder.fill(1.0, 1.0, 1.0))
+                .cameraBias(VecBuilder.fill(1.0, 1.0, 1.0)) // TODO
                 .calibrationPath(
                     Path.of("camera_calibrations/photon_calibration_FRONT_LEFT_1280x720.json"))
                 .build(),
@@ -124,7 +124,7 @@ public final class Constants {
                         -0.278751,
                         0.272098,
                         new Rotation3d(0, Math.toRadians(-45), Math.toRadians(67.5))))
-                .cameraBias(VecBuilder.fill(1.0, 1.0, 1.0))
+                .cameraBias(VecBuilder.fill(1.0, 1.0, 1.0)) // TODO
                 .calibrationPath(
                     Path.of("camera_calibrations/photon_calibration_FRONT_RIGHT_1280x720.json"))
                 .build());
