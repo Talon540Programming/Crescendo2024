@@ -22,7 +22,7 @@ public class ShooterState implements StructSerializable {
         angleTolerance.initDefault(0.01);
       }
       case ROBOT_2024_COMP -> {
-        velocityTolerance.initDefault(0.7);
+        velocityTolerance.initDefault(1.5);
         angleTolerance.initDefault(0.1);
       }
     }

@@ -50,8 +50,8 @@ public class ShooterBase extends SubsystemBase {
 
   static {
     switch (Constants.getRobotType()) {
-        // https://www.reca.lc/arm?armMass=%7B%22s%22%3A19.3879039%2C%22u%22%3A%22lbs%22%7D&comLength=%7B%22s%22%3A10.399172%2C%22u%22%3A%22in%22%7D&currentLimit=%7B%22s%22%3A40%2C%22u%22%3A%22A%22%7D&efficiency=100&endAngle=%7B%22s%22%3A90%2C%22u%22%3A%22deg%22%7D&iterationLimit=10000&motor=%7B%22quantity%22%3A2%2C%22name%22%3A%22NEO%22%7D&ratio=%7B%22magnitude%22%3A87.3978%2C%22ratioType%22%3A%22Reduction%22%7D&startAngle=%7B%22s%22%3A-215%2C%22u%22%3A%22deg%22%7D
       case ROBOT_2024_COMP -> {
+        // https://www.reca.lc/arm?armMass=%7B%22s%22%3A19.3879039%2C%22u%22%3A%22lbs%22%7D&comLength=%7B%22s%22%3A10.399172%2C%22u%22%3A%22in%22%7D&currentLimit=%7B%22s%22%3A40%2C%22u%22%3A%22A%22%7D&efficiency=100&endAngle=%7B%22s%22%3A90%2C%22u%22%3A%22deg%22%7D&iterationLimit=10000&motor=%7B%22quantity%22%3A2%2C%22name%22%3A%22NEO%22%7D&ratio=%7B%22magnitude%22%3A87.3978%2C%22ratioType%22%3A%22Reduction%22%7D&startAngle=%7B%22s%22%3A-215%2C%22u%22%3A%22deg%22%7D
         erectorKs.initDefault(0.0);
         erectorKg.initDefault(0.485);
         erectorKv.initDefault(0.0);
@@ -59,13 +59,12 @@ public class ShooterBase extends SubsystemBase {
         erectorKp.initDefault(5.5);
         erectorKi.initDefault(0.0);
         erectorKd.initDefault(0.0);
-
         erectorMaxVelocity.initDefault(Math.PI);
         erectorMaxAcceleration.initDefault(1.5 * Math.PI);
-
-        shooterModuleKs.initDefault(0.5);
-        shooterModuleKv.initDefault(0.0094048);
-        shooterModuleKp.initDefault(0.0001);
+        // https://www.reca.lc/flywheel?currentLimit=%7B%22s%22%3A40%2C%22u%22%3A%22A%22%7D&efficiency=100&flywheelMomentOfInertia=%7B%22s%22%3A0%2C%22u%22%3A%22in2%2Albs%22%7D&flywheelRadius=%7B%22s%22%3A0%2C%22u%22%3A%22in%22%7D&flywheelRatio=%7B%22magnitude%22%3A1%2C%22ratioType%22%3A%22Reduction%22%7D&flywheelWeight=%7B%22s%22%3A0%2C%22u%22%3A%22lbs%22%7D&motor=%7B%22quantity%22%3A1%2C%22name%22%3A%22NEO%22%7D&motorRatio=%7B%22magnitude%22%3A1.96153846154%2C%22ratioType%22%3A%22Step-up%22%7D&projectileRadius=%7B%22s%22%3A2%2C%22u%22%3A%22in%22%7D&projectileWeight=%7B%22s%22%3A8.3%2C%22u%22%3A%22oz%22%7D&shooterMomentOfInertia=%7B%22s%22%3A36.655768%2C%22u%22%3A%22in2%2Albs%22%7D&shooterRadius=%7B%22s%22%3A1.5%2C%22u%22%3A%22in%22%7D&shooterTargetSpeed=%7B%22s%22%3A11000%2C%22u%22%3A%22rpm%22%7D&shooterWeight=%7B%22s%22%3A1.5110941%2C%22u%22%3A%22lbs%22%7D&useCustomFlywheelMoi=0&useCustomShooterMoi=1
+        shooterModuleKs.initDefault(0.15);
+        shooterModuleKv.initDefault(0.26632);
+        shooterModuleKp.initDefault(0.00025);
         shooterModuleKi.initDefault(0.0);
         shooterModuleKd.initDefault(0.0);
       }
@@ -205,15 +204,14 @@ public class ShooterBase extends SubsystemBase {
               -12,
               12));
 
-      double topSetpoint = m_setpoint.shooterTopVelocityMetersPerSecond / SHOOTER_RADIUS_METERS;
-      double bottomSetpoint =
-          m_setpoint.shooterBottomVelocityMetersPerSecond / SHOOTER_RADIUS_METERS;
+      double topSetpointMetersPerSecond = m_setpoint.shooterTopVelocityMetersPerSecond;
+      double bottomSetpointMetersPerSecond = m_setpoint.shooterBottomVelocityMetersPerSecond;
 
       m_shooterModuleIO.runSetpoint(
-          topSetpoint,
-          bottomSetpoint,
-          m_shooterModuleFeedforward.calculate(topSetpoint),
-          m_shooterModuleFeedforward.calculate(bottomSetpoint));
+          topSetpointMetersPerSecond / SHOOTER_RADIUS_METERS,
+          bottomSetpointMetersPerSecond / SHOOTER_RADIUS_METERS,
+          m_shooterModuleFeedforward.calculate(topSetpointMetersPerSecond),
+          m_shooterModuleFeedforward.calculate(bottomSetpointMetersPerSecond));
     }
 
     if (m_setpoint != null) {
@@ -237,6 +235,10 @@ public class ShooterBase extends SubsystemBase {
         m_erectorInputs.absoluteAngle,
         m_shooterModuleInputs.topVelocityRadPerSecond * SHOOTER_RADIUS_METERS,
         m_shooterModuleInputs.bottomVelocityRadPerSecond * SHOOTER_RADIUS_METERS);
+  }
+
+  public void runShooterCharacterizationVoltage(double voltage) {
+    m_shooterModuleIO.runCharacterizationVoltage(voltage);
   }
 
   @AutoLogOutput(key = "Shooter/AtSetpoint")
