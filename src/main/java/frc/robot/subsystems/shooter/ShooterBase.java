@@ -7,7 +7,9 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.commands.FeedForwardCharacterization;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.shooter.dynamics.ShooterState;
 import frc.robot.util.LoggedTunableNumber;
@@ -237,8 +239,19 @@ public class ShooterBase extends SubsystemBase {
         m_shooterModuleInputs.bottomVelocityRadPerSecond * SHOOTER_RADIUS_METERS);
   }
 
-  public void runShooterCharacterizationVoltage(double voltage) {
-    m_shooterModuleIO.runCharacterizationVoltage(voltage);
+  public Command getShooterCharacterizationCommand() {
+    return new FeedForwardCharacterization(
+        this,
+        "ShooterModule",
+        m_shooterModuleIO::runCharacterizationVoltage,
+        () -> {
+          var currentState = getCurrentState();
+          return (currentState.shooterTopVelocityMetersPerSecond
+                  + currentState.shooterBottomVelocityMetersPerSecond)
+              / 2.0;
+        },
+        0.5,
+        10);
   }
 
   @AutoLogOutput(key = "Shooter/AtSetpoint")

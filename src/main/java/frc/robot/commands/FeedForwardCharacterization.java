@@ -12,59 +12,69 @@ import org.littletonrobotics.junction.Logger;
 
 public class FeedForwardCharacterization extends Command {
   private static final double START_DELAY_SECS = 2.0;
-  private static final double RAMP_VOLTS_PER_SEC = 0.1;
 
   private FeedForwardCharacterizationData data;
+  private final String logKey;
   private final Consumer<Double> voltageConsumer;
   private final Supplier<Double> velocitySupplier;
+  private final double rampRateVoltsPerSecond;
+  private final double timeout;
 
   private final Timer timer = new Timer();
 
-  /** Creates a new FeedForwardCharacterization command. */
   public FeedForwardCharacterization(
-      Subsystem subsystem, Consumer<Double> voltageConsumer, Supplier<Double> velocitySupplier) {
+      Subsystem subsystem,
+      String mechanismName,
+      Consumer<Double> voltageConsumer,
+      Supplier<Double> velocitySupplier,
+      double rampRateVoltsPerSecond,
+      double timeout) {
     addRequirements(subsystem);
+    this.logKey = subsystem.getName() + "/" + mechanismName;
     this.voltageConsumer = voltageConsumer;
     this.velocitySupplier = velocitySupplier;
+    this.rampRateVoltsPerSecond = rampRateVoltsPerSecond;
+    this.timeout = timeout;
   }
 
-  // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    data = new FeedForwardCharacterizationData();
-    timer.reset();
-    timer.start();
+    data = new FeedForwardCharacterizationData(logKey);
+    timer.restart();
   }
 
-  // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
     if (timer.get() < START_DELAY_SECS) {
       voltageConsumer.accept(0.0);
     } else {
-      double voltage = (timer.get() - START_DELAY_SECS) * RAMP_VOLTS_PER_SEC;
+      double voltage = (timer.get() - START_DELAY_SECS) * rampRateVoltsPerSecond;
       voltageConsumer.accept(voltage);
       data.add(velocitySupplier.get(), voltage);
     }
   }
 
-  // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
     voltageConsumer.accept(0.0);
     timer.stop();
-    data.print();
+    data.calculateAndLogResults();
   }
 
-  // Returns true when the command should end.
   @Override
   public boolean isFinished() {
-    return false;
+    return timer.get() >= timeout;
   }
 
   public static class FeedForwardCharacterizationData {
+    private static final String LOG_KEY_BASE = "FeedForwardCharacterizationResults";
+    private final String logKey;
     private final List<Double> velocityData = new LinkedList<>();
     private final List<Double> voltageData = new LinkedList<>();
+
+    public FeedForwardCharacterizationData(String logKey) {
+      this.logKey = LOG_KEY_BASE + "/" + logKey;
+    }
 
     public void add(double velocity, double voltage) {
       if (Math.abs(velocity) > 1E-4) {
@@ -73,8 +83,8 @@ public class FeedForwardCharacterization extends Command {
       }
     }
 
-    public void print() {
-      if (velocityData.size() == 0 || voltageData.size() == 0) {
+    public void calculateAndLogResults() {
+      if (velocityData.isEmpty() || voltageData.isEmpty()) {
         return;
       }
 
@@ -84,14 +94,10 @@ public class FeedForwardCharacterization extends Command {
               voltageData.stream().mapToDouble(Double::doubleValue).toArray(),
               1);
 
-      StringBuilder builder = new StringBuilder();
-      builder.append("FF Characterization Results:");
-      builder.append("\tCount=" + Integer.toString(velocityData.size()) + "");
-      builder.append(String.format("\tR2=%.5f", regression.R2()));
-      builder.append(String.format("\tkS=%.5f", regression.beta(0)));
-      builder.append(String.format("\tkV=%.5f", regression.beta(1)));
-
-      Logger.recordOutput("FF Output", builder.toString());
+      Logger.recordOutput(logKey + "/SampleCount", velocityData.size());
+      Logger.recordOutput(logKey + "/R^2", regression.R2());
+      Logger.recordOutput(logKey + "/kS", regression.beta(0));
+      Logger.recordOutput(logKey + "kV", regression.beta(1));
     }
   }
 }

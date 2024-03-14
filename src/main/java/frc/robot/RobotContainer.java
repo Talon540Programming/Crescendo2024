@@ -4,7 +4,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.commands.DriveTeleop;
 import frc.robot.commands.ShooterTeleop;
-import frc.robot.commands.FeedForwardCharacterization;
 import frc.robot.constants.Constants;
 import frc.robot.oi.ControlsInterface;
 import frc.robot.oi.SrimanXbox;
@@ -96,11 +95,7 @@ public class RobotContainer {
 
   private void configureTunableParameters() {
     m_autoChooser.addOption(
-        "ShooterModuleFFCharacterization",
-        new FeedForwardCharacterization(
-            m_shooter,
-            m_shooter::runShooterCharacterizationVoltage,
-            () -> m_shooter.getCurrentState().shooterTopVelocityMetersPerSecond));
+        "ShooterModuleFFCharacterization", m_shooter.getShooterCharacterizationCommand());
   }
 
   private void configureButtonBindings() {
