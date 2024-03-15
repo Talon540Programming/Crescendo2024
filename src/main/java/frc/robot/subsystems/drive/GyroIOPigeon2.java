@@ -8,9 +8,9 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareIds;
-import frc.robot.util.OdometryQueueThread;
+import frc.robot.util.OdometryQueueManager;
 import frc.robot.util.PoseEstimator;
-import frc.robot.util.TimestampedSensorMeasurement;
+import java.util.Optional;
 import java.util.Queue;
 
 /** IO implementation for Pigeon2 */
@@ -25,7 +25,7 @@ public class GyroIOPigeon2 implements GyroIO {
   private final StatusSignal<Double> m_pitchVelocity;
   private final StatusSignal<Double> m_yawVelocity;
 
-  private final Queue<TimestampedSensorMeasurement<Double>> yawPositionQueue;
+  private final Queue<Rotation2d> yawPositionQueue;
 
   public GyroIOPigeon2() {
     switch (Constants.getRobotType()) {
@@ -50,7 +50,9 @@ public class GyroIOPigeon2 implements GyroIO {
         50.0, m_roll, m_pitch, m_rollVelocity, m_pitchVelocity);
 
     this.yawPositionQueue =
-        OdometryQueueThread.getInstance().registerSignal(() -> m_gyro.getYaw().getValueAsDouble());
+        OdometryQueueManager.getInstance()
+            .registerGyro(
+                () -> Optional.of(Rotation2d.fromDegrees(m_yaw.refresh().getValueAsDouble())));
 
     m_gyro.optimizeBusUtilization();
   }
@@ -71,13 +73,7 @@ public class GyroIOPigeon2 implements GyroIO {
     inputs.pitchVelocityRadPerSec = Units.degreesToRadians(m_pitchVelocity.getValueAsDouble());
     inputs.yawVelocityRadPerSec = Units.degreesToRadians(m_yawVelocity.getValueAsDouble());
 
-    inputs.odometryYawPositions =
-        yawPositionQueue.stream()
-            .map(
-                v ->
-                    new TimestampedSensorMeasurement<>(
-                        v.getTimestampSeconds(), Rotation2d.fromDegrees(v.getMeasurement())))
-            .toList();
+    inputs.odometryYawPositions = yawPositionQueue.toArray(Rotation2d[]::new);
     this.yawPositionQueue.clear();
   }
 }

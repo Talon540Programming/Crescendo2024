@@ -8,9 +8,12 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.commands.FeedForwardCharacterization;
 import frc.robot.constants.Constants;
-import frc.robot.subsystems.drive.GyroIO.GyroIOInputs;
+import frc.robot.util.OdometryQueueManager;
+import frc.robot.util.OdometryTimestampInputsAutoLogged;
 import frc.robot.util.PoseEstimator;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -32,10 +35,20 @@ public class DriveBase extends SubsystemBase {
   private static final SwerveDriveKinematics m_kinematics;
 
   private final GyroIO m_gyroIO;
-  private final GyroIOInputs m_gyroInputs = new GyroIOInputs();
+  private final GyroIOInputsAutoLogged m_gyroInputs = new GyroIOInputsAutoLogged();
   private final Module[] m_modules = new Module[4]; // FL, FR, BL, BR
+  private final OdometryTimestampInputsAutoLogged m_odometryTimestampInputs =
+      new OdometryTimestampInputsAutoLogged();
 
   private Rotation2d m_lastGyroRotation = new Rotation2d();
+
+  private final SwerveModulePosition[] m_lastModulePositions =
+      new SwerveModulePosition[] {
+        new SwerveModulePosition(),
+        new SwerveModulePosition(),
+        new SwerveModulePosition(),
+        new SwerveModulePosition()
+      };
 
   static {
     switch (Constants.getRobotType()) {
@@ -78,64 +91,83 @@ public class DriveBase extends SubsystemBase {
 
   public void periodic() {
     PoseEstimator.odometryLock.lock();
-    m_gyroIO.updateInputs(m_gyroInputs);
-    for (var module : m_modules) {
-      module.updateInputs();
+    try {
+      OdometryQueueManager.getInstance().updateTimestampsInput(m_odometryTimestampInputs);
+      m_gyroIO.updateInputs(m_gyroInputs);
+      for (var module : m_modules) {
+        module.updateInputs();
+      }
+    } finally {
+      PoseEstimator.odometryLock.unlock();
     }
-    PoseEstimator.odometryLock.unlock();
 
+    // We don't want to block the odometry thread unless we need to. This ensures we collect the
+    // most number of samples possible.
+    Logger.processInputs("Odometry/Timestamps", m_odometryTimestampInputs);
     Logger.processInputs("Drive/Gyro", m_gyroInputs);
     for (var module : m_modules) {
-      module.periodic();
+      module.processInputs();
     }
 
     if (DriverStation.isDisabled()) {
-      // Stop moving when disabled
+      // Reset the setpoints when the robot is disabled
       for (var module : m_modules) {
-        module.disable();
+        module.stop();
       }
 
       // Log empty setpoint states when disabled
-      Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
-      Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
+      Logger.recordOutput("Drive/ModuleSetpoints", new SwerveModuleState[] {});
+      Logger.recordOutput("Drive/ModuleSetpointsOptimized", new SwerveModuleState[] {});
+      Logger.recordOutput("Drive/SpeedSetpoint", new ChassisSpeeds());
     }
 
-    // Update odometry
-    int deltaCount =
-        m_gyroInputs.connected ? m_gyroInputs.odometryYawPositions.size() : Integer.MAX_VALUE;
-    for (var module : m_modules) {
-      deltaCount = Math.min(deltaCount, module.getPositionDeltas().size());
-    }
-    for (int i = 0; i < deltaCount; i++) {
-      double timestampSeconds = Double.NEGATIVE_INFINITY;
+    // Update PoseEstimator with odometry deltas
+    for (int sampleIndex = 0; sampleIndex < m_odometryTimestampInputs.sampleCount; sampleIndex++) {
+      double timestampSeconds = m_odometryTimestampInputs.timestamps[sampleIndex];
       SwerveModulePosition[] wheelDeltas = new SwerveModulePosition[4];
-      for (int j = 0; j < 4; j++) {
-        var moduleMeasurement = m_modules[j].getPositionDeltas().get(i);
-        timestampSeconds = Math.max(moduleMeasurement.getTimestampSeconds(), timestampSeconds);
-        wheelDeltas[j] = moduleMeasurement.getMeasurement();
+      for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
+        var positionMeasurement = m_modules[moduleIndex].getModuleDeltas()[sampleIndex];
+        wheelDeltas[moduleIndex] =
+            new SwerveModulePosition(
+                positionMeasurement.distanceMeters
+                    - m_lastModulePositions[moduleIndex].distanceMeters,
+                positionMeasurement.angle);
+        m_lastModulePositions[moduleIndex] = positionMeasurement;
       }
 
-      // The twist represents the motion of the robot since the last
-      // sample in x, y, and theta based only on the modules, without
-      // the gyro. The gyro is always disconnected in simulation.
-      var twist = m_kinematics.toTwist2d(wheelDeltas);
+      var deltaTwist = m_kinematics.toTwist2d(wheelDeltas);
+
+      // Use the gyro if possible
       if (m_gyroInputs.connected) {
-        var gyroMeasurement = m_gyroInputs.odometryYawPositions.get(i);
-        timestampSeconds = Math.max(gyroMeasurement.getTimestampSeconds(), timestampSeconds);
-        // If the gyro is connected, replace the theta component of the twist
-        // with the change in angle since the last sample.
-        Rotation2d gyroRotation = gyroMeasurement.getMeasurement();
-
-        twist.dtheta = gyroRotation.minus(m_lastGyroRotation).getRadians();
-
-        m_lastGyroRotation = gyroRotation;
+        var yawMeasurement = m_gyroInputs.odometryYawPositions[sampleIndex];
+        // Replace the delta theta component from the one from the gyro
+        deltaTwist.dtheta = yawMeasurement.minus(m_lastGyroRotation).getRadians();
+        m_lastGyroRotation = yawMeasurement;
       }
 
-      // Apply the twist (change since last sample) to the current pose
-      PoseEstimator.getInstance().addDriveData(timestampSeconds, twist);
+      PoseEstimator.getInstance().addDriveData(timestampSeconds, deltaTwist);
     }
 
     Logger.recordOutput("Odometry/EstimatedPose", PoseEstimator.getInstance().getPose());
+  }
+
+  /** Returns the module states (turn angles and drive velocities) for all the modules. */
+  @AutoLogOutput(key = "Drive/Measured")
+  public SwerveModuleState[] getModuleStates() {
+    SwerveModuleState[] states = new SwerveModuleState[4];
+    for (int i = 0; i < 4; i++) {
+      states[i] = m_modules[i].getCurrentState();
+    }
+    return states;
+  }
+
+  public static Translation2d[] getModuleTranslations(double trackWidthX, double trackWidthY) {
+    return new Translation2d[] {
+      new Translation2d(trackWidthX / 2.0, trackWidthY / 2.0),
+      new Translation2d(trackWidthX / 2.0, -trackWidthY / 2.0),
+      new Translation2d(-trackWidthX / 2.0, trackWidthY / 2.0),
+      new Translation2d(-trackWidthX / 2.0, -trackWidthY / 2.0)
+    };
   }
 
   /**
@@ -144,23 +176,52 @@ public class DriveBase extends SubsystemBase {
    * @param speeds Speeds in meters/sec
    */
   public void runVelocity(ChassisSpeeds speeds) {
-    // Calculate module setpoints
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = m_kinematics.toSwerveModuleStates(discreteSpeeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, kMaxLinearVelocityMetersPerSecond);
 
-    // Send setpoints to modules
-    SwerveModuleState[] optimizedSetpointStates = new SwerveModuleState[4];
+    // Apply setpoints and form optimized states
+    SwerveModuleState[] optimizedStates = new SwerveModuleState[4];
     for (int i = 0; i < 4; i++) {
-      // The module returns the optimized state, useful for logging
-      optimizedSetpointStates[i] = m_modules[i].runSetpoint(setpointStates[i]);
+      optimizedStates[i] = m_modules[i].runSetpoint(setpointStates[i]);
     }
 
-    // Log setpoint states
-    Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
-    Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
+    Logger.recordOutput("Drive/SpeedSetpoint", discreteSpeeds);
+    Logger.recordOutput("Drive/ModuleSetpoints", setpointStates);
+    Logger.recordOutput("Drive/ModuleSetpointsOptimized", optimizedStates);
+
+    Logger.recordOutput(
+        "test",
+        Math.abs(
+            optimizedStates[0].speedMetersPerSecond - getModuleStates()[0].speedMetersPerSecond));
   }
 
+  public Command getDriveCharacterizationCommand() {
+    return new FeedForwardCharacterization(
+        this,
+        "Drive",
+        (var voltage) -> {
+          for (var module : m_modules) {
+            module.runCharacterizationVoltage(Rotation2d.fromDegrees(0), voltage);
+          }
+        },
+        () -> {
+          double sum = 0;
+          for (var module : m_modules) {
+            sum += module.getCharacterizationVelocity();
+          }
+
+          return sum / 4.0;
+        },
+        0.5,
+        15);
+  }
+
+  /**
+   * Get the current velocity of the drivetrain
+   *
+   * @return current velocity as a ChassisSpeeds object
+   */
   public ChassisSpeeds getVelocity() {
     var speeds = m_kinematics.toChassisSpeeds(getModuleStates());
     if (m_gyroInputs.connected) {
@@ -187,24 +248,5 @@ public class DriveBase extends SubsystemBase {
     }
     m_kinematics.resetHeadings(headings);
     stop();
-  }
-
-  /** Returns the module states (turn angles and drive velocities) for all the modules. */
-  @AutoLogOutput(key = "SwerveStates/Measured")
-  public SwerveModuleState[] getModuleStates() {
-    SwerveModuleState[] states = new SwerveModuleState[4];
-    for (int i = 0; i < 4; i++) {
-      states[i] = m_modules[i].getState();
-    }
-    return states;
-  }
-
-  public static Translation2d[] getModuleTranslations(double trackWidthX, double trackWidthY) {
-    return new Translation2d[] {
-      new Translation2d(trackWidthX / 2.0, trackWidthY / 2.0),
-      new Translation2d(trackWidthX / 2.0, -trackWidthY / 2.0),
-      new Translation2d(-trackWidthX / 2.0, trackWidthY / 2.0),
-      new Translation2d(-trackWidthX / 2.0, -trackWidthY / 2.0)
-    };
   }
 }

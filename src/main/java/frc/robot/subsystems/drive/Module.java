@@ -1,233 +1,151 @@
 package frc.robot.subsystems.drive;
 
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import frc.robot.constants.Constants;
-import frc.robot.subsystems.drive.ModuleIO.ModuleIOInputs;
 import frc.robot.util.LoggedTunableNumber;
-import frc.robot.util.TimestampedSensorMeasurement;
-import java.util.ArrayList;
-import java.util.List;
 import org.littletonrobotics.junction.Logger;
 
 public class Module {
-  private final ModuleIO m_io;
-  private final ModuleIOInputs m_inputs = new ModuleIOInputs();
-  private final int kModuleIndex;
-
-  private Rotation2d m_turnAngleSetpoint = null;
-  private Double m_driveVelocitySetpoint = null;
-
-  private Rotation2d m_turnRelativeOffset = null;
-  private double m_lastPositionMeters;
-
-  private List<TimestampedSensorMeasurement<SwerveModulePosition>> positionDeltas = List.of();
-
+  private static final LoggedTunableNumber driveKs = new LoggedTunableNumber("DriveKs");
+  private static final LoggedTunableNumber driveKv = new LoggedTunableNumber("DriveKv");
   private static final LoggedTunableNumber driveKp = new LoggedTunableNumber("DriveKp");
   private static final LoggedTunableNumber driveKi = new LoggedTunableNumber("DriveKi");
   private static final LoggedTunableNumber driveKd = new LoggedTunableNumber("DriveKd");
-  private static final LoggedTunableNumber driveKs = new LoggedTunableNumber("DriveKs");
-  private static final LoggedTunableNumber driveKv = new LoggedTunableNumber("DriveKv");
 
   private static final LoggedTunableNumber turnKp = new LoggedTunableNumber("TurnKp");
   private static final LoggedTunableNumber turnKi = new LoggedTunableNumber("TurnKi");
   private static final LoggedTunableNumber turnKd = new LoggedTunableNumber("TurnKd");
 
-  private SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(0, 0);
-  private final PIDController m_driveController =
-      new PIDController(0, 0, 0, Constants.kLoopPeriodSecs);
-  private final PIDController m_turnController =
-      new PIDController(0, 0, 0, Constants.kLoopPeriodSecs);
-
   static {
+    // Drive PID is volts per RPM
+    // Drive FF is volts per Rad/sec
+    // Turn PID is volts per rotation of the motor shaft
     switch (Constants.getRobotType()) {
       case ROBOT_2024_COMP -> {
-        driveKp.initDefault(0.1);
+        driveKs.initDefault(0.2740042899903624);
+        driveKv.initDefault(0.13424862447874678);
+        driveKp.initDefault(0.0025);
         driveKi.initDefault(0.0);
         driveKd.initDefault(0.0);
-        driveKs.initDefault(0.13); // TODO, tune this further
-        driveKv.initDefault(0.13752);
-        turnKp.initDefault(5.5);
+        turnKp.initDefault(1.0);
         turnKi.initDefault(0.0);
         turnKd.initDefault(0.0);
       }
       case ROBOT_SIMBOT -> {
-        driveKp.initDefault(0.1);
+        driveKs.initDefault(0.06769487824001116);
+        driveKv.initDefault(0.1338996940509799);
+        driveKp.initDefault(1.5);
         driveKi.initDefault(0.0);
         driveKd.initDefault(0.0);
-        driveKs.initDefault(0.0);
-        driveKv.initDefault(0.13);
-        turnKp.initDefault(10.0);
+        turnKp.initDefault(5.5);
         turnKi.initDefault(0.0);
         turnKd.initDefault(0.0);
       }
     }
   }
 
-  public Module(int index, ModuleIO io) {
-    this.kModuleIndex = index;
-    this.m_io = io;
+  private final int moduleIndex;
+  private final ModuleIO m_io;
+  private final ModuleIOInputsAutoLogged m_inputs = new ModuleIOInputsAutoLogged();
 
-    m_turnController.enableContinuousInput(-Math.PI, Math.PI);
-    setBrakeMode(true);
+  // Calculates the drive motor's feedforward value in volts/radians per second
+  private SimpleMotorFeedforward m_driveFeedforward;
+
+  public Module(int index, ModuleIO io) {
+    moduleIndex = index;
+    m_io = io;
   }
 
-  /** Updates the inputs of the module. Should be called before {@link #periodic} */
   public void updateInputs() {
     m_io.updateInputs(m_inputs);
-  }
-
-  public void periodic() {
-    Logger.processInputs("Drive/Module" + kModuleIndex, m_inputs);
 
     LoggedTunableNumber.ifChanged(
-        kModuleIndex,
-        () -> m_driveFeedforward = new SimpleMotorFeedforward(driveKs.get(), driveKv.get()),
-        driveKs,
-        driveKv);
-
-    LoggedTunableNumber.ifChanged(
-        kModuleIndex,
-        () -> m_driveController.setPID(driveKp.get(), driveKi.get(), driveKd.get()),
+        hashCode(),
+        () -> m_io.setDrivePID(driveKp.get(), driveKi.get(), driveKd.get()),
         driveKp,
         driveKi,
         driveKd);
-
     LoggedTunableNumber.ifChanged(
-        kModuleIndex,
-        () -> m_turnController.setPID(turnKp.get(), turnKi.get(), turnKd.get()),
+        hashCode(),
+        () -> this.m_driveFeedforward = new SimpleMotorFeedforward(driveKs.get(), driveKv.get()),
+        driveKs,
+        driveKv);
+    LoggedTunableNumber.ifChanged(
+        hashCode(),
+        () -> m_io.setTurnPID(turnKp.get(), turnKi.get(), turnKd.get()),
         turnKp,
         turnKi,
         turnKd);
-
-    // On first cycle, reset relative turn encoder
-    // Wait until absolute angle is nonzero in case it wasn't initialized yet
-    if (m_turnRelativeOffset == null && m_inputs.turnAbsolutePosition.getRadians() != 0.0) {
-      m_turnRelativeOffset = m_inputs.turnAbsolutePosition.minus(m_inputs.turnPosition);
-    }
-
-    // Run closed loop turn control
-    if (m_turnAngleSetpoint != null) {
-      m_io.setTurnVoltage(
-          m_turnController.calculate(getAngle().getRadians(), m_turnAngleSetpoint.getRadians()));
-
-      // Run closed loop drive control. Only if turn closed loop is enabled.
-      if (m_driveVelocitySetpoint != null) {
-        // When the error is 90°, the velocity setpoint should be 0. As the wheel turns
-        // towards the setpoint, its velocity should increase. This is achieved by
-        // taking the component of the velocity in the direction of the setpoint.
-        double adjustSpeedSetpoint =
-            m_driveVelocitySetpoint * Math.cos(m_turnController.getPositionError());
-
-        // Run drive controller
-        double velocityRadPerSec = adjustSpeedSetpoint / DriveBase.kWheelRadiusMeters;
-        m_io.setDriveVoltage(
-            m_driveFeedforward.calculate(velocityRadPerSec)
-                + m_driveController.calculate(m_inputs.driveVelocityRadPerSec, velocityRadPerSec));
-      }
-    }
-
-    // Calculate position deltas for odometry
-    int deltaCount =
-        Math.min(m_inputs.odometryDrivePositionsRad.size(), m_inputs.odometryTurnPositions.size());
-    positionDeltas = new ArrayList<>(deltaCount);
-    for (int i = 0; i < deltaCount; i++) {
-      var positionMetersMeasurement = m_inputs.odometryDrivePositionsRad.get(i);
-      double positionMetersTimestamp = positionMetersMeasurement.getTimestampSeconds();
-      double positionMeters =
-          positionMetersMeasurement.getMeasurement() * DriveBase.kWheelRadiusMeters;
-
-      var turnAngleMeasurement = m_inputs.odometryTurnPositions.get(i);
-      double angleTimestamp = turnAngleMeasurement.getTimestampSeconds();
-      Rotation2d angle =
-          turnAngleMeasurement
-              .getMeasurement()
-              .plus(m_turnRelativeOffset != null ? m_turnRelativeOffset : new Rotation2d());
-
-      double measurementTimestamp = Math.max(positionMetersTimestamp, angleTimestamp);
-
-      positionDeltas.add(
-          new TimestampedSensorMeasurement<>(
-              measurementTimestamp,
-              new SwerveModulePosition(positionMeters - m_lastPositionMeters, angle)));
-      m_lastPositionMeters = positionMeters;
-    }
   }
 
-  /**
-   * Runs the module with the specified setpoint state. Must be called periodically. Returns the
-   * optimized state.
-   */
-  public SwerveModuleState runSetpoint(SwerveModuleState state) {
-    // Optimize state based on current angle
-    // Controllers run in "periodic" when the setpoint is not null
-    var optimizedState = SwerveModuleState.optimize(state, getAngle());
-
-    // Update setpoints, controllers run in "periodic"
-    m_turnAngleSetpoint = optimizedState.angle;
-    m_driveVelocitySetpoint = optimizedState.speedMetersPerSecond;
-
-    return optimizedState;
+  public void processInputs() {
+    Logger.processInputs("Drive/Module" + moduleIndex, m_inputs);
   }
 
-  public void runCharacterizationVoltage(double volts) {
-    // Closed loop turn control
-    m_turnAngleSetpoint = new Rotation2d();
-
-    // Open loop drive control
-    m_io.setDriveVoltage(volts);
-    m_driveVelocitySetpoint = null;
-  }
-
-  /** Disables all outputs to motors. */
-  public void disable() {
-    m_io.setTurnVoltage(0.0);
-    m_io.setDriveVoltage(0.0);
-
-    m_turnAngleSetpoint = null;
-    m_driveVelocitySetpoint = null;
-  }
-
-  /** Sets whether brake mode is enabled. */
-  public void setBrakeMode(boolean enabled) {
-    m_io.setDriveBrakeMode(enabled);
-    m_io.setTurnBrakeMode(enabled);
-  }
-
-  /** Returns the current turn angle of the module. */
   public Rotation2d getAngle() {
-    if (m_turnRelativeOffset == null) {
-      return new Rotation2d();
-    } else {
-      return m_inputs.turnPosition.plus(m_turnRelativeOffset);
-    }
+    return m_inputs.turnPosition;
   }
 
-  /** Returns the current drive position of the module in meters. */
-  public double getPositionMeters() {
-    return m_inputs.drivePositionRad * DriveBase.kWheelRadiusMeters;
+  public double getDrivePositionRad() {
+    return m_inputs.drivePositionRad;
   }
 
-  /** Returns the current drive velocity of the module in meters per second. */
-  public double getVelocityMetersPerSec() {
-    return m_inputs.driveVelocityRadPerSec * DriveBase.kWheelRadiusMeters;
+  public double getDriveVelocityRadPerSec() {
+    return m_inputs.driveVelocityRadPerSec;
   }
 
-  /** Returns the module position (turn angle and drive position). */
-  public SwerveModulePosition getPosition() {
-    return new SwerveModulePosition(getPositionMeters(), getAngle());
+  public double getDrivePositionMeters() {
+    return getDrivePositionRad() * DriveBase.kWheelRadiusMeters;
   }
 
-  /** Returns the module state (turn angle and drive velocity). */
-  public SwerveModuleState getState() {
-    return new SwerveModuleState(getVelocityMetersPerSec(), getAngle());
+  public double getDriveVelocityMetersPerSec() {
+    return getDriveVelocityRadPerSec() * DriveBase.kWheelRadiusMeters;
   }
 
-  /** Returns the module position deltas received this cycle. */
-  public List<TimestampedSensorMeasurement<SwerveModulePosition>> getPositionDeltas() {
-    return positionDeltas;
+  public SwerveModulePosition getCurrentPosition() {
+    return new SwerveModulePosition(getDrivePositionMeters(), m_inputs.turnPosition);
+  }
+
+  public SwerveModuleState getCurrentState() {
+    return new SwerveModuleState(getDriveVelocityMetersPerSec(), m_inputs.turnPosition);
+  }
+
+  public SwerveModulePosition[] getModuleDeltas() {
+    return m_inputs.odometryPositions;
+  }
+
+  public SwerveModuleState runSetpoint(SwerveModuleState setpoint) {
+    var optimizedSetpoint = SwerveModuleState.optimize(setpoint, getAngle());
+
+    // TODO handle cos position error scaling
+    double setpointVelocityRadPerSec =
+        optimizedSetpoint.speedMetersPerSecond / DriveBase.kWheelRadiusMeters;
+    m_io.runDriveVelocitySetpoint(
+        setpointVelocityRadPerSec, m_driveFeedforward.calculate(setpointVelocityRadPerSec));
+    m_io.runTurnAngleSetpoint(optimizedSetpoint.angle);
+
+    return optimizedSetpoint;
+  }
+
+  public void runCharacterizationVoltage(Rotation2d angleSetpoint, double voltage) {
+    m_io.runTurnAngleSetpoint(angleSetpoint);
+    m_io.runDriveVolts(voltage);
+  }
+
+  public double getCharacterizationVelocity() {
+    return getDriveVelocityRadPerSec();
+  }
+
+  public void setBrakeMode(boolean enabled) {
+    m_io.setDriveBrakeMode(true);
+    m_io.setTurnBrakeMode(true);
+  }
+
+  public void stop() {
+    m_io.runDriveVolts(0);
+    m_io.runTurnVolts(0);
   }
 }
