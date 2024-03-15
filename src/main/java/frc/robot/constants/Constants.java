@@ -105,7 +105,7 @@ public final class Constants {
   }
 
   public static class Poses {
-    public static final Pose2d SUBWF_SHOOT_POSE = new Pose2d(0, 0, null); //TODO
-    public static final Pose2d FEEDER_INTAKE_POSE = new Pose2d(0, 0, null); //TODO
+    public static final Pose2d SUBWF_SHOOT_POSE = new Pose2d(0, 0, null); // TODO
+    public static final Pose2d FEEDER_INTAKE_POSE = new Pose2d(0, 0, null); // TODO
   }
 }
