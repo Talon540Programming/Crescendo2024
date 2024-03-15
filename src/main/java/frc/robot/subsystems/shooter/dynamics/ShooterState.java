@@ -11,7 +11,7 @@ public class ShooterState implements StructSerializable {
   public static final ShooterState STARTING_STATE = new ShooterState(Rotation2d.fromDegrees(70), 0);
   public static final ShooterState TRAVEL_STATE = new ShooterState(Rotation2d.fromDegrees(25), 1.5);
   public static final ShooterState GROUND_INTAKE_STATE =
-      new ShooterState(Rotation2d.fromRadians(45), -1.5);
+      new ShooterState(Rotation2d.fromDegrees(45), -1.5);
 
   private static final LoggedTunableNumber velocityTolerance =
       new LoggedTunableNumber("Shooter/VelocityTolerance");
