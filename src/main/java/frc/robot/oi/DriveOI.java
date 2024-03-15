@@ -16,4 +16,8 @@ public interface DriveOI {
   public Trigger shooterAngleLock();
 
   public Trigger trajectoryOverride();
+
+  public Trigger shootPoseOverride();
+
+  public Trigger feederIntakePoseOverride();
 }
