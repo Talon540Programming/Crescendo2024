@@ -54,6 +54,6 @@ public class DualXbox implements ControlsInterface {
 
   @Override
   public Trigger feederIntakePoseOverride() {
-    return operatorController.x();
+    return operatorController.y();
   }
 }
