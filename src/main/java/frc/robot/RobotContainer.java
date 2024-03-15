@@ -3,16 +3,15 @@ package frc.robot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.commands.DriveTeleop;
-import frc.robot.commands.ShooterTeleop;
 import frc.robot.constants.Constants;
 import frc.robot.oi.ControlsInterface;
-import frc.robot.oi.SrimanXbox;
+import frc.robot.oi.DualXbox;
 import frc.robot.subsystems.drive.*;
 import frc.robot.subsystems.intake.*;
 import frc.robot.subsystems.shooter.*;
 import frc.robot.subsystems.shooter.dynamics.ShooterDynamics;
+import frc.robot.subsystems.shooter.dynamics.ShooterState;
 import frc.robot.subsystems.vision.*;
-import frc.robot.util.PoseEstimator;
 import java.util.Optional;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
@@ -96,6 +95,7 @@ public class RobotContainer {
   private void configureTunableParameters() {
     m_autoChooser.addOption(
         "ShooterModuleFFCharacterization", m_shooter.getShooterCharacterizationCommand());
+    m_autoChooser.addOption("DriveFFCharacterization", m_drive.getDriveCharacterizationCommand());
   }
 
   private void configureButtonBindings() {
@@ -117,22 +117,44 @@ public class RobotContainer {
 
     controlsInterface.moduleLock().onTrue(Commands.runOnce(m_drive::stopWithX, m_drive));
 
-    // Drive teleop override button
     controlsInterface
-        .trajectoryOverride()
-        .onTrue(
-            Commands.runOnce(
-                () -> {
-                  m_drive.getCurrentCommand().cancel();
-                  m_drive.stop();
-                }));
+        .shoot()
+        .and(m_shooter::canShoot)
+        .onTrue(Commands.runOnce(() -> m_shooter.setKickupVoltage(12.0), m_shooter))
+        .onFalse(Commands.runOnce(() -> m_shooter.setKickupVoltage(0.0), m_shooter));
 
-    m_shooter.setDefaultCommand(
-        new ShooterTeleop(
-            m_shooter,
-            () -> PoseEstimator.getInstance().getPose(),
-            m_drive::getVelocity,
-            controlsInterface));
+    controlsInterface
+        .intake()
+        .and(() -> !m_shooter.holdingNote())
+        .onTrue(
+            Commands.sequence(
+                Commands.parallel(
+                    Commands.runOnce(
+                        () -> {
+                          m_shooter.setAutoModeEnabled(false);
+                          m_shooter.setSetpoint(ShooterState.GROUND_INTAKE_STATE);
+                        },
+                        m_shooter),
+                    Commands.runOnce(
+                        () -> m_intake.setWristGoal(Constants.Intake.GROUND_INTAKE_ANGLE),
+                        m_intake)),
+                Commands.waitUntil(() -> m_shooter.atSetpoint() && m_intake.atWristGoal()),
+                Commands.run(
+                        () -> {
+                          m_intake.setRollersVoltage(12.0);
+                          m_intake.setIndexerVoltage(12.0);
+                          m_shooter.setKickupVoltage(8.0);
+                        },
+                        m_intake,
+                        m_shooter)
+                    .until(m_shooter::holdingNote),
+                Commands.runOnce(
+                    () -> {
+                      m_intake.setWristGoal(Constants.Intake.STOW_ANGLE);
+                      m_shooter.setAutoModeEnabled(true);
+                    },
+                    m_intake,
+                    m_shooter)));
   }
 
   public Command getAutonomousCommand() {

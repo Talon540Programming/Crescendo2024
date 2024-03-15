@@ -1,53 +1,53 @@
 package frc.robot.oi;
 
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
-public class SingleXbox implements ControlsInterface {
-  private final CommandXboxController controller = new CommandXboxController(0);
+public class SimKeyboard implements ControlsInterface {
+  private final GenericHID hid = new GenericHID(0);
 
   @Override
   public double getDriveX() {
-    return -controller.getLeftY();
+    return -hid.getRawAxis(1);
   }
 
   @Override
   public double getDriveY() {
-    return -controller.getLeftX();
+    return -hid.getRawAxis(0);
   }
 
   @Override
   public double getDriveTheta() {
-    return -controller.getRightX();
+    return -hid.getRawAxis(2);
   }
 
   @Override
   public Trigger robotRelativeOverride() {
-    return controller.leftBumper();
+    return new Trigger(() -> false);
   }
 
   @Override
   public Trigger moduleLock() {
-    return controller.x();
+    return new Trigger(() -> false);
   }
 
   @Override
   public Trigger shooterAngleLock() {
-    return controller.rightBumper();
+    return new Trigger(() -> false);
   }
 
   @Override
   public Trigger trajectoryOverride() {
-    return controller.y();
+    return new Trigger(() -> false);
   }
 
   @Override
   public Trigger shoot() {
-    return controller.rightTrigger();
+    return new Trigger(() -> false);
   }
 
   @Override
   public Trigger intake() {
-    return controller.leftTrigger();
+    return new Trigger(() -> false);
   }
 }

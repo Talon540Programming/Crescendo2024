@@ -45,4 +45,9 @@ public class SrimanXbox implements ControlsInterface {
   public Trigger shoot() {
     return controller.rightTrigger();
   }
+
+  @Override
+  public Trigger intake() {
+    return controller.leftTrigger();
+  }
 }

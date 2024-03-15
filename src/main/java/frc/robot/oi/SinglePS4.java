@@ -45,4 +45,9 @@ public class SinglePS4 implements ControlsInterface {
   public Trigger shoot() {
     return controller.touchpad();
   }
+
+  @Override
+  public Trigger intake() {
+    return controller.L2();
+  }
 }
