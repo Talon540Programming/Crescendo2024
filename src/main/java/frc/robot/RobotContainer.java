@@ -176,23 +176,19 @@ public class RobotContainer {
             () -> PoseEstimator.getInstance().getPose(),
             m_drive::getVelocity,
             controlsInterface));
-
+    
     // Shoot and intake override
-    controlsInterface
-        .shootPoseOverride()
-        .onTrue(
-            Commands.runOnce(
-                () -> {
-                  PoseEstimator.getInstance().resetPose(Constants.Poses.SUBWF_SHOOT_POSE);
-                }));
+    controlsInterface.shootPoseOverride().onTrue(
+        Commands.runOnce(
+            () -> {
+                PoseEstimator.getInstance().resetPose(Constants.Poses.SUBWF_SHOOT_POSE);
+            }));
 
-    controlsInterface
-        .feederIntakePoseOverride()
-        .onTrue(
-            Commands.runOnce(
-                () -> {
-                  PoseEstimator.getInstance().resetPose(Constants.Poses.FEEDER_INTAKE_POSE);
-                }));
+    controlsInterface.feederIntakePoseOverride().onTrue(
+        Commands.runOnce(
+            () -> {
+                PoseEstimator.getInstance().resetPose(Constants.Poses.FEEDER_INTAKE_POSE);
+            }));
   }
 
   public Command getAutonomousCommand() {
