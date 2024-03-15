@@ -97,7 +97,7 @@ public class FeedForwardCharacterization extends Command {
       Logger.recordOutput(logKey + "/SampleCount", velocityData.size());
       Logger.recordOutput(logKey + "/R^2", regression.R2());
       Logger.recordOutput(logKey + "/kS", regression.beta(0));
-      Logger.recordOutput(logKey + "kV", regression.beta(1));
+      Logger.recordOutput(logKey + "/kV", regression.beta(1));
     }
   }
 }
