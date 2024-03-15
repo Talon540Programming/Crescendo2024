@@ -63,7 +63,7 @@ public class FeedForwardCharacterization extends Command {
 
   @Override
   public boolean isFinished() {
-    return timer.get() >= timeout;
+    return timer.get() >= timeout + START_DELAY_SECS;
   }
 
   public static class FeedForwardCharacterizationData {
