@@ -45,14 +45,4 @@ public class SingleXbox implements ControlsInterface {
   public Trigger shoot() {
     return controller.rightTrigger();
   }
-
-  @Override
-  public Trigger shootPoseOverride() {
-    return controller.a();
-  }
-
-  @Override
-  public Trigger feederIntakePoseOverride() {
-    return controller.x();
-  }
 }

@@ -1,6 +1,5 @@
 package frc.robot.constants;
 
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -102,10 +101,5 @@ public final class Constants {
             0,
             Units.inchesToMeters(7.414499),
             new Rotation3d(0.0, 0.0, 0.0));
-  }
-
-  public static class Poses {
-    public static final Pose2d SUBWF_SHOOT_POSE = new Pose2d(0, 0, null); //TODO
-    public static final Pose2d FEEDER_INTAKE_POSE = new Pose2d(0, 0, null); //TODO
   }
 }
