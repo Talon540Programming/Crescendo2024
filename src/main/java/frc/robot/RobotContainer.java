@@ -5,7 +5,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.commands.DriveTeleop;
 import frc.robot.constants.Constants;
 import frc.robot.oi.ControlsInterface;
-import frc.robot.oi.DualXbox;
+import frc.robot.oi.SingleXbox;
 import frc.robot.subsystems.drive.*;
 import frc.robot.subsystems.intake.*;
 import frc.robot.subsystems.shooter.*;
@@ -16,7 +16,7 @@ import java.util.Optional;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
-  private final ControlsInterface controlsInterface = new SrimanXbox();
+  private final ControlsInterface controlsInterface = new SingleXbox();
 
   private final DriveBase m_drive;
   private final ShooterBase m_shooter;
@@ -148,8 +148,12 @@ public class RobotContainer {
                         m_intake,
                         m_shooter)
                     .until(m_shooter::holdingNote),
+                Commands.waitSeconds(0.25),
                 Commands.runOnce(
                     () -> {
+                      m_intake.setRollersVoltage(0);
+                      m_intake.setIndexerVoltage(0);
+                      m_shooter.setKickupVoltage(0);
                       m_intake.setWristGoal(Constants.Intake.STOW_ANGLE);
                       m_shooter.setAutoModeEnabled(true);
                     },
