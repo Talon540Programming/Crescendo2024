@@ -4,6 +4,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -11,8 +12,10 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.commands.FeedForwardCharacterization;
 import frc.robot.constants.Constants;
+import frc.robot.subsystems.shooter.dynamics.ShooterDynamics;
 import frc.robot.subsystems.shooter.dynamics.ShooterState;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.PoseEstimator;
 import frc.robot.util.SingleJointedMechanismVisualizer;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -101,6 +104,8 @@ public class ShooterBase extends SubsystemBase {
 
   private ShooterState m_setpoint = ShooterState.TRAVEL_STATE;
 
+  private boolean AUTO_MODE_ENABLED = true;
+
   private ArmFeedforward m_erectorFeedforward = new ArmFeedforward(0, 0, 0);
   private final ProfiledPIDController m_erectorFeedback =
       new ProfiledPIDController(0, 0, 0, new TrapezoidProfile.Constraints(0, 0));
@@ -181,6 +186,35 @@ public class ShooterBase extends SubsystemBase {
         shooterModuleKp,
         shooterModuleKi,
         shooterModuleKd);
+
+    if (AUTO_MODE_ENABLED) {
+      var currentPose = PoseEstimator.getInstance().getPose();
+      // TODO handle this. Shouldn't matter cause no dynamics care about velocity as is
+      var currentVelocity = new ChassisSpeeds();
+
+      if (ShooterDynamics.inShooterZone(currentPose) && holdingNote()) {
+        ShooterDynamics.calculateSpeakerState(currentPose, currentVelocity)
+            .ifPresent(
+                v -> {
+                  boolean canShoot = canShoot();
+
+                  // Not shooting yet, bring to mid-level velocity. This will reduce the convergence
+                  // rate for when we do shoot.
+                  setSetpoint(
+                      canShoot ? v : new ShooterState(v.angle, ShooterState.SHOOTING_LOW_VELOCITY));
+                });
+      } else if (ShooterDynamics.inIntakeZone(currentPose)) {
+        ShooterDynamics.calculateIntakeState(currentPose)
+            .ifPresent(
+                v -> {
+                  // Don't bring the shooter down until we leave the intake zone to prevent damage
+                  setSetpoint(!holdingNote() ? v : ShooterState.STARTING_STATE);
+                  setKickupVoltage(!holdingNote() ? -8.0 : 0);
+                });
+      } else {
+        setSetpoint(ShooterState.TRAVEL_STATE);
+      }
+    }
 
     // Update setpoint and command IO layers
     if (DriverStation.isDisabled()) {
@@ -265,5 +299,19 @@ public class ShooterBase extends SubsystemBase {
 
   public boolean holdingNote() {
     return m_kickupInputs.beamBreakBroken;
+  }
+
+  public void setAutoModeEnabled(boolean enabled) {
+    this.AUTO_MODE_ENABLED = enabled;
+  }
+
+  @AutoLogOutput(key = "Shooter/Auto/CanShoot")
+  public boolean canShoot() {
+    // TODO handle chassis speeds
+    return AUTO_MODE_ENABLED
+        && holdingNote()
+        && atSetpoint()
+        && ShooterDynamics.withinSpeakerYawTolerance(
+            PoseEstimator.getInstance().getPose(), new ChassisSpeeds());
   }
 }
