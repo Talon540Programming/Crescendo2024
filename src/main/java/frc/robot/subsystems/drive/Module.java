@@ -60,6 +60,8 @@ public class Module {
   public Module(int index, ModuleIO io) {
     moduleIndex = index;
     m_io = io;
+
+    setBrakeMode(true);
   }
 
   public void periodic() {

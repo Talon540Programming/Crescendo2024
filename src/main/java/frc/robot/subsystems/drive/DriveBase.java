@@ -34,22 +34,6 @@ public class DriveBase extends SubsystemBase {
 
   private static final SwerveDriveKinematics m_kinematics;
 
-  private final GyroIO m_gyroIO;
-  private final GyroIOInputsAutoLogged m_gyroInputs = new GyroIOInputsAutoLogged();
-  private final Module[] m_modules = new Module[4]; // FL, FR, BL, BR
-  private final OdometryTimestampInputsAutoLogged m_odometryTimestampInputs =
-      new OdometryTimestampInputsAutoLogged();
-
-  private Rotation2d m_lastGyroRotation = new Rotation2d();
-
-  private final SwerveModulePosition[] m_lastModulePositions =
-      new SwerveModulePosition[] {
-        new SwerveModulePosition(),
-        new SwerveModulePosition(),
-        new SwerveModulePosition(),
-        new SwerveModulePosition()
-      };
-
   static {
     switch (Constants.getRobotType()) {
       case ROBOT_SIMBOT, ROBOT_2024_COMP -> {
@@ -74,6 +58,22 @@ public class DriveBase extends SubsystemBase {
     m_kinematics =
         new SwerveDriveKinematics(getModuleTranslations(kTrackWidthXMeters, kTrackWidthYMeters));
   }
+
+  private final GyroIO m_gyroIO;
+  private final GyroIOInputsAutoLogged m_gyroInputs = new GyroIOInputsAutoLogged();
+  private final Module[] m_modules = new Module[4]; // FL, FR, BL, BR
+  private final OdometryTimestampInputsAutoLogged m_odometryTimestampInputs =
+      new OdometryTimestampInputsAutoLogged();
+
+  private Rotation2d m_lastGyroRotation = new Rotation2d();
+
+  private final SwerveModulePosition[] m_lastModulePositions =
+      new SwerveModulePosition[] {
+        new SwerveModulePosition(),
+        new SwerveModulePosition(),
+        new SwerveModulePosition(),
+        new SwerveModulePosition()
+      };
 
   public DriveBase(
       GyroIO gyroIO,
