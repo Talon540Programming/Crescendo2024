@@ -51,7 +51,7 @@ public class ModuleIOSim implements ModuleIO {
 
     inputs.turnAbsolutePosition =
         new Rotation2d(MathUtil.angleModulus(m_turnSim.getAngularPositionRad()));
-    inputs.turnPosition =
+    inputs.turnPositionRad =
         Rotation2d.fromRadians(MathUtil.angleModulus(m_turnSim.getAngularPositionRad()));
     inputs.turnVelocityRadPerSec = m_turnSim.getAngularVelocityRadPerSec();
     inputs.turnAppliedVolts = turnAppliedVolts;
@@ -61,7 +61,7 @@ public class ModuleIOSim implements ModuleIO {
         new SwerveModulePosition[] {
           new SwerveModulePosition(
               // Convert from radians to meters
-              inputs.drivePositionRad * DriveBase.kWheelRadiusMeters, inputs.turnPosition)
+              inputs.drivePositionRad * DriveBase.kWheelRadiusMeters, inputs.turnPositionRad)
         };
 
     // PID setpoints need to be constantly calculated to mirror how the SparkMax handles the onboard

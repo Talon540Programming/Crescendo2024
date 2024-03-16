@@ -145,7 +145,7 @@ public class ModuleIOSparkMax implements ModuleIO {
     inputs.driveAppliedVolts = m_driveMotor.getAppliedOutput() * m_driveMotor.getBusVoltage();
     inputs.driveCurrentAmps = new double[] {m_driveMotor.getOutputCurrent()};
 
-    inputs.turnPosition = Rotation2d.fromRadians(m_turnRelativeEncoder.getPosition());
+    inputs.turnPositionRad = Rotation2d.fromRadians(m_turnRelativeEncoder.getPosition());
     inputs.turnVelocityRadPerSec = m_turnRelativeEncoder.getVelocity();
     inputs.turnAppliedVolts = m_turnMotor.getAppliedOutput() * m_turnMotor.getBusVoltage();
     inputs.turnCurrentAmps = new double[] {m_turnMotor.getOutputCurrent()};
