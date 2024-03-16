@@ -183,3 +183,4 @@ networktables.json
 
 # Version file
 src/main/java/frc/generated
+src/main/deploy/choreo/*.1.traj
