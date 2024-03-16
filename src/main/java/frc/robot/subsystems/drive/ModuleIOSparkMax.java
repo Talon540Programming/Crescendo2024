@@ -132,10 +132,10 @@ public class ModuleIOSparkMax implements ModuleIO {
                 () ->
                     // Convert from rads to meters
                     OptionalDouble.of(m_driveEncoder.getPosition() * DriveBase.kWheelRadiusMeters),
-                () -> {
-                  return Optional.of(
-                      Rotation2d.fromRotations(m_turnAbsoluteEncoder.refresh().getValueAsDouble()));
-                });
+                () ->
+                    Optional.of(
+                        Rotation2d.fromRotations(
+                            m_turnAbsoluteEncoder.refresh().getValueAsDouble())));
   }
 
   @Override

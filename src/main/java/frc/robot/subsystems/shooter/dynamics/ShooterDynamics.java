@@ -38,8 +38,6 @@ public class ShooterDynamics {
     var pivotTranslation = calculatePivotTranslation(robotPose);
     var targetTranslation = FieldConstants.Speaker.centerSpeaker.get();
 
-    // TODO, determine if linear approximation is enough or if regression is needed to determine the
-    //  shooter angle
     // Calculate the pitch angle to the target
     var pivotToTargetAngle =
         Rotation2d.fromRadians(
@@ -70,7 +68,6 @@ public class ShooterDynamics {
     double distance2d =
         Math.abs(a * pivotTranslation.getX() + b * pivotTranslation.getY() + c) / Math.hypot(a, b);
 
-    // TODO determine if this needs to be higher to account for initial note velocity
     double sourceHeight = upperPoint.getZ();
 
     var pivotToTargetAngle =

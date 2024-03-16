@@ -1,8 +1,7 @@
 package frc.robot.subsystems.vision;
 
-import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.Nat;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
@@ -17,15 +16,14 @@ public class VisionIOPhotonCamera implements VisionIO {
   protected final Transform3d kRobotToCamera;
   private final Matrix<N3, N1> kCameraBias;
 
-  private static final Matrix<N3, N1> INVALID_STDDEVS =
-      MatBuilder.fill(Nat.N3(), Nat.N1(), -1.0, -1.0, -1.0);
+  private static final Matrix<N3, N1> INVALID_STDDEVS = VecBuilder.fill(-1.0, -1.0, -1.0);
   private static final Matrix<N3, N1> SINGLE_TARGET_STDDEVS =
-      MatBuilder.fill(Nat.N3(), Nat.N1(), 0.1, 0.1, Math.toRadians(10.0)); // TODO
+      VecBuilder.fill(0.1, 0.1, Math.toRadians(2.5));
   private static final Matrix<N3, N1> MULTI_TARGET_STDDEVS =
-      MatBuilder.fill(Nat.N3(), Nat.N1(), 0.01, 0.01, Math.toRadians(1.0)); // TODO
+      VecBuilder.fill(0.01, 0.01, Math.toRadians(0.5));
 
   // Single tag the lowest ambiguity tags must be below the threshold
-  private static final double AMBIGUITY_THRESHOLD = 0.15;
+  private static final double AMBIGUITY_THRESHOLD = 0.4;
   // Robot pose estimates on the side of the field may be slightly off, this accounts for that
   private static final double FIELD_BORDER_MARGIN = 0.5;
   // AprilTag estimation may result in 3d estimations with poor z estimates, reject estimates with
@@ -64,7 +62,7 @@ public class VisionIOPhotonCamera implements VisionIO {
       var tagsUsed = new ArrayList<Integer>();
       for (var target : res.getTargets()) {
         double targetPoseAmbiguity = target.getPoseAmbiguity();
-        // Filter out tags that aren't in the ATFL or aren't fiducial targets
+        // Filter out tags that aren't fiducial targets (IDK how) or in the ATFL
         if (targetPoseAmbiguity == -1
             || FieldConstants.FIELD_LAYOUT.getTagPose(target.getFiducialId()).isEmpty()) continue;
 

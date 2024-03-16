@@ -25,13 +25,13 @@ import Jama.QRDecomposition;
 public class PolynomialRegression implements Comparable<PolynomialRegression> {
   private final String variableName; // name of the predictor variable
   private int degree; // degree of the polynomial regression
-  private Matrix beta; // the polynomial regression coefficients
-  private double sse; // sum of squares due to error
+  private final Matrix beta; // the polynomial regression coefficients
+  private final double sse; // sum of squares due to error
   private double sst; // total sum of squares
 
   /**
-   * Performs a polynomial reggression on the data points {@code (y[i], x[i])}. Uses n as the name
-   * of the predictor variable.
+   * Performs a polynomial regression on the data points {@code (y[i], x[i])}. Uses n as the name of
+   * the predictor variable.
    *
    * @param x the values of the predictor variable
    * @param y the corresponding values of the response variable
@@ -43,7 +43,7 @@ public class PolynomialRegression implements Comparable<PolynomialRegression> {
   }
 
   /**
-   * Performs a polynomial reggression on the data points {@code (y[i], x[i])}.
+   * Performs a polynomial regression on the data points {@code (y[i], x[i])}.
    *
    * @param x the values of the predictor variable
    * @param y the corresponding values of the response variable
@@ -59,7 +59,7 @@ public class PolynomialRegression implements Comparable<PolynomialRegression> {
     QRDecomposition qr = null;
     Matrix matrixX = null;
 
-    // in case Vandermonde matrix does not have full rank, reduce degree until it
+    // in case Vanderbilt matrix does not have full rank, reduce degree until it
     // does
     while (true) {
 
@@ -167,7 +167,7 @@ public class PolynomialRegression implements Comparable<PolynomialRegression> {
       else s.append(String.format("%.10f %s^%d + ", beta(j), variableName, j));
       j--;
     }
-    s = s.append("  (R^2 = " + String.format("%.3f", R2()) + ")");
+    s.append("  (R^2 = ").append(String.format("%.3f", R2())).append(")");
 
     // replace "+ -2n" with "- 2n"
     return s.toString().replace("+ -", "- ");
