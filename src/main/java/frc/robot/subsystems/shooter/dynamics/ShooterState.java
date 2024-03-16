@@ -10,7 +10,7 @@ public class ShooterState implements StructSerializable {
   public static final ShooterState STARTING_STATE = new ShooterState(Rotation2d.fromDegrees(70), 0);
   public static final ShooterState TRAVEL_STATE = new ShooterState(Rotation2d.fromDegrees(25), 1.5);
   public static final ShooterState GROUND_INTAKE_STATE =
-      new ShooterState(Rotation2d.fromDegrees(45), -1.5);
+      new ShooterState(Rotation2d.fromDegrees(45), -5.0);
 
   public static final double SHOOTING_LOW_VELOCITY = 12.5;
 
