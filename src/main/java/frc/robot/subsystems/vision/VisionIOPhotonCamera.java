@@ -6,6 +6,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import frc.robot.constants.FieldConstants;
 import java.util.ArrayList;
 import org.photonvision.PhotonCamera;
 import org.photonvision.targeting.PhotonTrackedTarget;
@@ -49,7 +50,7 @@ public class VisionIOPhotonCamera implements VisionIO {
       inputs.estimatedRobotPose =
           new Pose3d()
               .plus(fieldToCamera)
-              .relativeTo(VisionBase.m_fieldLayout.getOrigin())
+              .relativeTo(FieldConstants.FIELD_LAYOUT.getOrigin())
               .plus(kRobotToCamera.inverse());
       inputs.detectedTagsIds =
           res.getMultiTagResult().fiducialIDsUsed.stream().mapToInt(Integer::intValue).toArray();
@@ -63,7 +64,7 @@ public class VisionIOPhotonCamera implements VisionIO {
         double targetPoseAmbiguity = target.getPoseAmbiguity();
         // Filter out tags that aren't fiducial targets (IDK how) or in the ATFL
         if (targetPoseAmbiguity == -1
-            || VisionBase.m_fieldLayout.getTagPose(target.getFiducialId()).isEmpty()) continue;
+            || FieldConstants.FIELD_LAYOUT.getTagPose(target.getFiducialId()).isEmpty()) continue;
 
         tagsUsed.add(target.getFiducialId());
 
@@ -75,7 +76,8 @@ public class VisionIOPhotonCamera implements VisionIO {
       }
 
       if (lowestAmbiguityTarget != null) {
-        var tagPoseOpt = VisionBase.m_fieldLayout.getTagPose(lowestAmbiguityTarget.getFiducialId());
+        var tagPoseOpt =
+            FieldConstants.FIELD_LAYOUT.getTagPose(lowestAmbiguityTarget.getFiducialId());
         if (tagPoseOpt.isPresent()) {
           inputs.hasResult = true;
           inputs.estimatedRobotPose =
@@ -93,10 +95,10 @@ public class VisionIOPhotonCamera implements VisionIO {
     if (!inputs.hasResult
         || inputs.estimatedRobotPose.getX() < -FIELD_BORDER_MARGIN
         || inputs.estimatedRobotPose.getX()
-            > VisionBase.m_fieldLayout.getFieldLength() + FIELD_BORDER_MARGIN
+            > FieldConstants.FIELD_LAYOUT.getFieldLength() + FIELD_BORDER_MARGIN
         || inputs.estimatedRobotPose.getY() < -FIELD_BORDER_MARGIN
         || inputs.estimatedRobotPose.getY()
-            > VisionBase.m_fieldLayout.getFieldWidth() + FIELD_BORDER_MARGIN
+            > FieldConstants.FIELD_LAYOUT.getFieldWidth() + FIELD_BORDER_MARGIN
         || inputs.estimatedRobotPose.getZ() < -Z_MARGIN
         || inputs.estimatedRobotPose.getZ() > Z_MARGIN) {
       // Record default values if no results or invalid were found
@@ -115,7 +117,7 @@ public class VisionIOPhotonCamera implements VisionIO {
       for (int i = 0; i < numTags; i++) {
         int tagId = inputs.detectedTagsIds[i];
         // All values are guaranteed to exist within the ATFL
-        var tagPose = VisionBase.m_fieldLayout.getTagPose(tagId).orElseThrow();
+        var tagPose = FieldConstants.FIELD_LAYOUT.getTagPose(tagId).orElseThrow();
         inputs.detectedTagPoses[i] = tagPose;
         totalDistance +=
             tagPose.getTranslation().getDistance(inputs.estimatedRobotPose.getTranslation());

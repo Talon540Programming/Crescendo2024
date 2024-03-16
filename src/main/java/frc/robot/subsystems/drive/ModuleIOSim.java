@@ -1,12 +1,12 @@
 package frc.robot.subsystems.drive;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.constants.Constants;
-import frc.robot.util.TimestampedSensorMeasurement;
-import java.util.List;
 
 /**
  * Physics sim implementation of module IO.
@@ -19,13 +19,21 @@ public class ModuleIOSim implements ModuleIO {
   private final DCMotorSim m_driveSim;
   private final DCMotorSim m_turnSim;
 
+  private final PIDController m_driveController = new PIDController(0, 0, 0);
+  private final PIDController m_turnController = new PIDController(0, 0, 0);
+
   private final Rotation2d turnAbsoluteInitPosition = new Rotation2d(Math.random() * 2.0 * Math.PI);
+
   private double driveAppliedVolts = 0.0;
   private double turnAppliedVolts = 0.0;
 
   public ModuleIOSim() {
     this.m_driveSim = new DCMotorSim(DCMotor.getNEO(1), DriveBase.kDriveGearing, 0.025);
     this.m_turnSim = new DCMotorSim(DCMotor.getNEO(1), DriveBase.kTurnGearing, 0.004);
+    m_turnController.enableContinuousInput(-Math.PI, Math.PI);
+
+    // Equivalent of resetting the relative encoder to the absolute position
+    m_turnSim.setState(turnAbsoluteInitPosition.getRadians(), 0);
   }
 
   @Override
@@ -39,26 +47,54 @@ public class ModuleIOSim implements ModuleIO {
     inputs.driveCurrentAmps = new double[] {Math.abs(m_driveSim.getCurrentDrawAmps())};
 
     inputs.turnAbsolutePosition =
-        new Rotation2d(m_turnSim.getAngularPositionRad()).plus(turnAbsoluteInitPosition);
-    inputs.turnPosition = new Rotation2d(m_turnSim.getAngularPositionRad());
+        new Rotation2d(MathUtil.angleModulus(m_turnSim.getAngularPositionRad()));
+    inputs.turnPositionRad =
+        Rotation2d.fromRadians(MathUtil.angleModulus(m_turnSim.getAngularPositionRad()));
     inputs.turnVelocityRadPerSec = m_turnSim.getAngularVelocityRadPerSec();
     inputs.turnAppliedVolts = turnAppliedVolts;
     inputs.turnCurrentAmps = new double[] {Math.abs(m_turnSim.getCurrentDrawAmps())};
 
-    inputs.odometryDrivePositionsRad =
-        List.of(new TimestampedSensorMeasurement<>(inputs.drivePositionRad));
-    inputs.odometryTurnPositions = List.of(new TimestampedSensorMeasurement<>(inputs.turnPosition));
+    inputs.odometryPositions =
+        new SwerveModulePosition[] {
+          new SwerveModulePosition(
+              // Convert from radians to meters
+              inputs.drivePositionRad * DriveBase.kWheelRadiusMeters, inputs.turnPositionRad)
+        };
   }
 
   @Override
-  public void setDriveVoltage(double volts) {
+  public void runDriveVolts(double volts) {
     driveAppliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
     m_driveSim.setInputVoltage(driveAppliedVolts);
   }
 
   @Override
-  public void setTurnVoltage(double volts) {
+  public void runTurnVolts(double volts) {
     turnAppliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
     m_turnSim.setInputVoltage(turnAppliedVolts);
+  }
+
+  @Override
+  public void setDrivePID(double kP, double kI, double kD) {
+    m_driveController.setPID(kP, kI, kD);
+  }
+
+  @Override
+  public void setTurnPID(double kP, double kI, double kD) {
+    m_turnController.setPID(kP, kI, kD);
+  }
+
+  @Override
+  public void runDriveVelocitySetpoint(double velocityRadPerSec, double driveFeedForwardVolts) {
+    runDriveVolts(
+        m_driveController.calculate(m_driveSim.getAngularVelocityRadPerSec(), velocityRadPerSec)
+            + driveFeedForwardVolts);
+  }
+
+  @Override
+  public void runTurnAngleSetpoint(Rotation2d angle) {
+    runTurnVolts(
+        m_turnController.calculate(
+            MathUtil.angleModulus(m_turnSim.getAngularPositionRad()), angle.getRadians()));
   }
 }

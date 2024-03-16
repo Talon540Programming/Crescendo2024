@@ -11,16 +11,23 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.util.LoggerUtil.LogParameters;
 import java.nio.file.Path;
 import java.util.List;
 import lombok.Builder;
 
 public final class Constants {
   private static RobotType kRobotType = RobotType.ROBOT_SIMBOT;
+  public static final LogParameters LOGGER_PARAMETERS =
+      LogParameters.builder()
+          .enableLogger(true)
+          .enableUSBLogging(true)
+          .enable2dMechanismVisualizer(false)
+          .enable3dMechanismVisualizer(true)
+          .build();
+
   // Allows tunable values to be changed when enabled. Also adds tunable selectors to AutoSelector
   public static final boolean TUNING_MODE = false;
-  // Disable the AdvantageKit logger from running
-  public static final boolean ENABLE_LOGGING = true;
 
   public static final double kLoopPeriodSecs = 0.02;
 
@@ -57,9 +64,15 @@ public final class Constants {
     else return RobotBase.isReal() ? RobotMode.REAL : RobotMode.REPLAY;
   }
 
+  public static final double ROBOT_WIDTH = Units.inchesToMeters(29);
+  public static final double ROBOT_LENGTH = Units.inchesToMeters(29);
+  public static final double BUMPER_WIDTH = Units.inchesToMeters(3.5);
+
   public static class Shooter {
+    public static final double MAX_SHOOTER_SPEED_METERS_PER_SECOND = 43.5;
     public static final Rotation2d MIN_SHOOTER_ANGLE = Rotation2d.fromDegrees(17.5);
-    public static final Rotation2d MAX_SHOOTER_ANGLE = Rotation2d.fromDegrees(95.0);
+    public static final Rotation2d MAX_SHOOTER_ANGLE = Rotation2d.fromDegrees(80.0);
+
     public static final double SHOOTER_LENGTH_METERS = Units.inchesToMeters(20.75);
     // Position of the pivot point of the shooter in the RCS
     public static final Pose3d PIVOT_POSE =

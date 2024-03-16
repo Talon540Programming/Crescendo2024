@@ -1,22 +1,21 @@
 package frc.robot.subsystems.shooter;
 
-import static edu.wpi.first.units.Units.Seconds;
-import static edu.wpi.first.units.Units.Volts;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.commands.FeedForwardCharacterization;
 import frc.robot.constants.Constants;
+import frc.robot.subsystems.shooter.dynamics.ShooterDynamics;
 import frc.robot.subsystems.shooter.dynamics.ShooterState;
 import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.PoseEstimator;
 import frc.robot.util.SingleJointedMechanismVisualizer;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -57,6 +56,7 @@ public class ShooterBase extends SubsystemBase {
   static {
     switch (Constants.getRobotType()) {
       case ROBOT_2024_COMP -> {
+        // https://www.reca.lc/arm?armMass=%7B%22s%22%3A19.3879039%2C%22u%22%3A%22lbs%22%7D&comLength=%7B%22s%22%3A10.399172%2C%22u%22%3A%22in%22%7D&currentLimit=%7B%22s%22%3A40%2C%22u%22%3A%22A%22%7D&efficiency=100&endAngle=%7B%22s%22%3A90%2C%22u%22%3A%22deg%22%7D&iterationLimit=10000&motor=%7B%22quantity%22%3A2%2C%22name%22%3A%22NEO%22%7D&ratio=%7B%22magnitude%22%3A87.3978%2C%22ratioType%22%3A%22Reduction%22%7D&startAngle=%7B%22s%22%3A-215%2C%22u%22%3A%22deg%22%7D
         erectorKs.initDefault(0.0);
         erectorKg.initDefault(0.485);
         erectorKv.initDefault(0.0);
@@ -64,13 +64,12 @@ public class ShooterBase extends SubsystemBase {
         erectorKp.initDefault(5.5);
         erectorKi.initDefault(0.0);
         erectorKd.initDefault(0.0);
-
         erectorMaxVelocity.initDefault(Math.PI);
         erectorMaxAcceleration.initDefault(1.5 * Math.PI);
-
-        shooterModuleKs.initDefault(0.5);
-        shooterModuleKv.initDefault(0.0094048);
-        shooterModuleKp.initDefault(0.0001);
+        // https://www.reca.lc/flywheel?currentLimit=%7B%22s%22%3A40%2C%22u%22%3A%22A%22%7D&efficiency=100&flywheelMomentOfInertia=%7B%22s%22%3A0%2C%22u%22%3A%22in2%2Albs%22%7D&flywheelRadius=%7B%22s%22%3A0%2C%22u%22%3A%22in%22%7D&flywheelRatio=%7B%22magnitude%22%3A1%2C%22ratioType%22%3A%22Reduction%22%7D&flywheelWeight=%7B%22s%22%3A0%2C%22u%22%3A%22lbs%22%7D&motor=%7B%22quantity%22%3A1%2C%22name%22%3A%22NEO%22%7D&motorRatio=%7B%22magnitude%22%3A1.96153846154%2C%22ratioType%22%3A%22Step-up%22%7D&projectileRadius=%7B%22s%22%3A2%2C%22u%22%3A%22in%22%7D&projectileWeight=%7B%22s%22%3A8.3%2C%22u%22%3A%22oz%22%7D&shooterMomentOfInertia=%7B%22s%22%3A36.655768%2C%22u%22%3A%22in2%2Albs%22%7D&shooterRadius=%7B%22s%22%3A1.5%2C%22u%22%3A%22in%22%7D&shooterTargetSpeed=%7B%22s%22%3A11000%2C%22u%22%3A%22rpm%22%7D&shooterWeight=%7B%22s%22%3A1.5110941%2C%22u%22%3A%22lbs%22%7D&useCustomFlywheelMoi=0&useCustomShooterMoi=1
+        shooterModuleKs.initDefault(0.15);
+        shooterModuleKv.initDefault(0.26632);
+        shooterModuleKp.initDefault(0.00025);
         shooterModuleKi.initDefault(0.0);
         shooterModuleKd.initDefault(0.0);
       }
@@ -105,13 +104,12 @@ public class ShooterBase extends SubsystemBase {
 
   private ShooterState m_setpoint = ShooterState.TRAVEL_STATE;
 
+  private boolean AUTO_MODE_ENABLED = true;
+
   private ArmFeedforward m_erectorFeedforward = new ArmFeedforward(0, 0, 0);
   private final ProfiledPIDController m_erectorFeedback =
       new ProfiledPIDController(0, 0, 0, new TrapezoidProfile.Constraints(0, 0));
   private SimpleMotorFeedforward m_shooterModuleFeedforward = new SimpleMotorFeedforward(0, 0);
-
-  private final SysIdRoutine m_erectorCharacterizationRoutine;
-  private final SysIdRoutine m_shooterCharacterizationRoutine;
 
   private final SingleJointedMechanismVisualizer m_setpointVisualizer =
       new SingleJointedMechanismVisualizer(
@@ -119,7 +117,7 @@ public class ShooterBase extends SubsystemBase {
           "Setpoint",
           Constants.Shooter.SHOOTER_LENGTH_METERS,
           Constants.Shooter.PIVOT_POSE,
-          ShooterState.STARTING_STATE.angle(),
+          ShooterState.STARTING_STATE.angle,
           2,
           2);
   private final SingleJointedMechanismVisualizer m_measuredVisualizer =
@@ -128,7 +126,7 @@ public class ShooterBase extends SubsystemBase {
           "Measured",
           Constants.Shooter.SHOOTER_LENGTH_METERS,
           Constants.Shooter.PIVOT_POSE,
-          ShooterState.STARTING_STATE.angle(),
+          ShooterState.STARTING_STATE.angle,
           2,
           2);
 
@@ -138,29 +136,6 @@ public class ShooterBase extends SubsystemBase {
     this.m_kickupIO = kickupIO;
 
     m_erectorIO.setBrakeMode(true);
-
-    m_erectorCharacterizationRoutine =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(
-                null,
-                Volts.of(1),
-                null,
-                (state) -> Logger.recordOutput("Shooter/ErectorSysIdState", state.toString())),
-            new SysIdRoutine.Mechanism(
-                (voltage) -> m_erectorIO.setVoltage(voltage.in(Volts)), null, this, "Erector"));
-
-    m_shooterCharacterizationRoutine =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(
-                null,
-                null,
-                Seconds.of(7.5),
-                (state) -> Logger.recordOutput("Shooter/ShooterSysIdState", state.toString())),
-            new SysIdRoutine.Mechanism(
-                (voltage) -> m_shooterModuleIO.runCharacterizationVoltage(voltage.in(Volts)),
-                null,
-                this,
-                "Shooter"));
   }
 
   @Override
@@ -173,30 +148,72 @@ public class ShooterBase extends SubsystemBase {
     Logger.processInputs("Shooter/Module", m_shooterModuleInputs);
     Logger.processInputs("Shooter/Kickup", m_kickupInputs);
 
-    if (erectorKs.hasChanged(0)
-        || erectorKg.hasChanged(0)
-        || erectorKv.hasChanged(0)
-        || erectorKa.hasChanged(0)) {
-      m_erectorFeedforward =
-          new ArmFeedforward(erectorKs.get(), erectorKg.get(), erectorKv.get(), erectorKa.get());
-    }
-    if (erectorKp.hasChanged(0) || erectorKi.hasChanged(0) || erectorKd.hasChanged(0)) {
-      m_erectorFeedback.setPID(erectorKp.get(), erectorKi.get(), erectorKd.get());
-    }
+    LoggedTunableNumber.ifChanged(
+        () ->
+            m_erectorFeedforward =
+                new ArmFeedforward(
+                    erectorKs.get(), erectorKg.get(), erectorKv.get(), erectorKa.get()),
+        erectorKs,
+        erectorKg,
+        erectorKv,
+        erectorKa);
 
-    if (erectorMaxVelocity.hasChanged(0) || erectorMaxAcceleration.hasChanged(0)) {
-      m_erectorFeedback.setConstraints(
-          new TrapezoidProfile.Constraints(erectorMaxVelocity.get(), erectorMaxAcceleration.get()));
-    }
+    LoggedTunableNumber.ifChanged(
+        () -> m_erectorFeedback.setPID(erectorKp.get(), erectorKi.get(), erectorKd.get()),
+        erectorKp,
+        erectorKi,
+        erectorKd);
 
-    if (shooterModuleKs.hasChanged(0) || shooterModuleKv.hasChanged(0)) {
-      m_shooterModuleFeedforward =
-          new SimpleMotorFeedforward(shooterModuleKs.get(), shooterModuleKv.get());
-    }
-    if (shooterModuleKp.hasChanged(0)
-        || shooterModuleKi.hasChanged(0)
-        || shooterModuleKd.hasChanged(0)) {
-      m_shooterModuleIO.setPID(shooterModuleKp.get(), shooterModuleKi.get(), shooterModuleKd.get());
+    LoggedTunableNumber.ifChanged(
+        () ->
+            m_erectorFeedback.setConstraints(
+                new TrapezoidProfile.Constraints(
+                    erectorMaxVelocity.get(), erectorMaxAcceleration.get())),
+        erectorMaxVelocity,
+        erectorMaxAcceleration);
+
+    LoggedTunableNumber.ifChanged(
+        () ->
+            m_shooterModuleFeedforward =
+                new SimpleMotorFeedforward(shooterModuleKs.get(), shooterModuleKv.get()),
+        shooterModuleKs,
+        shooterModuleKv);
+
+    LoggedTunableNumber.ifChanged(
+        () ->
+            m_shooterModuleIO.setPID(
+                shooterModuleKp.get(), shooterModuleKi.get(), shooterModuleKd.get()),
+        shooterModuleKp,
+        shooterModuleKi,
+        shooterModuleKd);
+
+    if (AUTO_MODE_ENABLED) {
+      var currentPose = PoseEstimator.getInstance().getPose();
+      // TODO handle this. Shouldn't matter cause no dynamics care about velocity as is
+      var currentVelocity = new ChassisSpeeds();
+
+      if (ShooterDynamics.inShooterZone(currentPose) && holdingNote()) {
+        ShooterDynamics.calculateSpeakerState(currentPose, currentVelocity)
+            .ifPresent(
+                v -> {
+                  boolean canShoot = canShoot();
+
+                  // Not shooting yet, bring to mid-level velocity. This will reduce the convergence
+                  // rate for when we do shoot.
+                  setSetpoint(
+                      canShoot ? v : new ShooterState(v.angle, ShooterState.SHOOTING_LOW_VELOCITY));
+                });
+      } else if (ShooterDynamics.inIntakeZone(currentPose)) {
+        ShooterDynamics.calculateIntakeState(currentPose)
+            .ifPresent(
+                v -> {
+                  // Don't bring the shooter down until we leave the intake zone to prevent damage
+                  setSetpoint(!holdingNote() ? v : ShooterState.STARTING_STATE);
+                  setKickupVoltage(!holdingNote() ? -8.0 : 0);
+                });
+      } else {
+        setSetpoint(ShooterState.TRAVEL_STATE);
+      }
     }
 
     // Update setpoint and command IO layers
@@ -214,7 +231,7 @@ public class ShooterBase extends SubsystemBase {
           m_erectorInputs.absoluteAngle.getRadians(), m_erectorInputs.velocityRadPerSec);
     } else if (m_setpoint != null) {
       double erectorMeasurement = m_erectorInputs.absoluteAngle.getRadians();
-      double erectorGoal = m_setpoint.angle().getRadians();
+      double erectorGoal = m_setpoint.angle.getRadians();
 
       m_erectorIO.setVoltage(
           MathUtil.clamp(
@@ -223,19 +240,18 @@ public class ShooterBase extends SubsystemBase {
               -12,
               12));
 
-      double topSetpoint = m_setpoint.shooterTopVelocityMetersPerSecond() / SHOOTER_RADIUS_METERS;
-      double bottomSetpoint =
-          m_setpoint.shooterBottomVelocityMetersPerSecond() / SHOOTER_RADIUS_METERS;
+      double topSetpointMetersPerSecond = m_setpoint.shooterTopVelocityMetersPerSecond;
+      double bottomSetpointMetersPerSecond = m_setpoint.shooterBottomVelocityMetersPerSecond;
 
       m_shooterModuleIO.runSetpoint(
-          topSetpoint,
-          bottomSetpoint,
-          m_shooterModuleFeedforward.calculate(topSetpoint),
-          m_shooterModuleFeedforward.calculate(bottomSetpoint));
+          topSetpointMetersPerSecond / SHOOTER_RADIUS_METERS,
+          bottomSetpointMetersPerSecond / SHOOTER_RADIUS_METERS,
+          m_shooterModuleFeedforward.calculate(topSetpointMetersPerSecond),
+          m_shooterModuleFeedforward.calculate(bottomSetpointMetersPerSecond));
     }
 
     if (m_setpoint != null) {
-      m_setpointVisualizer.update(m_setpoint.angle());
+      m_setpointVisualizer.update(m_setpoint.angle);
     }
     m_measuredVisualizer.update(m_erectorInputs.absoluteAngle);
   }
@@ -257,6 +273,21 @@ public class ShooterBase extends SubsystemBase {
         m_shooterModuleInputs.bottomVelocityRadPerSecond * SHOOTER_RADIUS_METERS);
   }
 
+  public Command getShooterCharacterizationCommand() {
+    return new FeedForwardCharacterization(
+        this,
+        "ShooterModule",
+        m_shooterModuleIO::runCharacterizationVoltage,
+        () -> {
+          var currentState = getCurrentState();
+          return (currentState.shooterTopVelocityMetersPerSecond
+                  + currentState.shooterBottomVelocityMetersPerSecond)
+              / 2.0;
+        },
+        0.5,
+        10);
+  }
+
   @AutoLogOutput(key = "Shooter/AtSetpoint")
   public boolean atSetpoint() {
     return getSetpoint().equals(getCurrentState());
@@ -270,38 +301,17 @@ public class ShooterBase extends SubsystemBase {
     return m_kickupInputs.beamBreakBroken;
   }
 
-  public Command characterizeErectorQuasistatic(SysIdRoutine.Direction direction) {
-    return handleCharacterization()
-        .andThen(m_erectorCharacterizationRoutine.quasistatic(direction));
+  public void setAutoModeEnabled(boolean enabled) {
+    this.AUTO_MODE_ENABLED = enabled;
   }
 
-  public Command characterizeErectorDynamic(SysIdRoutine.Direction direction) {
-    return handleCharacterization().andThen(m_erectorCharacterizationRoutine.dynamic(direction));
-  }
-
-  public Command characterizeShooterQuasistatic(SysIdRoutine.Direction direction) {
-    return handleCharacterization()
-        .andThen(m_shooterCharacterizationRoutine.quasistatic(direction));
-  }
-
-  public Command characterizeShooterDynamic(SysIdRoutine.Direction direction) {
-    return handleCharacterization().andThen(m_shooterCharacterizationRoutine.dynamic(direction));
-  }
-
-  /**
-   * Stops the subsystem from going to the setpoint
-   *
-   * @return Command that sets up the subsystem for characterization. This should be run before the
-   *     characterization command.
-   */
-  private Command handleCharacterization() {
-    return Commands.runOnce(
-        () -> {
-          m_setpoint = null;
-          m_erectorIO.setVoltage(0);
-          m_kickupIO.setVoltage(0);
-          m_shooterModuleIO.stop();
-        },
-        this);
+  @AutoLogOutput(key = "Shooter/Auto/CanShoot")
+  public boolean canShoot() {
+    // TODO handle chassis speeds
+    return AUTO_MODE_ENABLED
+        && holdingNote()
+        && atSetpoint()
+        && ShooterDynamics.withinSpeakerYawTolerance(
+            PoseEstimator.getInstance().getPose(), new ChassisSpeeds());
   }
 }

@@ -19,6 +19,7 @@ public class PoseEstimator {
   // heading in radians).
   // Increase these numbers to trust your state estimate less.
   private static final Matrix<N3, N1> stateStdDevs = VecBuilder.fill(0.003, 0.003, 0.0002); // TODO
+  // Rate at which odometry samples are collected
   public static final double ODOMETRY_FREQUENCY = 100.0;
   public static final Lock odometryLock = new ReentrantLock();
 
@@ -104,12 +105,12 @@ public class PoseEstimator {
     resetPose(samplePose.exp(scaledTwist));
 
     // Record the current pose to allow multiple measurements from the same timestamp
-    m_poseBuffer.addSample(timestampSeconds, new OdometryUpdate(this.pose, sample.lerp()));
+    m_poseBuffer.addSample(timestampSeconds, new OdometryUpdate(this.pose, sample.deltaTwist()));
 
     // Replay odometry inputs between sample time and latest recorded sample to update the
     // pose buffer and correct odometry
     for (var entry : m_poseBuffer.getInternalBuffer().tailMap(timestampSeconds).entrySet()) {
-      addDriveData(entry.getKey(), entry.getValue().lerp());
+      addDriveData(entry.getKey(), entry.getValue().deltaTwist());
     }
   }
 
@@ -117,10 +118,10 @@ public class PoseEstimator {
    * Represents an Odometry update at a given moment
    *
    * @param pose The pose observed given the current sensor inputs and the previous pose.
-   * @param lerp The change measured by the sensors between the previous update and the update's
-   *     pose.
+   * @param deltaTwist The change measured by the sensors between the previous update and the
+   *     update's pose.
    */
-  private record OdometryUpdate(Pose2d pose, Twist2d lerp)
+  private record OdometryUpdate(Pose2d pose, Twist2d deltaTwist)
       implements Interpolatable<OdometryUpdate> {
     @Override
     public OdometryUpdate interpolate(OdometryUpdate endValue, double t) {
@@ -130,9 +131,9 @@ public class PoseEstimator {
         return endValue;
       } else {
         var interpolatedPose = pose().interpolate(endValue.pose(), t);
-        var lerp = pose().log(interpolatedPose);
+        var deltaTwist = pose().log(interpolatedPose);
 
-        return new OdometryUpdate(interpolatedPose, lerp);
+        return new OdometryUpdate(interpolatedPose, deltaTwist);
       }
     }
   }

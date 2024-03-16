@@ -8,6 +8,7 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import frc.robot.constants.Constants;
+import frc.robot.constants.FieldConstants;
 import frc.robot.util.PoseEstimator;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -21,7 +22,7 @@ public class VisionIOSim extends VisionIOPhotonCamera {
   static {
     if (Constants.getRobotMode() == Constants.RobotMode.SIM) {
       m_visionSystemSim = new VisionSystemSim("main");
-      m_visionSystemSim.addAprilTags(VisionBase.m_fieldLayout);
+      m_visionSystemSim.addAprilTags(FieldConstants.FIELD_LAYOUT);
     }
   }
 

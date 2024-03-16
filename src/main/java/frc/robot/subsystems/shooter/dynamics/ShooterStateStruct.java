@@ -40,8 +40,8 @@ public class ShooterStateStruct implements Struct<ShooterState> {
 
   @Override
   public void pack(ByteBuffer byteBuffer, ShooterState shooterState) {
-    Rotation2d.struct.pack(byteBuffer, shooterState.angle());
-    byteBuffer.putDouble(shooterState.shooterTopVelocityMetersPerSecond());
-    byteBuffer.putDouble(shooterState.shooterBottomVelocityMetersPerSecond());
+    Rotation2d.struct.pack(byteBuffer, shooterState.angle);
+    byteBuffer.putDouble(shooterState.shooterTopVelocityMetersPerSecond);
+    byteBuffer.putDouble(shooterState.shooterBottomVelocityMetersPerSecond);
   }
 }
