@@ -65,6 +65,10 @@ public class AllianceFlipUtil {
       return shouldFlip() ? transformer.apply(value) : value;
     }
 
+    public T getRaw() {
+      return value;
+    }
+
     public static AllianceRelative<Double> from(double value) {
       return new AllianceRelative<>(value, AllianceFlipUtil::flipX);
     }

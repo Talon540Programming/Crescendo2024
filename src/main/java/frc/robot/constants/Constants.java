@@ -64,6 +64,10 @@ public final class Constants {
     else return RobotBase.isReal() ? RobotMode.REAL : RobotMode.REPLAY;
   }
 
+  public static final double ROBOT_WIDTH = Units.inchesToMeters(29);
+  public static final double ROBOT_LENGTH = Units.inchesToMeters(29);
+  public static final double BUMPER_WIDTH = Units.inchesToMeters(3.5);
+
   public static class Shooter {
     public static final double MAX_SHOOTER_SPEED_METERS_PER_SECOND = 43.5;
     public static final Rotation2d MIN_SHOOTER_ANGLE = Rotation2d.fromDegrees(17.5);

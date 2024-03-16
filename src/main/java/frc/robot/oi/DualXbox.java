@@ -38,8 +38,13 @@ public class DualXbox implements ControlsInterface {
   }
 
   @Override
-  public Trigger trajectoryOverride() {
-    return driverController.y();
+  public Trigger subwooferPoseOverride() {
+    return driverController.povUp();
+  }
+
+  @Override
+  public Trigger sourcePoseOverride() {
+    return driverController.povDown();
   }
 
   @Override

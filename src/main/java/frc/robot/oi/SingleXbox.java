@@ -37,8 +37,13 @@ public class SingleXbox implements ControlsInterface {
   }
 
   @Override
-  public Trigger trajectoryOverride() {
-    return controller.y();
+  public Trigger subwooferPoseOverride() {
+    return controller.povUp();
+  }
+
+  @Override
+  public Trigger sourcePoseOverride() {
+    return controller.povDown();
   }
 
   @Override

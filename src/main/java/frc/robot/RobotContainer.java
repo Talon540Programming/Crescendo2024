@@ -1,22 +1,28 @@
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.commands.DriveTeleop;
 import frc.robot.constants.Constants;
+import frc.robot.constants.FieldConstants;
 import frc.robot.oi.ControlsInterface;
-import frc.robot.oi.SingleXbox;
+import frc.robot.oi.SimKeyboard;
 import frc.robot.subsystems.drive.*;
 import frc.robot.subsystems.intake.*;
 import frc.robot.subsystems.shooter.*;
 import frc.robot.subsystems.shooter.dynamics.ShooterDynamics;
 import frc.robot.subsystems.shooter.dynamics.ShooterState;
 import frc.robot.subsystems.vision.*;
+import frc.robot.util.AllianceFlipUtil;
+import frc.robot.util.PoseEstimator;
 import java.util.Optional;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
-  private final ControlsInterface controlsInterface = new SingleXbox();
+  private final ControlsInterface controlsInterface = new SimKeyboard();
 
   private final DriveBase m_drive;
   private final ShooterBase m_shooter;
@@ -131,6 +137,43 @@ public class RobotContainer {
         .and(m_shooter::canShoot)
         .onTrue(Commands.runOnce(() -> m_shooter.setKickupVoltage(12.0), m_shooter))
         .onFalse(Commands.runOnce(() -> m_shooter.setKickupVoltage(0.0), m_shooter));
+
+    controlsInterface
+        .subwooferPoseOverride()
+        .onTrue(
+            Commands.runOnce(
+                () ->
+                    PoseEstimator.getInstance()
+                        .resetPose(
+                            new Pose2d(
+                                AllianceFlipUtil.apply(
+                                    FieldConstants.Speaker.centerSpeaker
+                                        .getRaw()
+                                        .toTranslation2d()
+                                        .plus(
+                                            new Translation2d(
+                                                Constants.ROBOT_LENGTH / 2.0 + 0.75,
+                                                new Rotation2d()))),
+                                AllianceFlipUtil.apply(new Rotation2d())))));
+    controlsInterface
+        .sourcePoseOverride()
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  var wallAngle = FieldConstants.Source.SOURCE_WALL_ANGLE.get();
+                  PoseEstimator.getInstance()
+                      .resetPose(
+                          new Pose2d(
+                              AllianceFlipUtil.apply(
+                                  FieldConstants.Source.SOURCE_RIGHT_OPENING
+                                      .getRaw()
+                                      .toTranslation2d()
+                                      .plus(
+                                          new Translation2d(
+                                              Constants.ROBOT_WIDTH / 2.0 + Constants.BUMPER_WIDTH,
+                                              AllianceFlipUtil.apply(wallAngle)))),
+                              wallAngle));
+                }));
 
     controlsInterface
         .intake()

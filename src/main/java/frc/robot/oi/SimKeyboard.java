@@ -37,8 +37,13 @@ public class SimKeyboard implements ControlsInterface {
   }
 
   @Override
-  public Trigger trajectoryOverride() {
-    return new Trigger(() -> false);
+  public Trigger subwooferPoseOverride() {
+    return new Trigger(() -> hid.getRawButton(1));
+  }
+
+  @Override
+  public Trigger sourcePoseOverride() {
+    return new Trigger(() -> hid.getRawButton(2));
   }
 
   @Override

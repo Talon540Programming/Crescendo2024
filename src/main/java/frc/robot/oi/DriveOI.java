@@ -15,5 +15,7 @@ public interface DriveOI {
 
   public Trigger headingLock();
 
-  public Trigger trajectoryOverride();
+  public Trigger subwooferPoseOverride();
+
+  public Trigger sourcePoseOverride();
 }
