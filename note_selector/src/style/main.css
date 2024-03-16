@@ -1,0 +1,30 @@
+body {
+    padding: 0;
+    margin: 0;
+    background-color: #373737;
+}
+
+.field-wrapper {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.field-image {
+    display: block;
+    position: relative;
+    width: 100%;
+    height: auto;
+}
+
+.note-container {
+    cursor: pointer;
+    width: 3vw;
+    height: 3vw;
+    background-color: red;
+    opacity: 0.5;
+}
+
+.selected {
+    background-color: green !important;
+}
