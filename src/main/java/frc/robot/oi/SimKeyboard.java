@@ -32,7 +32,7 @@ public class SimKeyboard implements ControlsInterface {
   }
 
   @Override
-  public Trigger shooterAngleLock() {
+  public Trigger headingLock() {
     return new Trigger(() -> false);
   }
 

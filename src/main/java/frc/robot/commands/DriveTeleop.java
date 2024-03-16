@@ -95,7 +95,7 @@ public class DriveTeleop extends Command {
         oi::getDriveTheta,
         () -> oi.robotRelativeOverride().getAsBoolean(),
         headingSupplier,
-        () -> oi.shooterAngleLock().getAsBoolean());
+        () -> oi.headingLock().getAsBoolean());
   }
 
   @Override

@@ -32,7 +32,7 @@ public class SinglePS4 implements ControlsInterface {
   }
 
   @Override
-  public Trigger shooterAngleLock() {
+  public Trigger headingLock() {
     return controller.R1();
   }
 

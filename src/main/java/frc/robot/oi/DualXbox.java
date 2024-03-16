@@ -33,7 +33,7 @@ public class DualXbox implements ControlsInterface {
   }
 
   @Override
-  public Trigger shooterAngleLock() {
+  public Trigger headingLock() {
     return driverController.rightBumper();
   }
 

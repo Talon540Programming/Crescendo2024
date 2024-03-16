@@ -13,7 +13,7 @@ public interface DriveOI {
 
   public Trigger moduleLock();
 
-  public Trigger shooterAngleLock();
+  public Trigger headingLock();
 
   public Trigger trajectoryOverride();
 }

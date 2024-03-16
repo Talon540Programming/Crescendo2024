@@ -32,7 +32,7 @@ public class SingleXbox implements ControlsInterface {
   }
 
   @Override
-  public Trigger shooterAngleLock() {
+  public Trigger headingLock() {
     return controller.rightBumper();
   }
 
