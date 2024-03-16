@@ -1,16 +1,11 @@
 package frc.robot.commands;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.constants.Constants;
 import frc.robot.oi.DriveOI;
 import frc.robot.subsystems.drive.DriveBase;
 import frc.robot.util.LoggedTunableNumber;
@@ -19,37 +14,12 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
-import org.littletonrobotics.junction.Logger;
 
-public class DriveTeleop extends Command {
+public class DriveTeleop extends DriveHeading {
   private static final LoggedTunableNumber controllerDeadband =
       new LoggedTunableNumber("TeleopDrive/Deadband", 0.1);
   private static final LoggedTunableNumber maxAngularVelocityScalar =
       new LoggedTunableNumber("TeleopDrive/AngularVelocityScalar", 0.75);
-
-  private static final LoggedTunableNumber headingKp =
-      new LoggedTunableNumber("TeleopDrive/HeadingKp");
-  private static final LoggedTunableNumber headingKd =
-      new LoggedTunableNumber("TeleopDrive/HeadingKd");
-  private static final LoggedTunableNumber headingToleranceDegrees =
-      new LoggedTunableNumber("TeleopDrive/HeadingToleranceDegrees");
-
-  private static final LoggedTunableNumber headingMaxVelocityScalar =
-      new LoggedTunableNumber("TeleopDrive/HeadingMaxVelocityScalar");
-  private static final LoggedTunableNumber headingMaxAccelerationScalar =
-      new LoggedTunableNumber("TeleopDrive/HeadingMaxAccelerationScalar");
-
-  static {
-    switch (Constants.getRobotType()) {
-      case ROBOT_SIMBOT, ROBOT_2024_COMP -> {
-        headingKp.initDefault(5.0);
-        headingKd.initDefault(0.0);
-        headingToleranceDegrees.initDefault(1.0);
-        headingMaxVelocityScalar.initDefault(0.8);
-        headingMaxAccelerationScalar.initDefault(0.8);
-      }
-    }
-  }
 
   private final DriveBase driveBase;
 
@@ -57,11 +27,7 @@ public class DriveTeleop extends Command {
   private final DoubleSupplier ySupplier;
   private final DoubleSupplier thetaSupplier;
   private final BooleanSupplier robotRelativeSupplier;
-  private final BiFunction<Pose2d, ChassisSpeeds, Optional<Rotation2d>> headingSupplier;
   private final BooleanSupplier headingLockSupplier;
-
-  private final ProfiledPIDController headingController =
-      new ProfiledPIDController(0, 0, 0, new TrapezoidProfile.Constraints(0, 0));
 
   public DriveTeleop(
       DriveBase driveBase,
@@ -71,17 +37,17 @@ public class DriveTeleop extends Command {
       BooleanSupplier robotRelativeSupplier,
       BiFunction<Pose2d, ChassisSpeeds, Optional<Rotation2d>> headingSupplier,
       BooleanSupplier headingLockSupplier) {
-    addRequirements(driveBase);
+    super(driveBase, headingSupplier);
 
     this.driveBase = driveBase;
     this.xSupplier = xSupplier;
     this.ySupplier = ySupplier;
     this.thetaSupplier = thetaSupplier;
     this.robotRelativeSupplier = robotRelativeSupplier;
-    this.headingSupplier = headingSupplier;
     this.headingLockSupplier = headingLockSupplier;
 
-    headingController.enableContinuousInput(-Math.PI, Math.PI);
+    // Because we are extending the command, we need to replace the parent name
+    setName("DriveTeleop");
   }
 
   public DriveTeleop(
@@ -99,41 +65,9 @@ public class DriveTeleop extends Command {
   }
 
   @Override
-  public void initialize() {
-    headingController.setPID(headingKp.get(), 0, headingKd.get());
-    headingController.setConstraints(
-        new TrapezoidProfile.Constraints(
-            DriveBase.kMaxAngularVelocityRadiansPerSecond * headingMaxVelocityScalar.get(),
-            DriveBase.kMaxAngularAccelerationRadiansPerSecondSquared
-                * headingMaxAccelerationScalar.get()));
-    headingController.setTolerance(Units.degreesToRadians(headingToleranceDegrees.get()));
-
-    headingController.reset(
-        PoseEstimator.getInstance().getPose().getRotation().getRadians(),
-        driveBase.getVelocity().omegaRadiansPerSecond);
-  }
-
-  @Override
   public void execute() {
-    LoggedTunableNumber.ifChanged(
-        hashCode(),
-        () -> headingController.setPID(headingKp.get(), 0, headingKd.get()),
-        headingKp,
-        headingKd);
-    LoggedTunableNumber.ifChanged(
-        hashCode(),
-        () ->
-            headingController.setConstraints(
-                new TrapezoidProfile.Constraints(
-                    DriveBase.kMaxAngularVelocityRadiansPerSecond * headingMaxVelocityScalar.get(),
-                    DriveBase.kMaxAngularAccelerationRadiansPerSecondSquared
-                        * headingMaxAccelerationScalar.get())),
-        headingMaxVelocityScalar,
-        headingMaxAccelerationScalar);
-    LoggedTunableNumber.ifChanged(
-        hashCode(),
-        () -> headingController.setTolerance(Units.degreesToRadians(headingToleranceDegrees.get())),
-        headingToleranceDegrees);
+    // Because we aren't calling super.execute(), we need this
+    super.pollTunableNumbers();
 
     Pose2d currentPose = PoseEstimator.getInstance().getPose();
     double deadband = controllerDeadband.get();
@@ -178,19 +112,7 @@ public class DriveTeleop extends Command {
 
     // Replace omega velocity component with calculated speaker lock value using heading controller
     if (headingLockSupplier.getAsBoolean()) {
-      headingSupplier
-          .apply(currentPose, driveBase.getVelocity())
-          .ifPresent(
-              v -> {
-                speeds.omegaRadiansPerSecond =
-                    headingController.calculate(
-                        currentPose.getRotation().getRadians(), v.getRadians());
-                Logger.recordOutput(
-                    "TeleopDrive/HeadingControllerPose",
-                    new Pose2d(currentPose.getTranslation(), v));
-                Logger.recordOutput(
-                    "TeleopDrive/HeadingError", headingController.getPositionError());
-              });
+      calculateSpeeds().ifPresent((v) -> speeds.omegaRadiansPerSecond = v.omegaRadiansPerSecond);
     }
 
     driveBase.runVelocity(speeds);
