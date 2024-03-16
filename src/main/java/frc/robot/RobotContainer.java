@@ -180,26 +180,25 @@ public class RobotContainer {
         .and(() -> !m_shooter.holdingNote())
         .onTrue(
             Commands.sequence(
-                Commands.parallel(
-                    Commands.runOnce(
-                        () -> {
-                          m_shooter.setAutoModeEnabled(false);
-                          m_shooter.setSetpoint(ShooterState.GROUND_INTAKE_STATE);
-                        },
-                        m_shooter),
-                    Commands.runOnce(
-                        () -> m_intake.setWristGoal(Constants.Intake.GROUND_INTAKE_ANGLE),
-                        m_intake)),
+                Commands.runOnce(
+                    () -> {
+                      m_shooter.setAutoModeEnabled(false);
+                      m_shooter.setSetpoint(ShooterState.GROUND_INTAKE_STATE);
+                      m_intake.setWristGoal(Constants.Intake.GROUND_INTAKE_ANGLE);
+                    },
+                    m_shooter,
+                    m_intake),
                 Commands.waitUntil(() -> m_shooter.atSetpoint() && m_intake.atWristGoal()),
                 Commands.run(
                         () -> {
-                          m_intake.setRollersVoltage(12.0);
-                          m_intake.setIndexerVoltage(12.0);
+                          m_intake.setRollersVoltage(8.0);
+                          m_intake.setIndexerVoltage(8.0);
                           m_shooter.setKickupVoltage(8.0);
                         },
                         m_intake,
                         m_shooter)
-                    .until(m_shooter::holdingNote),
+                    .until(m_shooter::holdingNote)
+                    .withTimeout(7.5),
                 Commands.waitSeconds(0.25),
                 Commands.runOnce(
                     () -> {
@@ -211,6 +210,17 @@ public class RobotContainer {
                     },
                     m_intake,
                     m_shooter)));
+
+    controlsInterface
+        .ejectIndexer()
+        .onTrue(
+            Commands.sequence(
+                Commands.runOnce(
+                    () -> m_intake.setWristGoal(Constants.Intake.STOW_ANGLE), m_intake),
+                Commands.waitUntil(m_intake::atWristGoal),
+                Commands.runOnce(() -> m_intake.setIndexerVoltage(-8.0), m_intake),
+                Commands.waitSeconds(1.5),
+                Commands.runOnce(() -> m_intake.setIndexerVoltage(0), m_intake)));
   }
 
   public Command getAutonomousCommand() {

@@ -6,4 +6,6 @@ public interface OperatorOI {
   public Trigger shoot();
 
   public Trigger intake();
+
+  public Trigger ejectIndexer();
 }

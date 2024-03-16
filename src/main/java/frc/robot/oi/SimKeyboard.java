@@ -55,4 +55,9 @@ public class SimKeyboard implements ControlsInterface {
   public Trigger intake() {
     return new Trigger(() -> false);
   }
+
+  @Override
+  public Trigger ejectIndexer() {
+    return new Trigger(() -> false);
+  }
 }

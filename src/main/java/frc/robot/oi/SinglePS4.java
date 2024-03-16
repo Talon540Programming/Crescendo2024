@@ -53,6 +53,11 @@ public class SinglePS4 implements ControlsInterface {
 
   @Override
   public Trigger intake() {
-    return controller.L2();
+    return controller.cross();
+  }
+
+  @Override
+  public Trigger ejectIndexer() {
+    return controller.triangle();
   }
 }

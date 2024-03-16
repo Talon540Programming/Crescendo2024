@@ -53,6 +53,11 @@ public class SingleXbox implements ControlsInterface {
 
   @Override
   public Trigger intake() {
-    return controller.leftTrigger();
+    return controller.a();
+  }
+
+  @Override
+  public Trigger ejectIndexer() {
+    return controller.y();
   }
 }
