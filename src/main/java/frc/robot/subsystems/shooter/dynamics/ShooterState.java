@@ -9,6 +9,10 @@ import frc.robot.util.LoggedTunableNumber;
 public class ShooterState implements StructSerializable {
   public static final ShooterState STARTING_STATE = new ShooterState(Rotation2d.fromDegrees(70), 0);
   public static final ShooterState TRAVEL_STATE = new ShooterState(Rotation2d.fromDegrees(25), 1.5);
+  public static final ShooterState GROUND_INTAKE_STATE =
+      new ShooterState(Rotation2d.fromDegrees(45), -1.5);
+
+  public static final double SHOOTING_LOW_VELOCITY = 12.5;
 
   private static final LoggedTunableNumber velocityTolerance =
       new LoggedTunableNumber("Shooter/VelocityTolerance");
@@ -22,7 +26,7 @@ public class ShooterState implements StructSerializable {
         angleTolerance.initDefault(0.01);
       }
       case ROBOT_2024_COMP -> {
-        velocityTolerance.initDefault(0.7);
+        velocityTolerance.initDefault(1.5);
         angleTolerance.initDefault(0.1);
       }
     }

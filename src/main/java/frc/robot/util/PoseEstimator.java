@@ -12,6 +12,7 @@ import edu.wpi.first.math.numbers.N3;
 import java.util.NoSuchElementException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import lombok.Getter;
 
 public class PoseEstimator {
   // Standard deviations of the pose estimate (x position in meters, y position in meters, and
@@ -24,7 +25,7 @@ public class PoseEstimator {
 
   private static PoseEstimator instance;
 
-  private Pose2d pose = new Pose2d();
+  @Getter private Pose2d pose = new Pose2d();
   private final Matrix<N3, N1> m_q = new Matrix<>(Nat.N3(), Nat.N1());
   private static final double kBufferDurationSec = 0.3;
   private final TimeInterpolatableBuffer<OdometryUpdate> m_poseBuffer =
@@ -41,10 +42,6 @@ public class PoseEstimator {
     for (int i = 0; i < 3; ++i) {
       m_q.set(i, 0, stateStdDevs.get(i, 0) * stateStdDevs.get(i, 0));
     }
-  }
-
-  public Pose2d getPose() {
-    return pose;
   }
 
   public void resetPose(Pose2d pose) {
@@ -108,12 +105,12 @@ public class PoseEstimator {
     resetPose(samplePose.exp(scaledTwist));
 
     // Record the current pose to allow multiple measurements from the same timestamp
-    m_poseBuffer.addSample(timestampSeconds, new OdometryUpdate(this.pose, sample.lerp()));
+    m_poseBuffer.addSample(timestampSeconds, new OdometryUpdate(this.pose, sample.deltaTwist()));
 
     // Replay odometry inputs between sample time and latest recorded sample to update the
     // pose buffer and correct odometry
     for (var entry : m_poseBuffer.getInternalBuffer().tailMap(timestampSeconds).entrySet()) {
-      addDriveData(entry.getKey(), entry.getValue().lerp());
+      addDriveData(entry.getKey(), entry.getValue().deltaTwist());
     }
   }
 
@@ -121,10 +118,10 @@ public class PoseEstimator {
    * Represents an Odometry update at a given moment
    *
    * @param pose The pose observed given the current sensor inputs and the previous pose.
-   * @param lerp The change measured by the sensors between the previous update and the update's
-   *     pose.
+   * @param deltaTwist The change measured by the sensors between the previous update and the
+   *     update's pose.
    */
-  private record OdometryUpdate(Pose2d pose, Twist2d lerp)
+  private record OdometryUpdate(Pose2d pose, Twist2d deltaTwist)
       implements Interpolatable<OdometryUpdate> {
     @Override
     public OdometryUpdate interpolate(OdometryUpdate endValue, double t) {
@@ -134,9 +131,9 @@ public class PoseEstimator {
         return endValue;
       } else {
         var interpolatedPose = pose().interpolate(endValue.pose(), t);
-        var lerp = pose().log(interpolatedPose);
+        var deltaTwist = pose().log(interpolatedPose);
 
-        return new OdometryUpdate(interpolatedPose, lerp);
+        return new OdometryUpdate(interpolatedPose, deltaTwist);
       }
     }
   }

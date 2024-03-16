@@ -46,4 +46,9 @@ public class DualXbox implements ControlsInterface {
   public Trigger shoot() {
     return operatorController.x();
   }
+
+  @Override
+  public Trigger intake() {
+    return operatorController.leftTrigger();
+  }
 }

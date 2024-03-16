@@ -5,6 +5,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import frc.robot.constants.Constants;
 import frc.robot.constants.FieldConstants;
+import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.GeomUtil;
 import java.util.Optional;
 
@@ -25,7 +26,7 @@ public class ShooterDynamics {
   public static Optional<ShooterState> calculateSpeakerState(
       Pose2d robotPose, ChassisSpeeds robotVel) {
     // Ensure shot is within legal limits
-    if (robotPose.getX() > FieldConstants.Field.WING_LINE_X) {
+    if (AllianceFlipUtil.apply(robotPose.getX()) > FieldConstants.Field.WING_LINE_X) {
       return Optional.empty();
     }
 
@@ -34,11 +35,11 @@ public class ShooterDynamics {
       return Optional.empty();
     }
 
-    // TODO, determine if linear approximation is enough or if regression is needed to determine the
-    //  shooter angle
     var pivotTranslation = calculatePivotTranslation(robotPose);
     var targetTranslation = FieldConstants.Speaker.centerSpeaker.get();
 
+    // TODO, determine if linear approximation is enough or if regression is needed to determine the
+    //  shooter angle
     // Calculate the pitch angle to the target
     var pivotToTargetAngle =
         Rotation2d.fromRadians(
@@ -133,6 +134,6 @@ public class ShooterDynamics {
     var currentAngle = robotPose.getRotation();
     var requiredRobotAngle = calculateRobotSpeakerAngle(robotPose.getTranslation(), speeds);
     return Math.abs(requiredRobotAngle.getDegrees() - currentAngle.getDegrees())
-        >= SHOOTER_SPEAKER_YAW_ANGLE_TOLERANCE_DEGREES;
+        <= SHOOTER_SPEAKER_YAW_ANGLE_TOLERANCE_DEGREES;
   }
 }
