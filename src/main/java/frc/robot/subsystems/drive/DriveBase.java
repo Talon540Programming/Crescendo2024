@@ -189,11 +189,6 @@ public class DriveBase extends SubsystemBase {
     Logger.recordOutput("Drive/SpeedSetpoint", discreteSpeeds);
     Logger.recordOutput("Drive/ModuleSetpoints", setpointStates);
     Logger.recordOutput("Drive/ModuleSetpointsOptimized", optimizedStates);
-
-    Logger.recordOutput(
-        "test",
-        Math.abs(
-            optimizedStates[0].speedMetersPerSecond - getModuleStates()[0].speedMetersPerSecond));
   }
 
   public Command getDriveCharacterizationCommand() {
