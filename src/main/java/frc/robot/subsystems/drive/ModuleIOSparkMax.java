@@ -200,9 +200,7 @@ public class ModuleIOSparkMax implements ModuleIO {
       hasResetPosition = true;
     }
 
-    m_turnController.setReference(
-        // Convert from module relative to motor relative
-        angle.getRadians(), CANSparkBase.ControlType.kPosition);
+    m_turnController.setReference(angle.getRadians(), CANSparkBase.ControlType.kPosition);
   }
 
   @Override

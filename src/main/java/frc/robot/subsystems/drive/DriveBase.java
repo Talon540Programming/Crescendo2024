@@ -95,7 +95,7 @@ public class DriveBase extends SubsystemBase {
       OdometryQueueManager.getInstance().updateTimestampsInput(m_odometryTimestampInputs);
       m_gyroIO.updateInputs(m_gyroInputs);
       for (var module : m_modules) {
-        module.updateInputs();
+        module.periodic();
       }
     } finally {
       PoseEstimator.odometryLock.unlock();

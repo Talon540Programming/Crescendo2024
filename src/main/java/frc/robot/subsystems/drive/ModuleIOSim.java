@@ -24,9 +24,6 @@ public class ModuleIOSim implements ModuleIO {
 
   private final Rotation2d turnAbsoluteInitPosition = new Rotation2d(Math.random() * 2.0 * Math.PI);
 
-  private Double velocitySetpoint = null;
-  private double driveFeedForwardVolts;
-  private Rotation2d angleSetpoint = null;
   private double driveAppliedVolts = 0.0;
   private double turnAppliedVolts = 0.0;
 
@@ -63,26 +60,6 @@ public class ModuleIOSim implements ModuleIO {
               // Convert from radians to meters
               inputs.drivePositionRad * DriveBase.kWheelRadiusMeters, inputs.turnPositionRad)
         };
-
-    // PID setpoints need to be constantly calculated to mirror how the SparkMax handles the onboard
-    // PID controller
-    if (velocitySetpoint != null) {
-      runDriveVolts(
-          // PID coefficients are in terms of the motor's output, not the module as a whole, scale
-          // the
-          // inputs to account for this
-          m_driveController.calculate(m_driveSim.getAngularVelocityRadPerSec(), velocitySetpoint)
-              + driveFeedForwardVolts);
-    }
-    if (angleSetpoint != null) {
-      runTurnVolts(
-          // PID coefficients are in terms of the motor's output, not the module as a whole, scale
-          // the
-          // inputs to account for this
-          m_turnController.calculate(
-              MathUtil.angleModulus(m_turnSim.getAngularPositionRad()),
-              angleSetpoint.getRadians()));
-    }
   }
 
   @Override
@@ -109,12 +86,15 @@ public class ModuleIOSim implements ModuleIO {
 
   @Override
   public void runDriveVelocitySetpoint(double velocityRadPerSec, double driveFeedForwardVolts) {
-    velocitySetpoint = velocityRadPerSec;
-    this.driveFeedForwardVolts = driveFeedForwardVolts;
+    runDriveVolts(
+        m_driveController.calculate(m_driveSim.getAngularVelocityRadPerSec(), velocityRadPerSec)
+            + driveFeedForwardVolts);
   }
 
   @Override
   public void runTurnAngleSetpoint(Rotation2d angle) {
-    angleSetpoint = angle;
+    runTurnVolts(
+        m_turnController.calculate(
+            MathUtil.angleModulus(m_turnSim.getAngularPositionRad()), angle.getRadians()));
   }
 }

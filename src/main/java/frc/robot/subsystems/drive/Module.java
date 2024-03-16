@@ -54,12 +54,15 @@ public class Module {
   // Calculates the drive motor's feedforward value in volts/radians per second
   private SimpleMotorFeedforward m_driveFeedforward;
 
+  private Rotation2d angleSetpoint;
+  private Double velocitySetpointRadsPerSecond;
+
   public Module(int index, ModuleIO io) {
     moduleIndex = index;
     m_io = io;
   }
 
-  public void updateInputs() {
+  public void periodic() {
     m_io.updateInputs(m_inputs);
 
     LoggedTunableNumber.ifChanged(
@@ -79,6 +82,23 @@ public class Module {
         turnKp,
         turnKi,
         turnKd);
+
+    if (angleSetpoint == null) {
+      return;
+    }
+
+    m_io.runTurnAngleSetpoint(angleSetpoint);
+
+    if (velocitySetpointRadsPerSecond == null) {
+      return;
+    }
+
+    // Increase module velocity as delta angle approaches zero
+    double scaledVelocitySetpointRadsPerSec =
+        velocitySetpointRadsPerSecond * angleSetpoint.minus(m_inputs.turnPositionRad).getCos();
+    m_io.runDriveVelocitySetpoint(
+        scaledVelocitySetpointRadsPerSec,
+        m_driveFeedforward.calculate(scaledVelocitySetpointRadsPerSec));
   }
 
   public void processInputs() {
@@ -86,7 +106,7 @@ public class Module {
   }
 
   public Rotation2d getAngle() {
-    return m_inputs.turnPosition;
+    return m_inputs.turnPositionRad;
   }
 
   public double getDrivePositionRad() {
@@ -106,11 +126,11 @@ public class Module {
   }
 
   public SwerveModulePosition getCurrentPosition() {
-    return new SwerveModulePosition(getDrivePositionMeters(), m_inputs.turnPosition);
+    return new SwerveModulePosition(getDrivePositionMeters(), m_inputs.turnPositionRad);
   }
 
   public SwerveModuleState getCurrentState() {
-    return new SwerveModuleState(getDriveVelocityMetersPerSec(), m_inputs.turnPosition);
+    return new SwerveModuleState(getDriveVelocityMetersPerSec(), m_inputs.turnPositionRad);
   }
 
   public SwerveModulePosition[] getModuleDeltas() {
@@ -120,18 +140,18 @@ public class Module {
   public SwerveModuleState runSetpoint(SwerveModuleState setpoint) {
     var optimizedSetpoint = SwerveModuleState.optimize(setpoint, getAngle());
 
-    // TODO handle cos position error scaling
-    double setpointVelocityRadPerSec =
+    this.angleSetpoint = optimizedSetpoint.angle;
+    this.velocitySetpointRadsPerSecond =
         optimizedSetpoint.speedMetersPerSecond / DriveBase.kWheelRadiusMeters;
-    m_io.runDriveVelocitySetpoint(
-        setpointVelocityRadPerSec, m_driveFeedforward.calculate(setpointVelocityRadPerSec));
-    m_io.runTurnAngleSetpoint(optimizedSetpoint.angle);
 
     return optimizedSetpoint;
   }
 
   public void runCharacterizationVoltage(Rotation2d angleSetpoint, double voltage) {
+    this.angleSetpoint = angleSetpoint;
     m_io.runTurnAngleSetpoint(angleSetpoint);
+
+    this.velocitySetpointRadsPerSecond = null;
     m_io.runDriveVolts(voltage);
   }
 
