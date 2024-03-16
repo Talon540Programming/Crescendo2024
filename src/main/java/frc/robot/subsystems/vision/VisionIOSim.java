@@ -1,10 +1,17 @@
 package frc.robot.subsystems.vision;
 
-import edu.wpi.first.math.geometry.Rotation2d;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.wpi.first.math.MatBuilder;
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import frc.robot.constants.Constants;
 import frc.robot.constants.FieldConstants;
 import frc.robot.util.PoseEstimator;
+import java.io.IOException;
+import java.nio.file.Path;
 import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
@@ -19,18 +26,28 @@ public class VisionIOSim extends VisionIOPhotonCamera {
     }
   }
 
-  public VisionIOSim(String cameraName, Transform3d robotToCamera) {
-    super(cameraName, robotToCamera);
-    // All SIM cameras share the same properties except their placements in the RCS
-    var cameraProp = new SimCameraProperties();
-    cameraProp.setCalibration(960, 720, Rotation2d.fromDegrees(90));
-    cameraProp.setCalibError(0.35, 0.10);
-    cameraProp.setFPS(50);
-    cameraProp.setAvgLatencyMs(25);
-    cameraProp.setLatencyStdDevMs(10);
+  public VisionIOSim(
+      String cameraName,
+      Transform3d robotToCamera,
+      Matrix<N3, N1> cameraBias,
+      Path calibrationPath) {
+    super(cameraName, robotToCamera, cameraBias);
+    var cameraProps = new SimCameraProperties();
+    // Photon camera sim is currently out of date with the calibration export model, so we can only
+    // pull the camera intrinsics and distortion from it
+    try {
+      setCalibrationFromConfig(calibrationPath, 1280, 720, cameraProps);
+    } catch (IOException e) {
+      throw new RuntimeException("Unable to parse calibration data from file");
+    }
 
-    var camSim = new PhotonCameraSim(this.m_camera, cameraProp);
+    // These are per camera but this average is good enough
+    cameraProps.setCalibError(.30, 0.05);
+    cameraProps.setFPS(50);
+    cameraProps.setAvgLatencyMs(25);
+    cameraProps.setLatencyStdDevMs(10);
 
+    var camSim = new PhotonCameraSim(this.m_camera, cameraProps);
     camSim.enableRawStream(false);
     camSim.enableProcessedStream(false);
     camSim.enableDrawWireframe(false);
@@ -52,5 +69,38 @@ public class VisionIOSim extends VisionIOPhotonCamera {
     } else {
       m_visionSystemSim.getDebugField().getObject("VisionEstimation").setPoses();
     }
+  }
+
+  private void setCalibrationFromConfig(
+      Path path, int resWidth, int resHeight, SimCameraProperties properties)
+      throws IOException, IllegalStateException {
+    var mapper = new ObjectMapper();
+    var calibData = mapper.readTree(path.toFile());
+    int jsonWidth = calibData.get("resolution").get("width").asInt();
+    int jsonHeight = calibData.get("resolution").get("height").asInt();
+    if (jsonWidth != resWidth || jsonHeight != resHeight) {
+      throw new IllegalStateException(
+          "The provided calibration file doesn't match the requested resolution");
+    }
+
+    var jsonIntrinsicsNode = calibData.get("cameraIntrinsics").get("data");
+    double[] jsonIntrinsics = new double[jsonIntrinsicsNode.size()];
+    for (int j = 0; j < jsonIntrinsicsNode.size(); j++) {
+      jsonIntrinsics[j] = jsonIntrinsicsNode.get(j).asDouble();
+    }
+    var jsonDistortNode = calibData.get("distCoeffs").get("data");
+    // Calibration model only needs to include first five elements of the distortion vector.
+    // https://discord.com/channels/725836368059826228/725848198794706994/1210448658936365076
+    int numCol = Math.min(5, jsonDistortNode.size());
+    double[] jsonDistortion = new double[numCol];
+    for (int j = 0; j < numCol; j++) {
+      jsonDistortion[j] = jsonDistortNode.get(j).asDouble();
+    }
+
+    properties.setCalibration(
+        jsonWidth,
+        jsonHeight,
+        MatBuilder.fill(Nat.N3(), Nat.N3(), jsonIntrinsics),
+        MatBuilder.fill(Nat.N5(), Nat.N1(), jsonDistortion));
   }
 }

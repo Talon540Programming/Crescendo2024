@@ -44,7 +44,10 @@ public class RobotContainer {
         m_vision =
             new VisionBase(
                 Constants.Vision.configs.stream()
-                    .map(v -> new VisionIOPhotonCamera(v.cameraName(), v.robotToCamera()))
+                    .map(
+                        v ->
+                            new VisionIOPhotonCamera(
+                                v.cameraName(), v.robotToCamera(), v.cameraBias()))
                     .toArray(VisionIOPhotonCamera[]::new));
       }
       case SIM -> {
@@ -61,7 +64,13 @@ public class RobotContainer {
         m_vision =
             new VisionBase(
                 Constants.Vision.configs.stream()
-                    .map(v -> new VisionIOSim(v.cameraName(), v.robotToCamera()))
+                    .map(
+                        v ->
+                            new VisionIOSim(
+                                v.cameraName(),
+                                v.robotToCamera(),
+                                v.cameraBias(),
+                                v.calibrationPath()))
                     .toArray(VisionIOSim[]::new));
       }
       default -> {

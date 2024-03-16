@@ -15,6 +15,7 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 public class VisionIOPhotonCamera implements VisionIO {
   protected final PhotonCamera m_camera;
   protected final Transform3d kRobotToCamera;
+  private final Matrix<N3, N1> kCameraBias;
 
   private static final Matrix<N3, N1> INVALID_STDDEVS =
       MatBuilder.fill(Nat.N3(), Nat.N1(), -1.0, -1.0, -1.0);
@@ -31,9 +32,11 @@ public class VisionIOPhotonCamera implements VisionIO {
   // too crazy z estimates
   private static final double Z_MARGIN = 0.75;
 
-  public VisionIOPhotonCamera(String cameraName, Transform3d robotToCamera) {
+  public VisionIOPhotonCamera(
+      String cameraName, Transform3d robotToCamera, Matrix<N3, N1> cameraBias) {
     m_camera = new PhotonCamera(cameraName);
     kRobotToCamera = robotToCamera;
+    kCameraBias = cameraBias;
   }
 
   @Override
@@ -62,8 +65,8 @@ public class VisionIOPhotonCamera implements VisionIO {
       for (var target : res.getTargets()) {
         double targetPoseAmbiguity = target.getPoseAmbiguity();
         // Filter out tags that aren't in the ATFL or aren't fiducial targets
-        if (FieldConstants.FIELD_LAYOUT.getTagPose(target.getFiducialId()).isEmpty()
-            || targetPoseAmbiguity == -1) continue;
+        if (targetPoseAmbiguity == -1
+            || FieldConstants.FIELD_LAYOUT.getTagPose(target.getFiducialId()).isEmpty()) continue;
 
         tagsUsed.add(target.getFiducialId());
 
@@ -122,9 +125,12 @@ public class VisionIOPhotonCamera implements VisionIO {
             tagPose.getTranslation().getDistance(inputs.estimatedRobotPose.getTranslation());
       }
       double averageDistance = totalDistance / numTags;
-      // Increase std devs based on the average distance to the target
+      // Increase std devs based on the average distance to the target and per camera bias matrix
       inputs.visionMeasurementStdDevs =
-          inputs.visionMeasurementStdDevs.times(1.0 + (Math.pow(averageDistance, 2.0) / numTags));
+          inputs
+              .visionMeasurementStdDevs
+              .times(1.0 + ((Math.pow(averageDistance, 2.0) / numTags)))
+              .elementTimes(kCameraBias);
     }
   }
 }

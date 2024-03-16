@@ -74,12 +74,12 @@ public class IntakeBase extends SubsystemBase {
         wristTolerance.initDefault(Math.toRadians(4));
       }
       case ROBOT_SIMBOT -> {
-        wristKp.initDefault(0.0); // TODO
-        wristKi.initDefault(0.0); // TODO
-        wristKd.initDefault(0.0); // TODO
-        wristMaxVelocity.initDefault(0.0); // TODO
-        wristMaxAcceleration.initDefault(0.0); // TODO
-        wristTolerance.initDefault(0.0); // TODO
+        wristKp.initDefault(5.5);
+        wristKi.initDefault(0.0);
+        wristKd.initDefault(0.0);
+        wristMaxVelocity.initDefault(Math.toRadians(90));
+        wristMaxAcceleration.initDefault(Math.toRadians(180));
+        wristTolerance.initDefault(Math.toRadians(2));
       }
     }
   }
@@ -141,10 +141,10 @@ public class IntakeBase extends SubsystemBase {
     }
 
     if (m_wristGoal != null) {
-      m_goalVisualizer.update(m_wristGoal);
+      m_goalVisualizer.update(Rotation2d.fromRadians(Math.PI).minus(m_wristGoal));
     }
 
-    m_measuredVisualizer.update(getWristAngle());
+    m_measuredVisualizer.update(Rotation2d.fromRadians(Math.PI).minus(getWristAngle()));
   }
 
   public Rotation2d getWristAngle() {
