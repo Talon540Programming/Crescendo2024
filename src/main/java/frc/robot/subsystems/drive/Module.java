@@ -25,8 +25,8 @@ public class Module {
     // Turn PID is volts per rotation of the motor shaft
     switch (Constants.getRobotType()) {
       case ROBOT_2024_COMP -> {
-        driveKs.initDefault(0.2740042899903624);
-        driveKv.initDefault(0.13424862447874678);
+        driveKs.initDefault(0.23609632827639157);
+        driveKv.initDefault(0.13635824213461853);
         driveKp.initDefault(0.0025);
         driveKi.initDefault(0.0);
         driveKd.initDefault(0.0);
