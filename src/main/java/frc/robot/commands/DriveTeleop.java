@@ -5,9 +5,9 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.oi.DriveOI;
 import frc.robot.subsystems.drive.DriveBase;
+import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.PoseEstimator;
 import java.util.Optional;
@@ -95,8 +95,7 @@ public class DriveTeleop extends DriveHeading {
 
       // // Flip the direction of the translational component for field relative based on alliance
       // // swap. Pose is always relative to blue alliance, so swap if red
-      var allianceOpt = DriverStation.getAlliance();
-      if (allianceOpt.isPresent() && allianceOpt.get() == DriverStation.Alliance.Red) {
+      if (AllianceFlipUtil.shouldFlip()) {
         linearVelocity = linearVelocity.rotateBy(Rotation2d.fromRadians(Math.PI));
       }
 
