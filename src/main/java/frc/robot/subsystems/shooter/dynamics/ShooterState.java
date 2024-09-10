@@ -91,13 +91,17 @@ public class ShooterState implements StructSerializable {
       return Math.hypot(
                   angle.getCos() - other.angle.getCos(), angle.getSin() - other.angle.getSin())
               < angleTolerance.get()
-          && Math.abs(shooterTopVelocityMetersPerSecond - other.shooterTopVelocityMetersPerSecond)
-              <= velocityTolerance.get()
-          && Math.abs(
-                  shooterBottomVelocityMetersPerSecond - other.shooterBottomVelocityMetersPerSecond)
-              <= velocityTolerance.get();
+          && velocityEquals(other);
     }
     return false;
+  }
+
+  public boolean velocityEquals(ShooterState other) {
+    return Math.abs(shooterTopVelocityMetersPerSecond - other.shooterTopVelocityMetersPerSecond)
+            <= velocityTolerance.get()
+        && Math.abs(
+                shooterBottomVelocityMetersPerSecond - other.shooterBottomVelocityMetersPerSecond)
+            <= velocityTolerance.get();
   }
 
   // Required for struct serialization

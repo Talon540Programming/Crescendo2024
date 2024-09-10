@@ -5,17 +5,16 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.oi.DriveOI;
 import frc.robot.subsystems.drive.DriveBase;
 import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.LoggedTunableNumber;
 import frc.robot.util.PoseEstimator;
-import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
-public class DriveTeleop extends DriveHeading {
+public class DriveTeleop extends Command {
   private static final LoggedTunableNumber controllerDeadband =
       new LoggedTunableNumber("TeleopDrive/Deadband", 0.1);
   private static final LoggedTunableNumber maxAngularVelocityScalar =
@@ -27,48 +26,36 @@ public class DriveTeleop extends DriveHeading {
   private final DoubleSupplier ySupplier;
   private final DoubleSupplier thetaSupplier;
   private final BooleanSupplier robotRelativeSupplier;
-  private final BooleanSupplier headingLockSupplier;
 
   public DriveTeleop(
       DriveBase driveBase,
       DoubleSupplier xSupplier,
       DoubleSupplier ySupplier,
       DoubleSupplier thetaSupplier,
-      BooleanSupplier robotRelativeSupplier,
-      BiFunction<Pose2d, ChassisSpeeds, Optional<Rotation2d>> headingSupplier,
-      BooleanSupplier headingLockSupplier) {
-    super(driveBase, headingSupplier);
+      BooleanSupplier robotRelativeSupplier) {
+    addRequirements(driveBase);
 
     this.driveBase = driveBase;
     this.xSupplier = xSupplier;
     this.ySupplier = ySupplier;
     this.thetaSupplier = thetaSupplier;
     this.robotRelativeSupplier = robotRelativeSupplier;
-    this.headingLockSupplier = headingLockSupplier;
 
     // Because we are extending the command, we need to replace the parent name
     setName("DriveTeleop");
   }
 
-  public DriveTeleop(
-      DriveBase driveBase,
-      DriveOI oi,
-      BiFunction<Pose2d, ChassisSpeeds, Optional<Rotation2d>> headingSupplier) {
+  public DriveTeleop(DriveBase driveBase, DriveOI oi) {
     this(
         driveBase,
         oi::getDriveX,
         oi::getDriveY,
         oi::getDriveTheta,
-        () -> oi.robotRelativeOverride().getAsBoolean(),
-        headingSupplier,
-        () -> oi.headingLock().getAsBoolean());
+        () -> oi.robotRelativeOverride().getAsBoolean());
   }
 
   @Override
   public void execute() {
-    // Because we aren't calling super.execute(), we need this
-    super.pollTunableNumbers();
-
     Pose2d currentPose = PoseEstimator.getInstance().getPose();
     double deadband = controllerDeadband.get();
     double x = MathUtil.applyDeadband(xSupplier.getAsDouble(), deadband);
@@ -107,11 +94,6 @@ public class DriveTeleop extends DriveHeading {
               fieldRelativeVelocity.getX() * DriveBase.kMaxLinearVelocityMetersPerSecond,
               fieldRelativeVelocity.getY() * DriveBase.kMaxLinearVelocityMetersPerSecond,
               theta * DriveBase.kMaxAngularVelocityRadiansPerSecond);
-    }
-
-    // Replace omega velocity component with calculated speaker lock value using heading controller
-    if (headingLockSupplier.getAsBoolean()) {
-      calculateSpeeds().ifPresent((v) -> speeds.omegaRadiansPerSecond = v.omegaRadiansPerSecond);
     }
 
     driveBase.runVelocity(speeds);

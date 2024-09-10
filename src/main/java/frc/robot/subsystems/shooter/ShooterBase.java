@@ -104,7 +104,7 @@ public class ShooterBase extends SubsystemBase {
 
   private ShooterState m_setpoint = ShooterState.TRAVEL_STATE;
 
-  private boolean AUTO_MODE_ENABLED = true;
+  private boolean AUTO_MODE_ENABLED = false;
 
   private ArmFeedforward m_erectorFeedforward = new ArmFeedforward(0, 0, 0);
   private final ProfiledPIDController m_erectorFeedback =
@@ -291,6 +291,10 @@ public class ShooterBase extends SubsystemBase {
   @AutoLogOutput(key = "Shooter/AtSetpoint")
   public boolean atSetpoint() {
     return getSetpoint().equals(getCurrentState());
+  }
+
+  public boolean atVelocitySetpoint() {
+    return getSetpoint().velocityEquals(getCurrentState());
   }
 
   public void setKickupVoltage(double volts) {
