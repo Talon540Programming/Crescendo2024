@@ -7,8 +7,6 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.drive.ModuleIO.ModuleIOInputs;
-import frc.robot.util.LoggedTunableNumber;
-import frc.robot.util.TimestampedSensorMeasurement;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -25,50 +23,21 @@ public class Module {
   private Rotation2d m_turnRelativeOffset = null;
   private double m_lastPositionMeters;
 
-  /** Returns the module position deltas received this cycle. */
-  @Getter
-  private List<TimestampedSensorMeasurement<SwerveModulePosition>> positionDeltas = List.of();
+  // private static final LoggedTunableNumber driveKp = new LoggedTunableNumber("DriveKp");
+  // private static final LoggedTunableNumber driveKi = new LoggedTunableNumber("DriveKi");
+  // private static final LoggedTunableNumber driveKd = new LoggedTunableNumber("DriveKd");
+  // private static final LoggedTunableNumber driveKs = new LoggedTunableNumber("DriveKs");
+  // private static final LoggedTunableNumber driveKv = new LoggedTunableNumber("DriveKv");
 
-  private static final LoggedTunableNumber driveKp = new LoggedTunableNumber("DriveKp");
-  private static final LoggedTunableNumber driveKi = new LoggedTunableNumber("DriveKi");
-  private static final LoggedTunableNumber driveKd = new LoggedTunableNumber("DriveKd");
-  private static final LoggedTunableNumber driveKs = new LoggedTunableNumber("DriveKs");
-  private static final LoggedTunableNumber driveKv = new LoggedTunableNumber("DriveKv");
+  // private static final LoggedTunableNumber turnKp = new LoggedTunableNumber("TurnKp");
+  // private static final LoggedTunableNumber turnKi = new LoggedTunableNumber("TurnKi");
+  // private static final LoggedTunableNumber turnKd = new LoggedTunableNumber("TurnKd");
 
-  private static final LoggedTunableNumber turnKp = new LoggedTunableNumber("TurnKp");
-  private static final LoggedTunableNumber turnKi = new LoggedTunableNumber("TurnKi");
-  private static final LoggedTunableNumber turnKd = new LoggedTunableNumber("TurnKd");
-
-  private SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(0, 0);
+  private SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(0.13, 0.13752);
   private final PIDController m_driveController =
-      new PIDController(0, 0, 0, Constants.kLoopPeriodSecs);
+      new PIDController(.1, 0, 0, Constants.kLoopPeriodSecs);
   private final PIDController m_turnController =
-      new PIDController(0, 0, 0, Constants.kLoopPeriodSecs);
-
-  static {
-    switch (Constants.getRobotType()) {
-      case ROBOT_2024_COMP -> {
-        driveKp.initDefault(0.1);
-        driveKi.initDefault(0.0);
-        driveKd.initDefault(0.0);
-        driveKs.initDefault(0.13); // TODO, tune this further
-        driveKv.initDefault(0.13752);
-        turnKp.initDefault(5.5);
-        turnKi.initDefault(0.0);
-        turnKd.initDefault(0.0);
-      }
-      case ROBOT_SIMBOT -> {
-        driveKp.initDefault(0.1);
-        driveKi.initDefault(0.0);
-        driveKd.initDefault(0.0);
-        driveKs.initDefault(0.0);
-        driveKv.initDefault(0.13);
-        turnKp.initDefault(10.0);
-        turnKi.initDefault(0.0);
-        turnKd.initDefault(0.0);
-      }
-    }
-  }
+      new PIDController(5.5, 0, 0, Constants.kLoopPeriodSecs);
 
   public Module(int index, ModuleIO io) {
     this.kModuleIndex = index;
@@ -85,20 +54,6 @@ public class Module {
 
   public void periodic() {
     Logger.processInputs("Drive/Module" + kModuleIndex, m_inputs);
-
-    if (driveKs.hasChanged(kModuleIndex) || driveKv.hasChanged(kModuleIndex)) {
-      m_driveFeedforward = new SimpleMotorFeedforward(driveKs.get(), driveKv.get());
-    }
-    if (driveKp.hasChanged(kModuleIndex)
-        || driveKi.hasChanged(kModuleIndex)
-        || driveKd.hasChanged(kModuleIndex)) {
-      m_driveController.setPID(driveKp.get(), driveKi.get(), driveKd.get());
-    }
-    if (turnKp.hasChanged(kModuleIndex)
-        || turnKi.hasChanged(kModuleIndex)
-        || turnKd.hasChanged(kModuleIndex)) {
-      m_turnController.setPID(turnKp.get(), turnKi.get(), turnKd.get());
-    }
 
     // On first cycle, reset relative turn encoder
     // Wait until absolute angle is nonzero in case it wasn't initialized yet
@@ -125,32 +80,6 @@ public class Module {
             m_driveFeedforward.calculate(velocityRadPerSec)
                 + m_driveController.calculate(m_inputs.driveVelocityRadPerSec, velocityRadPerSec));
       }
-    }
-
-    // Calculate position deltas for odometry
-    int deltaCount =
-        Math.min(m_inputs.odometryDrivePositionsRad.size(), m_inputs.odometryTurnPositions.size());
-    positionDeltas = new ArrayList<>(deltaCount);
-    for (int i = 0; i < deltaCount; i++) {
-      var positionMetersMeasurement = m_inputs.odometryDrivePositionsRad.get(i);
-      double positionMetersTimestamp = positionMetersMeasurement.getTimestampSeconds();
-      double positionMeters =
-          positionMetersMeasurement.getMeasurement() * DriveBase.kWheelRadiusMeters;
-
-      var turnAngleMeasurement = m_inputs.odometryTurnPositions.get(i);
-      double angleTimestamp = turnAngleMeasurement.getTimestampSeconds();
-      Rotation2d angle =
-          turnAngleMeasurement
-              .getMeasurement()
-              .plus(m_turnRelativeOffset != null ? m_turnRelativeOffset : new Rotation2d());
-
-      double measurementTimestamp = Math.max(positionMetersTimestamp, angleTimestamp);
-
-      positionDeltas.add(
-          new TimestampedSensorMeasurement<>(
-              measurementTimestamp,
-              new SwerveModulePosition(positionMeters - m_lastPositionMeters, angle)));
-      m_lastPositionMeters = positionMeters;
     }
   }
 

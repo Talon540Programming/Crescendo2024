@@ -2,32 +2,30 @@ package frc.robot.subsystems.drive;
 
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.CANcoder;
-import com.revrobotics.CANSparkBase.IdleMode;
-import com.revrobotics.CANSparkLowLevel.MotorType;
-import com.revrobotics.CANSparkLowLevel.PeriodicFrame;
-import com.revrobotics.CANSparkMax;
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.servohub.ServoHub.ResetMode;
+
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Angle;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareIds;
-import frc.robot.util.OdometryQueueThread;
-import frc.robot.util.PoseEstimator;
-import frc.robot.util.SparkMaxUtils;
-import frc.robot.util.TimestampedSensorMeasurement;
 import java.util.Queue;
 
 public class ModuleIOSparkMax implements ModuleIO {
-  private final CANSparkMax m_driveMotor;
-  private final CANSparkMax m_turnMotor;
+  private final SparkMax m_driveMotor;
+  private final SparkMax m_turnMotor;
   private final CANcoder m_absoluteEncoder;
 
   private final RelativeEncoder m_driveEncoder;
   private final RelativeEncoder m_turnRelativeEncoder;
-  private final StatusSignal<Double> m_turnAbsoluteEncoder;
+  private final StatusSignal<Angle> m_turnAbsoluteEncoder;
 
-  private final Queue<TimestampedSensorMeasurement<Double>> drivePositionQueue;
-  private final Queue<TimestampedSensorMeasurement<Double>> turnPositionQueue;
 
   public ModuleIOSparkMax(int moduleIndex) {
     switch (Constants.getRobotType()) {
@@ -35,30 +33,30 @@ public class ModuleIOSparkMax implements ModuleIO {
         switch (moduleIndex) {
           case 0 -> {
             this.m_driveMotor =
-                new CANSparkMax(HardwareIds.COMP_2024.kFrontLeftDriveId, MotorType.kBrushless);
+                new SparkMax(HardwareIds.COMP_2024.kFrontLeftDriveId, MotorType.kBrushless);
             this.m_turnMotor =
-                new CANSparkMax(HardwareIds.COMP_2024.kFrontLeftTurnId, MotorType.kBrushless);
+                new SparkMax(HardwareIds.COMP_2024.kFrontLeftTurnId, MotorType.kBrushless);
             this.m_absoluteEncoder = new CANcoder(HardwareIds.COMP_2024.kFrontLeftEncoderId);
           }
           case 1 -> {
             this.m_driveMotor =
-                new CANSparkMax(HardwareIds.COMP_2024.kFrontRightDriveId, MotorType.kBrushless);
+                new SparkMax(HardwareIds.COMP_2024.kFrontRightDriveId, MotorType.kBrushless);
             this.m_turnMotor =
-                new CANSparkMax(HardwareIds.COMP_2024.kFrontRightTurnId, MotorType.kBrushless);
+                new SparkMax(HardwareIds.COMP_2024.kFrontRightTurnId, MotorType.kBrushless);
             this.m_absoluteEncoder = new CANcoder(HardwareIds.COMP_2024.kFrontRightEncoderId);
           }
           case 2 -> {
             this.m_driveMotor =
-                new CANSparkMax(HardwareIds.COMP_2024.kBackLeftDriveId, MotorType.kBrushless);
+                new SparkMax(HardwareIds.COMP_2024.kBackLeftDriveId, MotorType.kBrushless);
             this.m_turnMotor =
-                new CANSparkMax(HardwareIds.COMP_2024.kBackLeftTurnId, MotorType.kBrushless);
+                new SparkMax(HardwareIds.COMP_2024.kBackLeftTurnId, MotorType.kBrushless);
             this.m_absoluteEncoder = new CANcoder(HardwareIds.COMP_2024.kBackLeftEncoderId);
           }
           case 3 -> {
             this.m_driveMotor =
-                new CANSparkMax(HardwareIds.COMP_2024.kBackRightDriveId, MotorType.kBrushless);
+                new SparkMax(HardwareIds.COMP_2024.kBackRightDriveId, MotorType.kBrushless);
             this.m_turnMotor =
-                new CANSparkMax(HardwareIds.COMP_2024.kBackRightTurnId, MotorType.kBrushless);
+                new SparkMax(HardwareIds.COMP_2024.kBackRightTurnId, MotorType.kBrushless);
             this.m_absoluteEncoder = new CANcoder(HardwareIds.COMP_2024.kBackRightEncoderId);
           }
           default -> throw new RuntimeException("Invalid module index for ModuleIOSparkMax");
@@ -67,48 +65,16 @@ public class ModuleIOSparkMax implements ModuleIO {
       default -> throw new RuntimeException("Invalid robot for ModuleIOSparkMax");
     }
 
-    this.m_driveMotor.restoreFactoryDefaults();
-    this.m_turnMotor.restoreFactoryDefaults();
-
-    this.m_driveMotor.setCANTimeout(250);
-    this.m_turnMotor.setCANTimeout(250);
-
     this.m_driveEncoder = this.m_driveMotor.getEncoder();
     this.m_turnRelativeEncoder = this.m_turnMotor.getEncoder();
     this.m_turnAbsoluteEncoder = this.m_absoluteEncoder.getAbsolutePosition();
 
-    this.m_driveMotor.setSmartCurrentLimit(40);
-    this.m_turnMotor.setSmartCurrentLimit(30);
-    this.m_driveMotor.enableVoltageCompensation(12.0);
-    this.m_turnMotor.enableVoltageCompensation(12.0);
-
     this.m_driveEncoder.setPosition(0.0);
-    this.m_driveEncoder.setMeasurementPeriod(10);
-    this.m_driveEncoder.setAverageDepth(2);
 
     this.m_turnRelativeEncoder.setPosition(0.0);
-    this.m_turnRelativeEncoder.setMeasurementPeriod(10);
-    this.m_turnRelativeEncoder.setAverageDepth(2);
-
-    this.m_driveMotor.setCANTimeout(0);
-    this.m_turnMotor.setCANTimeout(0);
-
-    this.m_driveMotor.burnFlash();
-    this.m_turnMotor.burnFlash();
-
-    this.m_driveMotor.setPeriodicFramePeriod(
-        PeriodicFrame.kStatus2, (int) (1000.0 / PoseEstimator.ODOMETRY_FREQUENCY));
-    this.m_turnMotor.setPeriodicFramePeriod(
-        PeriodicFrame.kStatus2, (int) (1000.0 / PoseEstimator.ODOMETRY_FREQUENCY));
-    SparkMaxUtils.disableSensorFrames(m_driveMotor, m_turnMotor);
 
     this.m_turnAbsoluteEncoder.setUpdateFrequency(50);
     this.m_absoluteEncoder.optimizeBusUtilization();
-
-    this.drivePositionQueue =
-        OdometryQueueThread.getInstance().registerSignal(m_driveEncoder::getPosition);
-    this.turnPositionQueue =
-        OdometryQueueThread.getInstance().registerSignal(m_turnRelativeEncoder::getPosition);
   }
 
   @Override
@@ -133,25 +99,6 @@ public class ModuleIOSparkMax implements ModuleIO {
             / DriveBase.kTurnGearing;
     inputs.turnAppliedVolts = m_turnMotor.getAppliedOutput() * m_turnMotor.getBusVoltage();
     inputs.turnCurrentAmps = new double[] {m_turnMotor.getOutputCurrent()};
-
-    inputs.odometryDrivePositionsRad =
-        this.drivePositionQueue.stream()
-            .map(
-                v ->
-                    new TimestampedSensorMeasurement<>(
-                        v.getTimestampSeconds(), v.getMeasurement() / DriveBase.kDriveGearing))
-            .toList();
-    inputs.odometryTurnPositions =
-        this.turnPositionQueue.stream()
-            .map(
-                v ->
-                    new TimestampedSensorMeasurement<>(
-                        v.getTimestampSeconds(),
-                        Rotation2d.fromRotations(v.getMeasurement() / DriveBase.kTurnGearing)))
-            .toList();
-
-    this.drivePositionQueue.clear();
-    this.turnPositionQueue.clear();
   }
 
   @Override
@@ -166,11 +113,15 @@ public class ModuleIOSparkMax implements ModuleIO {
 
   @Override
   public void setDriveBrakeMode(boolean enable) {
-    m_driveMotor.setIdleMode(enable ? IdleMode.kBrake : IdleMode.kCoast);
+    SparkMaxConfig config = new SparkMaxConfig();
+    config.idleMode(enable ? IdleMode.kBrake : IdleMode.kCoast);
+    m_driveMotor.configure(config, com.revrobotics.spark.SparkBase.ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 
   @Override
   public void setTurnBrakeMode(boolean enable) {
-    m_turnMotor.setIdleMode(enable ? IdleMode.kBrake : IdleMode.kCoast);
+    SparkMaxConfig config = new SparkMaxConfig();
+    config.idleMode(enable ? IdleMode.kBrake : IdleMode.kCoast);
+    m_turnMotor.configure(config, com.revrobotics.spark.SparkBase.ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 }

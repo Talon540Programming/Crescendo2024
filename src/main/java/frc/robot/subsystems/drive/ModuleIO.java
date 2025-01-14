@@ -1,7 +1,6 @@
 package frc.robot.subsystems.drive;
 
 import edu.wpi.first.math.geometry.Rotation2d;
-import frc.robot.util.TimestampedSensorMeasurement;
 import java.util.ArrayList;
 import java.util.List;
 import org.littletonrobotics.junction.LogTable;
@@ -20,8 +19,6 @@ public interface ModuleIO {
     public double turnAppliedVolts = 0.0;
     public double[] turnCurrentAmps = new double[] {};
 
-    public List<TimestampedSensorMeasurement<Double>> odometryDrivePositionsRad = List.of();
-    public List<TimestampedSensorMeasurement<Rotation2d>> odometryTurnPositions = List.of();
 
     @Override
     public void toLog(LogTable table) {
@@ -34,28 +31,6 @@ public interface ModuleIO {
       table.put("TurnVelocityRadPerSec", turnVelocityRadPerSec);
       table.put("TurnAppliedVolts", turnAppliedVolts);
       table.put("TurnCurrentAmps", turnCurrentAmps);
-
-      // Separate sensor measurement pairs into discrete components
-      table.put(
-          "OdometryDrivePositionsRad",
-          odometryDrivePositionsRad.stream()
-              .mapToDouble(TimestampedSensorMeasurement::getMeasurement)
-              .toArray());
-      table.put(
-          "OdometryDrivePositionsRadTimestamps",
-          odometryDrivePositionsRad.stream()
-              .mapToDouble(TimestampedSensorMeasurement::getTimestampSeconds)
-              .toArray());
-      table.put(
-          "OdometryTurnPositions",
-          odometryTurnPositions.stream()
-              .map(TimestampedSensorMeasurement::getMeasurement)
-              .toArray(Rotation2d[]::new));
-      table.put(
-          "OdometryTurnPositionsTimestamps",
-          odometryTurnPositions.stream()
-              .mapToDouble(TimestampedSensorMeasurement::getTimestampSeconds)
-              .toArray());
     }
 
     @Override
@@ -69,58 +44,6 @@ public interface ModuleIO {
       turnVelocityRadPerSec = table.get("TurnVelocityRadPerSec", turnVelocityRadPerSec);
       turnAppliedVolts = table.get("TurnAppliedVolts", turnAppliedVolts);
       turnCurrentAmps = table.get("TurnCurrentAmps", turnCurrentAmps);
-
-      var currentDriveMeasurements =
-          odometryDrivePositionsRad.stream()
-              .mapToDouble(TimestampedSensorMeasurement::getMeasurement)
-              .toArray();
-      var currentDriveTimestamps =
-          odometryDrivePositionsRad.stream()
-              .mapToDouble(TimestampedSensorMeasurement::getTimestampSeconds)
-              .toArray();
-      var currentTurnMeasurements =
-          odometryTurnPositions.stream()
-              .map(TimestampedSensorMeasurement::getMeasurement)
-              .toArray(Rotation2d[]::new);
-      var currentTurnTimestamps =
-          odometryTurnPositions.stream()
-              .mapToDouble(TimestampedSensorMeasurement::getTimestampSeconds)
-              .toArray();
-
-      currentDriveMeasurements = table.get("OdometryDrivePositionsRad", currentDriveMeasurements);
-      currentDriveTimestamps =
-          table.get("OdometryDrivePositionsRadTimestamps", currentDriveTimestamps);
-      currentTurnMeasurements = table.get("OdometryTurnPositions", currentTurnMeasurements);
-      currentTurnTimestamps = table.get("OdometryTurnPositionsTimestamps", currentTurnTimestamps);
-
-      odometryDrivePositionsRad = new ArrayList<>(currentDriveMeasurements.length);
-      for (int i = 0; i < currentDriveMeasurements.length; i++) {
-        odometryDrivePositionsRad.add(
-            new TimestampedSensorMeasurement<>(
-                currentDriveTimestamps[i], currentDriveMeasurements[i]));
-      }
-      odometryTurnPositions = new ArrayList<>(currentTurnMeasurements.length);
-      for (int i = 0; i < currentTurnMeasurements.length; i++) {
-        odometryTurnPositions.add(
-            new TimestampedSensorMeasurement<>(
-                currentTurnTimestamps[i], currentTurnMeasurements[i]));
-      }
-    }
-
-    public ModuleIOInputs clone() {
-      ModuleIOInputs copy = new ModuleIOInputs();
-      copy.drivePositionRad = this.drivePositionRad;
-      copy.driveVelocityRadPerSec = this.driveVelocityRadPerSec;
-      copy.driveAppliedVolts = this.driveAppliedVolts;
-      copy.driveCurrentAmps = this.driveCurrentAmps.clone();
-      copy.turnAbsolutePosition = this.turnAbsolutePosition;
-      copy.turnPosition = this.turnPosition;
-      copy.turnVelocityRadPerSec = this.turnVelocityRadPerSec;
-      copy.turnAppliedVolts = this.turnAppliedVolts;
-      copy.turnCurrentAmps = this.turnCurrentAmps.clone();
-      copy.odometryDrivePositionsRad = List.copyOf(this.odometryDrivePositionsRad);
-      copy.odometryTurnPositions = List.copyOf(this.odometryTurnPositions);
-      return copy;
     }
   }
 

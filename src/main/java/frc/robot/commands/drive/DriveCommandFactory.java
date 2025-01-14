@@ -5,35 +5,10 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.drive.DriveBase;
-import frc.robot.util.PoseEstimator;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
-import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class DriveCommandFactory {
-  private static final LoggedDashboardChooser<Double> xCoefficient =
-      new LoggedDashboardChooser<>("Drive X Speed Limiter");
-  private static final LoggedDashboardChooser<Double> yCoefficient =
-      new LoggedDashboardChooser<>("Drive Y Speed Limiter");
-  private static final LoggedDashboardChooser<Double> omegaCoefficient =
-      new LoggedDashboardChooser<>("Drive Omega Speed Limiter");
-
-  static {
-    xCoefficient.addDefaultOption("Default (100%)", 1.0);
-    xCoefficient.addOption("Fast (70%)", 0.7);
-    xCoefficient.addOption("Medium (30%)", 0.3);
-    xCoefficient.addOption("Slow (15%)", 0.15);
-
-    yCoefficient.addDefaultOption("Default (100%)", 1.0);
-    yCoefficient.addOption("Fast (70%)", 0.7);
-    yCoefficient.addOption("Medium (30%)", 0.3);
-    yCoefficient.addOption("Slow (15%)", 0.15);
-
-    omegaCoefficient.addDefaultOption("Default (100%)", 1.0);
-    omegaCoefficient.addOption("Fast (70%)", 0.7);
-    omegaCoefficient.addOption("Medium (30%)", 0.3);
-    omegaCoefficient.addOption("Slow (15%)", 0.15);
-  }
 
   public static Command joystickDrive(
       DriveBase driveBase,
@@ -59,17 +34,14 @@ public class DriveCommandFactory {
           double omega = 0.0;
 
           if (x_val != 0) {
-            x_val = x_val * xCoefficient.get();
             x = Math.copySign(Math.min(Math.pow(x_val, 2), 1.0), x_val);
           }
 
           if (y_val != 0) {
-            y_val = y_val * yCoefficient.get();
             y = Math.copySign(Math.min(Math.pow(y_val, 2), 1.0), y_val);
           }
 
           if (omega_val != 0) {
-            omega_val = omega_val * omegaCoefficient.get();
             omega = Math.copySign(Math.min(Math.pow(omega_val, 2), 1.0), omega_val);
           }
 
@@ -113,7 +85,7 @@ public class DriveCommandFactory {
 
           if (x_val != 0) {
             x_val =
-                (x_val * xCoefficient.get() * maxNonSprintSpeed)
+                (x_val * maxNonSprintSpeed)
                     + (sprintSupplier.getAsBoolean()
                         ? Math.copySign(sprintIncreaseVal, x_val)
                         : 0.0);
@@ -122,7 +94,7 @@ public class DriveCommandFactory {
 
           if (y_val != 0) {
             y_val =
-                (y_val * yCoefficient.get() * maxNonSprintSpeed)
+                (y_val * maxNonSprintSpeed)
                     + (sprintSupplier.getAsBoolean()
                         ? Math.copySign(sprintIncreaseVal, y_val)
                         : 0.0);
@@ -130,7 +102,6 @@ public class DriveCommandFactory {
           }
 
           if (omega_val != 0) {
-            omega_val = omega_val * omegaCoefficient.get();
             omega = Math.copySign(Math.min(Math.pow(omega_val, 2), 1.0), omega_val);
           }
 
@@ -140,11 +111,10 @@ public class DriveCommandFactory {
   }
 
   private static ChassisSpeeds toFieldRelative(double x, double y, double omega) {
-    return ChassisSpeeds.fromFieldRelativeSpeeds(
+    return new ChassisSpeeds(
         x * DriveBase.kMaxLinearVelocityMetersPerSecond,
         y * DriveBase.kMaxLinearVelocityMetersPerSecond,
-        omega * DriveBase.kMaxAngularVelocityRadiansPerSecond,
-        PoseEstimator.getInstance().getPose().getRotation());
+        omega * DriveBase.kMaxAngularVelocityRadiansPerSecond);
   }
 
   private static ChassisSpeeds toRobotRelative(double x, double y, double omega) {
