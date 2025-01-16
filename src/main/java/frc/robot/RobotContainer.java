@@ -1,5 +1,6 @@
 package frc.robot;
 
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -13,6 +14,7 @@ public class RobotContainer {
   private final CommandXboxController controller = new CommandXboxController(0);
 
   public RobotContainer() {
+    System.out.println("CHECKPOINT 1");
     switch (Constants.getRobotMode()) {
       case REAL -> {
         m_drive =

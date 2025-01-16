@@ -4,7 +4,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 
 public final class Constants {
-  private static RobotType kRobotType = RobotType.ROBOT_SIMBOT;
+  private static RobotType kRobotType = RobotType.ROBOT_2024_COMP;
   // Allows tunable values to be changed when enabled. Also adds tunable selectors to AutoSelector
   public static final boolean TUNING_MODE = false;
   // Disable the AdvantageKit logger from running

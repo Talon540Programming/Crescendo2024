@@ -8,14 +8,12 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.servohub.ServoHub.ResetMode;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import frc.robot.constants.Constants;
 import frc.robot.constants.HardwareIds;
-import java.util.Queue;
 
 public class ModuleIOSparkMax implements ModuleIO {
   private final SparkMax m_driveMotor;
@@ -28,6 +26,7 @@ public class ModuleIOSparkMax implements ModuleIO {
 
 
   public ModuleIOSparkMax(int moduleIndex) {
+    System.out.println("CHECKPOINT 2");
     switch (Constants.getRobotType()) {
       case ROBOT_2024_COMP -> {
         switch (moduleIndex) {
@@ -79,6 +78,7 @@ public class ModuleIOSparkMax implements ModuleIO {
 
   @Override
   public void updateInputs(ModuleIOInputs inputs) {
+    System.out.println("CHECKPOINT 3");
     inputs.drivePositionRad =
         Units.rotationsToRadians(m_driveEncoder.getPosition()) / DriveBase.kDriveGearing;
     inputs.driveVelocityRadPerSec =
@@ -103,12 +103,15 @@ public class ModuleIOSparkMax implements ModuleIO {
 
   @Override
   public void setDriveVoltage(double volts) {
+    System.out.println("DRIVE VOLTAGE CHECKPOINT");
     m_driveMotor.setVoltage(volts);
   }
 
   @Override
   public void setTurnVoltage(double volts) {
     m_turnMotor.setVoltage(volts);
+    System.out.println("TURN VOLTAGE CHECKPOINT");
+    System.out.println(volts);
   }
 
   @Override

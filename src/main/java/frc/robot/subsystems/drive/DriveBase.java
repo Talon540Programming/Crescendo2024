@@ -2,12 +2,15 @@ package frc.robot.subsystems.drive;
 
 import static edu.wpi.first.units.Units.Volts;
 
+import edu.wpi.first.math.estimator.PoseEstimator;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -87,6 +90,25 @@ public class DriveBase extends SubsystemBase {
                 },
                 null,
                 this));
+  }
+
+  public void periodic() {
+    m_gyroIO.updateInputs(m_gyroInputs);
+
+    for (var module : m_modules) {
+      module.updateInputs();
+    }
+
+    for (var module : m_modules) {
+      module.periodic();
+    }
+
+    if (DriverStation.isDisabled()) {
+      // Stop moving when disabled
+      for (var module : m_modules) {
+        module.disable();
+      }
+    }
   }
 
   /**
