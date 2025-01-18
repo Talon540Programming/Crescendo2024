@@ -26,7 +26,6 @@ public class ModuleIOSparkMax implements ModuleIO {
 
 
   public ModuleIOSparkMax(int moduleIndex) {
-    System.out.println("CHECKPOINT 2");
     switch (Constants.getRobotType()) {
       case ROBOT_2024_COMP -> {
         switch (moduleIndex) {
@@ -78,7 +77,6 @@ public class ModuleIOSparkMax implements ModuleIO {
 
   @Override
   public void updateInputs(ModuleIOInputs inputs) {
-    System.out.println("CHECKPOINT 3");
     inputs.drivePositionRad =
         Units.rotationsToRadians(m_driveEncoder.getPosition()) / DriveBase.kDriveGearing;
     inputs.driveVelocityRadPerSec =

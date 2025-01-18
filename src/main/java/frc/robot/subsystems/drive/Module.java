@@ -76,6 +76,7 @@ public class Module {
 
         // Run drive controller
         double velocityRadPerSec = adjustSpeedSetpoint / DriveBase.kWheelRadiusMeters;
+        System.out.println("velocityRadPerSec: " + velocityRadPerSec);
         m_io.setDriveVoltage(
             m_driveFeedforward.calculate(velocityRadPerSec)
                 + m_driveController.calculate(m_inputs.driveVelocityRadPerSec, velocityRadPerSec));

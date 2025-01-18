@@ -29,10 +29,10 @@ public class RobotContainer {
         m_drive =
             new DriveBase(
                 new GyroIO() {},
-                new ModuleIO() {},
-                new ModuleIO() {},
-                new ModuleIO() {},
-                new ModuleIO() {});
+                new ModuleIOSim() {},
+                new ModuleIOSim() {},
+                new ModuleIOSim() {},
+                new ModuleIOSim() {});
       }
       default -> {
         m_drive =
