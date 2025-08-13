@@ -1,64 +1,138 @@
 package frc.robot.subsystems.drive;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
-import frc.robot.constants.Constants;
-import frc.robot.util.TimestampedSensorMeasurement;
-import java.util.List;
+import frc.robot.Constants;
+import java.util.Queue;
 
-/**
- * Physics sim implementation of module IO.
- *
- * <p>Uses two DCMotor sims for the drive and turn motors, with the absolute position initialized to
- * a random value. The DCMotor sims are not physically accurate, but provide a decent approximation
- * for the behavior of the module.
- */
 public class ModuleIOSim implements ModuleIO {
-  private final DCMotorSim m_driveSim;
-  private final DCMotorSim m_turnSim;
+  private final DCMotor driveMotorModel = DCMotor.getNEO(1);
+  private final DCMotor turnMotorModel = DCMotor.getNEO(1);
 
-  private final Rotation2d turnAbsoluteInitPosition = new Rotation2d(Math.random() * 2.0 * Math.PI);
+  private final DCMotorSim driveSim =
+      new DCMotorSim(
+          LinearSystemId.createDCMotorSystem(
+              driveMotorModel, 0.025, DriveConstants.mk4iDriveGearing),
+          driveMotorModel);
+  private final DCMotorSim turnSim =
+      new DCMotorSim(
+          LinearSystemId.createDCMotorSystem(turnMotorModel, 0.004, DriveConstants.mk4iTurnGearing),
+          turnMotorModel);
+
+  private boolean driveClosedLoop = false;
+  private boolean turnClosedLoop = false;
+
+  private final PIDController driveController = new PIDController(0, 0, 0);
+  private final PIDController turnController = new PIDController(0, 0, 0);
+  private final SimpleMotorFeedforward driveFeedforward = new SimpleMotorFeedforward(0.0, 0.0);
+
   private double driveAppliedVolts = 0.0;
+  private double driveFFVolts = 0.0;
   private double turnAppliedVolts = 0.0;
 
+  // Queue inputs from odometry thread
+  private final Queue<Double> drivePositionQueue;
+  private final Queue<Double> turnPositionQueue;
+
   public ModuleIOSim() {
-    this.m_driveSim = new DCMotorSim(DCMotor.getNEO(1), DriveBase.kDriveGearing, 0.025);
-    this.m_turnSim = new DCMotorSim(DCMotor.getNEO(1), DriveBase.kTurnGearing, 0.004);
+    // Enable wrapping for turn PID
+    turnController.enableContinuousInput(-Math.PI, Math.PI);
+
+    drivePositionQueue =
+        OdometryManager.getInstance().registerSignal(driveSim::getAngularPositionRad);
+    turnPositionQueue =
+        OdometryManager.getInstance().registerSignal(turnSim::getAngularPositionRad);
   }
 
   @Override
   public void updateInputs(ModuleIOInputs inputs) {
-    m_driveSim.update(Constants.kLoopPeriodSecs);
-    m_turnSim.update(Constants.kLoopPeriodSecs);
+    // Run closed-loop control
+    if (driveClosedLoop) {
+      driveAppliedVolts =
+          driveFFVolts + driveController.calculate(driveSim.getAngularVelocityRadPerSec());
+    } else {
+      driveController.reset();
+    }
 
-    inputs.drivePositionRad = m_driveSim.getAngularPositionRad();
-    inputs.driveVelocityRadPerSec = m_driveSim.getAngularVelocityRadPerSec();
+    if (turnClosedLoop) {
+      turnAppliedVolts = turnController.calculate(turnSim.getAngularPositionRad());
+    } else {
+      turnController.reset();
+    }
+
+    // Update simulation state
+    driveSim.setInputVoltage(MathUtil.clamp(driveAppliedVolts, -12.0, 12.0));
+    turnSim.setInputVoltage(MathUtil.clamp(turnAppliedVolts, -12.0, 12.0));
+    driveSim.update(Constants.kLoopPeriodSecs);
+    turnSim.update(Constants.kLoopPeriodSecs);
+
+    // Update drive inputs
+    inputs.driveConnected = true;
+    inputs.drivePositionRad = driveSim.getAngularPositionRad();
+    inputs.driveVelocityRadPerSec = driveSim.getAngularVelocityRadPerSec();
     inputs.driveAppliedVolts = driveAppliedVolts;
-    inputs.driveCurrentAmps = new double[] {Math.abs(m_driveSim.getCurrentDrawAmps())};
+    inputs.driveCurrentAmps = Math.abs(driveSim.getCurrentDrawAmps());
 
-    inputs.turnAbsolutePosition =
-        new Rotation2d(m_turnSim.getAngularPositionRad()).plus(turnAbsoluteInitPosition);
-    inputs.turnPosition = new Rotation2d(m_turnSim.getAngularPositionRad());
-    inputs.turnVelocityRadPerSec = m_turnSim.getAngularVelocityRadPerSec();
+    // Update turn inputs
+    inputs.turnConnected = true;
+    inputs.turnAbsolutePosition = new Rotation2d(turnSim.getAngularPositionRad());
+    inputs.turnPosition = new Rotation2d(turnSim.getAngularPositionRad());
+    inputs.turnVelocityRadPerSec = turnSim.getAngularVelocityRadPerSec();
     inputs.turnAppliedVolts = turnAppliedVolts;
-    inputs.turnCurrentAmps = new double[] {Math.abs(m_turnSim.getCurrentDrawAmps())};
+    inputs.turnCurrentAmps = Math.abs(turnSim.getCurrentDrawAmps());
 
     inputs.odometryDrivePositionsRad =
-        List.of(new TimestampedSensorMeasurement<>(inputs.drivePositionRad));
-    inputs.odometryTurnPositions = List.of(new TimestampedSensorMeasurement<>(inputs.turnPosition));
+        drivePositionQueue.stream().mapToDouble((Double value) -> value).toArray();
+    drivePositionQueue.clear();
+    inputs.odometryTurnPositions =
+        turnPositionQueue.stream().map(Rotation2d::fromRadians).toArray(Rotation2d[]::new);
+    turnPositionQueue.clear();
   }
 
   @Override
-  public void setDriveVoltage(double volts) {
-    driveAppliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
-    m_driveSim.setInputVoltage(driveAppliedVolts);
+  public void runDriveOpenLoop(double output) {
+    driveClosedLoop = false;
+    driveAppliedVolts = output;
   }
 
   @Override
-  public void setTurnVoltage(double volts) {
-    turnAppliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
-    m_turnSim.setInputVoltage(turnAppliedVolts);
+  public void runTurnOpenLoop(double output) {
+    turnClosedLoop = false;
+    turnAppliedVolts = output;
+  }
+
+  @Override
+  public void runDriveVelocity(double velocityRadPerSec) {
+    driveClosedLoop = true;
+    driveFFVolts = driveFeedforward.calculate(velocityRadPerSec);
+    driveController.setSetpoint(velocityRadPerSec);
+  }
+
+  @Override
+  public void runTurnPosition(Rotation2d rotation) {
+    turnClosedLoop = true;
+    turnController.setSetpoint(rotation.getRadians());
+  }
+
+  @Override
+  public void setDrivePID(double kP, double kI, double kD) { // , double IZone) {
+    driveController.setPID(kP, kI, kD);
+    // driveController.setI(IZone);
+  }
+
+  @Override
+  public void setDriveFF(double kS, double kV) {
+    driveFeedforward.setKs(kS);
+    driveFeedforward.setKv(kV);
+  }
+
+  @Override
+  public void setTurnPID(double kP, double kI, double kD) {
+    turnController.setPID(kP, kI, kD);
   }
 }
