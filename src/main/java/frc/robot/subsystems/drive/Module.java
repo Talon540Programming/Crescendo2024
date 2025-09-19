@@ -35,12 +35,12 @@ public class Module {
   static {
     switch (Constants.getRobot()) {
       case OUTREACHBOT -> {
-        drivekP.initDefault(0.1);
+        drivekP.initDefault(0.0);
         drivekI.initDefault(0.0);
         drivekD.initDefault(0.0);
-        drivekS.initDefault(0.13);
-        drivekV.initDefault(0.13752);
-        turnkP.initDefault(5.5);
+        drivekS.initDefault(0.0);
+        drivekV.initDefault(0.0);
+        turnkP.initDefault(0.0);
         turnkD.initDefault(0.0);
       }
       case SIMBOT -> {

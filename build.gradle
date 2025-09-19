@@ -22,7 +22,8 @@ deploy {
             // or from command line. If not found an exception will be thrown.
             // You can use getTeamOrDefault(team) instead of getTeamNumber if you
             // want to store a team number in this file.
-            team = project.frc.getTeamNumber()
+            team = project.frc.getTeamOrDefault(540)
+            //team = project.frc.getTeamNumber()
             debug = project.frc.getDebugOrDefault(false)
 
             artifacts {
@@ -109,7 +110,7 @@ test {
 // AdvantageKit log replay from the command line. Set the
 // value to "true" to enable the sim GUI by default (this
 // is the standard WPILib behavior).
-wpi.sim.addGui().defaultEnabled = false
+wpi.sim.addGui().defaultEnabled = true
 wpi.sim.addDriverstation()
 
 // Setting up my Jar File. In this case, adding all libraries into the main jar ('fat jar')
@@ -140,7 +141,7 @@ tasks.withType(JavaCompile) {
 project.compileJava.dependsOn(createVersionFile)
 gversion {
     srcDir       = "src/main/java/"
-    classPackage = "frc.robot"
+    classPackage = "frc.generated" //"frc.robot"
     className    = "BuildConstants"
     dateFormat   = "yyyy-MM-dd HH:mm:ss z"
     timeZone     = "America/New_York"

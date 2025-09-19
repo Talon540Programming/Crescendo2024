@@ -1,6 +1,8 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.commands.*;
@@ -15,7 +17,6 @@ import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import lombok.experimental.ExtensionMethod;
-import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 @ExtensionMethod({DoublePressTracker.class, TriggerUtil.class})
 public class RobotContainer {
@@ -30,7 +31,7 @@ public class RobotContainer {
       new Alert("Main controller disconnected (port 0).", Alert.AlertType.kWarning);
 
   /* Dashboard inputs */
-  private final LoggedDashboardChooser<Command> autoChooser;
+  // private final LoggedDashboardChooser<Command> autoChooser;
 
   // private final LoggedNetworkNumber endgameAlert1 =
   //     new LoggedNetworkNumber("/SmartDashboard/Endgame Alert #1", 30.0);
@@ -78,7 +79,7 @@ public class RobotContainer {
 
     /* Set up auto routines */
     // var autoBuilder = new AutoBuilder(driveBase, shooterBase);
-    autoChooser = new LoggedDashboardChooser<>("Auto Choices");
+    // autoChooser = new LoggedDashboardChooser<>("Auto Choices");
 
     // autoChooser.addDefaultOption("Noting", Commands.none());
     // autoChooser.addOption("Taxi", autoBuilder.taxi());
@@ -86,19 +87,19 @@ public class RobotContainer {
     // autoChooser.addOption("Multi", autoBuilder.sideStartMulti(false));
     // autoChooser.addOption("DeadreckonedMulti", autoBuilder.sideStartMulti(true));
 
-    if (Constants.TUNING_MODE) {
-      // Set up Characterization routines
-      autoChooser.addOption(
-          "Drive Wheel Radius Characterization", driveBase.wheelRadiusCharacterization());
-      autoChooser.addOption(
-          "Drive Simple FF Characterization", driveBase.feedforwardCharacterization());
-    }
+    // if (Constants.TUNING_MODE) {
+    //   // Set up Characterization routines
+    //   autoChooser.addOption(
+    //       "Drive Wheel Radius Characterization", driveBase.wheelRadiusCharacterization());
+    //   autoChooser.addOption(
+    //       "Drive Simple FF Characterization", driveBase.feedforwardCharacterization());
+    // }
 
-    LoggedDashboardChooser<Boolean> mirror =
-        new LoggedDashboardChooser<>("Starting on Processor Side?");
-    mirror.addDefaultOption("Yes", false);
-    mirror.addOption("No", true);
-    MirrorUtil.setMirror(mirror::get);
+    // LoggedDashboardChooser<Boolean> mirror =
+    //     new LoggedDashboardChooser<>("Starting on Processor Side?");
+    // mirror.addDefaultOption("Yes", false);
+    // mirror.addOption("No", true);
+    // MirrorUtil.setMirror(mirror::get);
 
     configureButtonBindings();
   }
@@ -120,4 +121,18 @@ public class RobotContainer {
 
     /* Assign buttons here */
   }
+
+  // Update dashboard data
+  public void updateDashboardOutputs() {
+    SmartDashboard.putNumber("Match Time", DriverStation.getMatchTime());
+  }
+
+  public void updateAlerts() {
+    // Controller disconnected alerts
+    controllerDisconnected.set(!DriverStation.isJoystickConnected(controller.getHID().getPort()));
+  }
+
+  // public Command getAutonomousCommand() {
+  //   return autoChooser.get();
+  // }
 }

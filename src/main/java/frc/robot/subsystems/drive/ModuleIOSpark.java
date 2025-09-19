@@ -2,6 +2,7 @@ package frc.robot.subsystems.drive;
 
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
+import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
@@ -18,7 +19,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.AnalogEncoder;
+// import edu.wpi.first.wpilibj.AnalogEncoder;
 import frc.robot.Constants;
 import frc.robot.subsystems.drive.DriveConstants.ModuleConfig;
 import java.util.Queue;
@@ -35,7 +36,7 @@ public class ModuleIOSpark implements ModuleIO {
   private final SparkMax turnSpark;
   private final RelativeEncoder driveEncoder;
   private final RelativeEncoder turnRelativeEncoder;
-  private final AnalogEncoder turnAbsoluteEncoder;
+  private final AbsoluteEncoder turnAbsoluteEncoder;
 
   // Closed loop controllers
   private final SparkClosedLoopController driveController;
@@ -64,7 +65,7 @@ public class ModuleIOSpark implements ModuleIO {
 
     driveEncoder = driveSpark.getEncoder();
     turnRelativeEncoder = turnSpark.getEncoder();
-    turnAbsoluteEncoder = new AnalogEncoder(config.encoderChannel(), 2 * Math.PI, 0);
+    turnAbsoluteEncoder = turnSpark.getAbsoluteEncoder();
 
     driveController = driveSpark.getClosedLoopController();
     turnController = turnSpark.getClosedLoopController();
@@ -223,6 +224,6 @@ public class ModuleIOSpark implements ModuleIO {
   }
 
   private Rotation2d getOffsetAbsoluteAngle() {
-    return Rotation2d.fromRadians(turnAbsoluteEncoder.get()).minus(config.encoderOffset());
+    return Rotation2d.fromRadians(turnAbsoluteEncoder.getPosition()).minus(config.encoderOffset());
   }
 }

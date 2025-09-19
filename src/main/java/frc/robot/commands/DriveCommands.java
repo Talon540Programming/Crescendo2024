@@ -10,10 +10,10 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 // import edu.wpi.first.math.trajectory.TrapezoidProfile; //Not in 6328
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.RobotState;
+// import frc.robot.RobotState;
 import frc.robot.subsystems.drive.DriveBase;
 import frc.robot.subsystems.drive.DriveConstants;
-import frc.robot.util.AllianceFlipUtil; // Not in 6328
+// import frc.robot.util.AllianceFlipUtil; // Not in 6328
 import frc.robot.util.LoggedTunableNumber;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -79,14 +79,14 @@ public class DriveCommands {
                   y * DriveConstants.maxLinearVelocityMetersPerSec * linearVelocityScalar,
                   omega * DriveConstants.maxAngularVelocityRadPerSec * angularVelocityScalar);
 
-          // Convert to field relative
-          if (!robotRelativeSupplier.getAsBoolean()) {
-            Rotation2d rotation = RobotState.getInstance().getRotation();
-            if (AllianceFlipUtil.shouldFlip()) {
-              rotation = rotation.rotateBy(Rotation2d.kPi);
-            }
-            speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, rotation);
-          }
+          // // Convert to field relative
+          // if (!robotRelativeSupplier.getAsBoolean()) {
+          //   Rotation2d rotation = RobotState.getInstance().getRotation();
+          //   if (AllianceFlipUtil.shouldFlip()) {
+          //     rotation = rotation.rotateBy(Rotation2d.kPi);
+          //   }
+          //   speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, rotation);
+          // }
 
           // Apply speeds
           driveBase.runVelocity(speeds);

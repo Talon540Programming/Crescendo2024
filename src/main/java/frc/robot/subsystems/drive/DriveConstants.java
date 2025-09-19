@@ -47,8 +47,8 @@ public class DriveConstants {
 
   // Module Gearing
   // If we do Kraken or Redux, then implement like 6328
-  static final double mk4iDriveGearing = (50.0 / 14.0) * (19.0 / 25.0) * (45.0 / 15.0);
-  static final double mk4iTurnGearing = 12.8;
+  static final double mk4DriveGearing = (50.0 / 14.0) * (19.0 / 25.0) * (45.0 / 15.0);
+  static final double mk4TurnGearing = 12.8;
 
   // Module configurations
   // This is not on 2024's code.  Why?
@@ -58,44 +58,42 @@ public class DriveConstants {
         .turnMotorId(2)
         .driveMotorId(3)
         .encoderChannel(0)
-        .encoderOffset(
-            Rotation2d.fromRadians(
-                1.7182357115138978)) // .rotateBy(Rotation2d.kPi)) (may not be needed for Krakens
-        // depending on encoder)
+        // .encoderOffset( Rotation2d.fromRadians( 1.7182357115138978))
+        // .rotateBy(Rotation2d.kPi)) (may not be needed for Krakens depending on encoder)
         // Why .rotateBy(Rotation2d.kPi)?
-        .driveGearing(mk4iDriveGearing)
-        .turnGearing(mk4iTurnGearing)
-        .turnInverted(true)
+        .driveGearing(mk4DriveGearing)
+        .turnGearing(mk4TurnGearing)
+        .turnInverted(false)
         .build(),
     // Front Right
     ModuleConfig.builder()
         .turnMotorId(4)
         .driveMotorId(5)
         .encoderChannel(1)
-        .encoderOffset(Rotation2d.fromRadians(-1.4361935561244243)) // .rotateBy(Rotation2d.kPi))
-        .driveGearing(mk4iDriveGearing)
-        .turnGearing(mk4iTurnGearing)
-        .turnInverted(true)
+        // .encoderOffset(Rotation2d.fromRadians(-1.4361935561244243)) // .rotateBy(Rotation2d.kPi))
+        .driveGearing(mk4DriveGearing)
+        .turnGearing(mk4TurnGearing)
+        .turnInverted(false)
         .build(),
     // Back Left
     ModuleConfig.builder()
         .turnMotorId(6)
         .driveMotorId(7)
         .encoderChannel(2)
-        .encoderOffset(Rotation2d.fromRadians(0.9998617084472845)) // .rotateBy(Rotation2d.kPi))
-        .driveGearing(mk4iDriveGearing)
-        .turnGearing(mk4iTurnGearing)
-        .turnInverted(true)
+        // .encoderOffset(Rotation2d.fromRadians(0.9998617084472845)) // .rotateBy(Rotation2d.kPi))
+        .driveGearing(mk4DriveGearing)
+        .turnGearing(mk4TurnGearing)
+        .turnInverted(false)
         .build(),
     // Back Right
     ModuleConfig.builder()
         .turnMotorId(8)
         .driveMotorId(9)
         .encoderChannel(3)
-        .encoderOffset(Rotation2d.fromRadians(-1.7285578862473199)) // .rotateBy(Rotation2d.kPi))
-        .driveGearing(mk4iDriveGearing)
-        .turnGearing(mk4iTurnGearing)
-        .turnInverted(true)
+        // .encoderOffset(Rotation2d.fromRadians(-1.7285578862473199)) // .rotateBy(Rotation2d.kPi))
+        .driveGearing(mk4DriveGearing)
+        .turnGearing(mk4TurnGearing)
+        .turnInverted(false)
         .build(),
   };
 

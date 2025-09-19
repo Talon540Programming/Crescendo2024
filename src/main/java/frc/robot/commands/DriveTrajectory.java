@@ -4,20 +4,22 @@ import choreo.trajectory.SwerveSample;
 import choreo.trajectory.Trajectory;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
+// import edu.wpi.first.math.geometry.Rotation2d;
+// import edu.wpi.first.math.kinematics.ChassisSpeeds;
 // import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
-import frc.robot.RobotState;
+// import frc.robot.RobotState;
 import frc.robot.subsystems.drive.DriveBase;
-import frc.robot.util.AllianceFlipUtil;
+// import frc.robot.util.AllianceFlipUtil;
 import frc.robot.util.LoggedTunableNumber;
-import frc.robot.util.MirrorUtil;
-import java.util.Arrays;
+// import frc.robot.util.MirrorUtil;
+// import java.util.Arrays;
 import java.util.function.Supplier;
-import org.littletonrobotics.junction.Logger;
+
+// import org.littletonrobotics.junction.Logger;
 
 public class DriveTrajectory extends Command {
 
@@ -30,12 +32,11 @@ public class DriveTrajectory extends Command {
   private static final LoggedTunableNumber thetakD =
       new LoggedTunableNumber("DriveTrajectory/ThetakD");
 
-  // private static final LoggedTunableNumber overrideMaxVelocity =
-  //     new LoggedTunableNumber("DriveTrajectory/OverrideMaxVelocity",
-  // Units.degreesToRadians(360));
-  // private static final LoggedTunableNumber overrideMaxAcceleration =
-  //     new LoggedTunableNumber( "DriveTrajectory/OverrideMaxAcceleration",
-  // Units.degreesToRadians(720));
+  private static final LoggedTunableNumber overrideMaxVelocity =
+      new LoggedTunableNumber("DriveTrajectory/OverrideMaxVelocity", Units.degreesToRadians(360));
+  private static final LoggedTunableNumber overrideMaxAcceleration =
+      new LoggedTunableNumber(
+          "DriveTrajectory/OverrideMaxAcceleration", Units.degreesToRadians(720));
 
   static {
     switch (Constants.getRobot()) {
@@ -79,14 +80,14 @@ public class DriveTrajectory extends Command {
     addRequirements(driveBase);
   }
 
-  public DriveTrajectory(
-      DriveBase driveBase, Trajectory<SwerveSample> trajectory, boolean respectMirror) {
-    this(driveBase, trajectory, RobotState.getInstance()::getEstimatedPose, respectMirror);
-  }
+  // public DriveTrajectory(
+  //     DriveBase driveBase, Trajectory<SwerveSample> trajectory, boolean respectMirror) {
+  //   this(driveBase, trajectory, RobotState.getInstance()::getEstimatedPose, respectMirror);
+  // }
 
-  public DriveTrajectory(DriveBase driveBase, Trajectory<SwerveSample> trajectory) {
-    this(driveBase, trajectory, false);
-  }
+  // public DriveTrajectory(DriveBase driveBase, Trajectory<SwerveSample> trajectory) {
+  //   this(driveBase, trajectory, false);
+  // }
 
   @Override
   public void initialize() {
@@ -96,11 +97,11 @@ public class DriveTrajectory extends Command {
     yController.reset();
     thetaController.reset();
 
-    Logger.recordOutput(
-        "Trajectory/TrajectoryPoses",
-        Arrays.stream(trajectory.getPoses())
-            .map(pose -> AllianceFlipUtil.apply(respectMirror ? MirrorUtil.apply(pose) : pose))
-            .toArray(Pose2d[]::new));
+    // Logger.recordOutput(
+    //     "Trajectory/TrajectoryPoses",
+    //     Arrays.stream(trajectory.getPoses())
+    //         .map(pose -> AllianceFlipUtil.apply(respectMirror ? MirrorUtil.apply(pose) : pose))
+    //         .toArray(Pose2d[]::new));
   }
 
   @Override
@@ -124,31 +125,33 @@ public class DriveTrajectory extends Command {
 
     var robot = robotPose.get();
     var trajSample = trajectory.sampleAt(timer.get(), false).orElseThrow();
-    var setpointTrajSample =
-        AllianceFlipUtil.apply(respectMirror ? MirrorUtil.apply(trajSample) : trajSample);
+    // var setpointTrajSample = AllianceFlipUtil.apply(respectMirror ? MirrorUtil.apply(trajSample)
+    // : trajSample);
 
-    double xFeedback = xController.calculate(robot.getX(), setpointTrajSample.x);
-    double yFeedback = yController.calculate(robot.getY(), setpointTrajSample.y);
-    double thetaFeedback =
-        thetaController.calculate(robot.getRotation().getRadians(), setpointTrajSample.heading);
+    //   double xFeedback = xController.calculate(robot.getX(), setpointTrajSample.x);
+    //   double yFeedback = yController.calculate(robot.getY(), setpointTrajSample.y);
+    //   double thetaFeedback =
+    //       thetaController.calculate(robot.getRotation().getRadians(),
+    // setpointTrajSample.heading);
 
-    // Command drive
-    driveBase.runVelocity(
-        ChassisSpeeds.fromFieldRelativeSpeeds(
-            setpointTrajSample.vx + xFeedback,
-            setpointTrajSample.vy + yFeedback,
-            setpointTrajSample.omega + thetaFeedback,
-            robot.getRotation()));
+    //   // Command drive
+    //   driveBase.runVelocity(
+    //       ChassisSpeeds.fromFieldRelativeSpeeds(
+    //           setpointTrajSample.vx + xFeedback,
+    //           setpointTrajSample.vy + yFeedback,
+    //           setpointTrajSample.omega + thetaFeedback,
+    //           robot.getRotation()));
 
-    // Log outputs
-    Logger.recordOutput("Trajectory/RobotPose", robot);
-    Logger.recordOutput("Trajectory/SetpointPose", setpointTrajSample);
-    Logger.recordOutput(
-        "Trajectory/Feedback",
-        new Pose2d(xFeedback, yFeedback, Rotation2d.fromRadians(thetaFeedback)));
-    Logger.recordOutput(
-        "Trajectory/VelocityFeedforward",
-        new ChassisSpeeds(setpointTrajSample.vx, setpointTrajSample.vy, setpointTrajSample.omega));
+    //   // Log outputs
+    //   Logger.recordOutput("Trajectory/RobotPose", robot);
+    //   Logger.recordOutput("Trajectory/SetpointPose", setpointTrajSample);
+    //   Logger.recordOutput(
+    //       "Trajectory/Feedback",
+    //       new Pose2d(xFeedback, yFeedback, Rotation2d.fromRadians(thetaFeedback)));
+    //   Logger.recordOutput(
+    //       "Trajectory/VelocityFeedforward",
+    //       new ChassisSpeeds(setpointTrajSample.vx, setpointTrajSample.vy,
+    // setpointTrajSample.omega));
   }
 
   @Override
