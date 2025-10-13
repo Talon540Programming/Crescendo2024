@@ -77,7 +77,7 @@ public class Robot extends LoggedRobot {
   /** This function is called periodically during all modes. */
   @Override
   public void robotPeriodic() {
-    LoggedTracer.reset();
+    LoggedTracer.reset(); // deletes data from previous cycle, preps for tracer for new data
     // // Run virtual subsystems
     // VirtualSubsystem.periodicAll();
 

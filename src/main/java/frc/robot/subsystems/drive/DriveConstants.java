@@ -58,8 +58,9 @@ public class DriveConstants {
         .turnMotorId(2)
         .driveMotorId(3)
         .encoderChannel(0)
-        // .encoderOffset( Rotation2d.fromRadians( 1.7182357115138978))
-        // .rotateBy(Rotation2d.kPi)) (may not be needed for Krakens depending on encoder)
+        .encoderOffset(
+            Rotation2d.fromRadians(1.7182357115138978)
+                .rotateBy(Rotation2d.kPi)) // (may not be needed for Krakens depending on encoder)
         // Why .rotateBy(Rotation2d.kPi)?
         .driveGearing(mk4DriveGearing)
         .turnGearing(mk4TurnGearing)
@@ -70,7 +71,7 @@ public class DriveConstants {
         .turnMotorId(4)
         .driveMotorId(5)
         .encoderChannel(1)
-        // .encoderOffset(Rotation2d.fromRadians(-1.4361935561244243)) // .rotateBy(Rotation2d.kPi))
+        .encoderOffset(Rotation2d.fromRadians(-1.4361935561244243).rotateBy(Rotation2d.kPi))
         .driveGearing(mk4DriveGearing)
         .turnGearing(mk4TurnGearing)
         .turnInverted(false)
@@ -80,7 +81,7 @@ public class DriveConstants {
         .turnMotorId(6)
         .driveMotorId(7)
         .encoderChannel(2)
-        // .encoderOffset(Rotation2d.fromRadians(0.9998617084472845)) // .rotateBy(Rotation2d.kPi))
+        .encoderOffset(Rotation2d.fromRadians(0.9998617084472845).rotateBy(Rotation2d.kPi))
         .driveGearing(mk4DriveGearing)
         .turnGearing(mk4TurnGearing)
         .turnInverted(false)
@@ -90,7 +91,7 @@ public class DriveConstants {
         .turnMotorId(8)
         .driveMotorId(9)
         .encoderChannel(3)
-        // .encoderOffset(Rotation2d.fromRadians(-1.7285578862473199)) // .rotateBy(Rotation2d.kPi))
+        .encoderOffset(Rotation2d.fromRadians(-1.7285578862473199).rotateBy(Rotation2d.kPi))
         .driveGearing(mk4DriveGearing)
         .turnGearing(mk4TurnGearing)
         .turnInverted(false)
@@ -107,8 +108,9 @@ public class DriveConstants {
       int turnMotorId,
       int driveMotorId,
       int encoderChannel,
-      Rotation2d encoderOffset,
+      int absoluteEncoderId,
       double driveGearing,
       double turnGearing,
-      boolean turnInverted) {}
+      boolean turnInverted,
+      Rotation2d encoderOffset) {}
 }

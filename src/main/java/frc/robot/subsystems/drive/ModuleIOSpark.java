@@ -2,7 +2,8 @@ package frc.robot.subsystems.drive;
 
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
-import com.revrobotics.AbsoluteEncoder;
+import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
@@ -19,6 +20,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.measure.Angle;
 // import edu.wpi.first.wpilibj.AnalogEncoder;
 import frc.robot.Constants;
 import frc.robot.subsystems.drive.DriveConstants.ModuleConfig;
@@ -36,7 +38,10 @@ public class ModuleIOSpark implements ModuleIO {
   private final SparkMax turnSpark;
   private final RelativeEncoder driveEncoder;
   private final RelativeEncoder turnRelativeEncoder;
-  private final AbsoluteEncoder turnAbsoluteEncoder;
+  private final CANcoder absoluteEncoder;
+
+  // StatusSignals
+  private final StatusSignal<Angle> turnAbsoluteEncoder;
 
   // Closed loop controllers
   private final SparkClosedLoopController driveController;
@@ -65,10 +70,11 @@ public class ModuleIOSpark implements ModuleIO {
 
     driveEncoder = driveSpark.getEncoder();
     turnRelativeEncoder = turnSpark.getEncoder();
-    turnAbsoluteEncoder = turnSpark.getAbsoluteEncoder();
+    absoluteEncoder = new CANcoder(config.encoderChannel());
 
     driveController = driveSpark.getClosedLoopController();
     turnController = turnSpark.getClosedLoopController();
+    turnAbsoluteEncoder = absoluteEncoder.getAbsolutePosition();
 
     // Configure Drive
     var driveConfig = new SparkMaxConfig();
@@ -99,7 +105,7 @@ public class ModuleIOSpark implements ModuleIO {
     var turnConfig = new SparkMaxConfig();
     turnConfig
         .idleMode(IdleMode.kBrake)
-        .inverted(config.turnInverted())
+        // .inverted(config.turnInverted())
         .smartCurrentLimit(20)
         .voltageCompensation(12.0);
     turnConfig
@@ -144,6 +150,7 @@ public class ModuleIOSpark implements ModuleIO {
     inputs.driveCurrentAmps = driveSpark.getOutputCurrent();
     inputs.driveTempCelsius = driveSpark.getMotorTemperature();
 
+    turnAbsoluteEncoder.refresh();
     inputs.turnAbsolutePosition = getOffsetAbsoluteAngle();
     inputs.turnPosition = Rotation2d.fromRadians(turnRelativeEncoder.getPosition());
     inputs.turnVelocityRadPerSec = turnRelativeEncoder.getVelocity();
@@ -224,6 +231,7 @@ public class ModuleIOSpark implements ModuleIO {
   }
 
   private Rotation2d getOffsetAbsoluteAngle() {
-    return Rotation2d.fromRadians(turnAbsoluteEncoder.getPosition()).minus(config.encoderOffset());
+    return Rotation2d.fromRadians(absoluteEncoder.getAbsolutePosition().getValueAsDouble())
+        .minus(config.encoderOffset());
   }
 }
