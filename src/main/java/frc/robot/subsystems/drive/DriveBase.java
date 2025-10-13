@@ -1,180 +1,262 @@
 package frc.robot.subsystems.drive;
 
-import static edu.wpi.first.units.Units.Volts;
-
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.constants.Constants;
-import frc.robot.subsystems.drive.GyroIO.GyroIOInputs;
-import frc.robot.util.PoseEstimator;
+import frc.robot.Constants;
+// import frc.robot.RobotState; //Probably only Enstimated Pose for Outreach used in multiple
+// subsystems at same time
+// import frc.robot.RobotState.OdometryObservation;
+import frc.robot.util.LoggedTracer;
+import frc.robot.util.LoggedTunableNumber;
+import frc.robot.util.swerve.SwerveSetpointGenerator;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 public class DriveBase extends SubsystemBase {
-  public static final double kDriveGearing;
-  public static final double kTurnGearing;
-  public static final double kWheelRadiusMeters;
+  // Characterization
+  private static final double FF_START_DELAY = 2; // Secs
+  private static final double FF_RAMP_RATE = 3.5; // Volts/Sec
+  private static final double WHEEL_RADIUS_MAX_VELOCITY = 0.25; // Rad/Sec
+  private static final double WHEEL_RADIUS_RAMP_RATE = 0.05; // Rad/Sec^2
+  private final GyroIO gyroIO;
+  private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
 
-  public static final double kTrackWidthXMeters;
-  public static final double kTrackWidthYMeters;
-  public static final double kDriveBaseRadiusMeters;
+  private final Module[] modules = new Module[4]; // FL, FR, BL, BR
 
-  public static final double kMaxLinearVelocityMetersPerSecond;
-  public static final double kMaxAngularVelocityRadiansPerSecond;
+  private final Queue<Double> m_timestampsQueue;
+  private final OdometryTimestampsInputAutoLogged m_timestampInputs =
+      new OdometryTimestampsInputAutoLogged();
+  private final Alert gyroDisconnectedAlert =
+      new Alert(
+          "Disconnected gyro, using kinematic approximation as fallback.", Alert.AlertType.kError);
 
-  public static final SwerveDriveKinematics m_kinematics;
+  private static final LoggedTunableNumber coastWaitTime =
+      new LoggedTunableNumber("Drive/CoastWaitTimeSeconds", 0.5);
+  private static final LoggedTunableNumber coastMetersPerSecondThreshold =
+      new LoggedTunableNumber("Drive/CoastMetersPerSecThreshold", .05);
 
-  private final GyroIO m_gyroIO;
-  private final GyroIOInputs m_gyroInputs = new GyroIOInputs();
-  private final Module[] m_modules = new Module[4]; // FL, FR, BL, BR
+  private final Timer lastMovementTimer = new Timer();
 
-  private Rotation2d m_lastGyroRotation = new Rotation2d();
+  private final SwerveDriveKinematics kinematics =
+      new SwerveDriveKinematics(DriveConstants.moduleTranslations);
 
-  private final SysIdRoutine m_driveCharacterizationRoutine;
+  private SwerveSetpointGenerator.SwerveSetpoint currentSetpoint =
+      new SwerveSetpointGenerator.SwerveSetpoint(
+          new ChassisSpeeds(),
+          new SwerveModuleState[] {
+            new SwerveModuleState(),
+            new SwerveModuleState(),
+            new SwerveModuleState(),
+            new SwerveModuleState()
+          });
+  private final SwerveSetpointGenerator swerveSetpointGenerator;
 
-  static {
-    switch (Constants.getRobotType()) {
-      case ROBOT_SIMBOT, ROBOT_2024_COMP -> {
-        kDriveGearing = (50.0 / 14.0) * (17.0 / 27.0) * (45.0 / 15.0);
-        kTurnGearing = 12.8;
-        kWheelRadiusMeters = Units.inchesToMeters(2.0);
-        kTrackWidthXMeters = Units.inchesToMeters(22.5);
-        kTrackWidthYMeters = Units.inchesToMeters(22.5);
+  @AutoLogOutput(key = "Drive/ClosedLoopMode")
+  private boolean CLOSED_LOOP_MODE = false;
 
-        kMaxLinearVelocityMetersPerSecond = Units.feetToMeters(14.5);
-      }
-      default -> throw new RuntimeException("Unknown RobotType for Drivebase");
-    }
-
-    kDriveBaseRadiusMeters = Math.hypot(kTrackWidthXMeters / 2.0, kTrackWidthYMeters / 2.0);
-    kMaxAngularVelocityRadiansPerSecond =
-        kMaxLinearVelocityMetersPerSecond / kDriveBaseRadiusMeters;
-    m_kinematics =
-        new SwerveDriveKinematics(getModuleTranslations(kTrackWidthXMeters, kTrackWidthYMeters));
-  }
+  @AutoLogOutput(key = "Drive/BrakeModeEnabled")
+  private boolean BRAKE_MODE = true;
 
   public DriveBase(
       GyroIO gyroIO,
-      ModuleIO frontLeftIO,
-      ModuleIO frontRightIO,
-      ModuleIO backLeftIO,
-      ModuleIO backRightIO) {
-    this.m_gyroIO = gyroIO;
+      ModuleIO frontLeftModuleIO,
+      ModuleIO frontRightModuleIO,
+      ModuleIO backLeftModuleIO,
+      ModuleIO backRightModuleIO) {
+    this.gyroIO = gyroIO;
+    modules[0] = new Module(frontLeftModuleIO, 0);
+    modules[1] = new Module(frontRightModuleIO, 1);
+    modules[2] = new Module(backLeftModuleIO, 2);
+    modules[3] = new Module(backRightModuleIO, 3);
 
-    m_modules[0] = new Module(0, frontLeftIO);
-    m_modules[1] = new Module(1, frontRightIO);
-    m_modules[2] = new Module(2, backLeftIO);
-    m_modules[3] = new Module(3, backRightIO);
+    swerveSetpointGenerator =
+        new SwerveSetpointGenerator(kinematics, DriveConstants.moduleTranslations);
 
-    m_driveCharacterizationRoutine =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(
-                null,
-                null,
-                null,
-                (state) -> Logger.recordOutput("Drive/SysIdState", state.toString())),
-            new SysIdRoutine.Mechanism(
-                (voltage) -> {
-                  for (int i = 0; i < 4; i++) {
-                    m_modules[i].runCharacterizationVoltage(voltage.in(Volts));
-                  }
-                },
-                null,
-                this));
+    m_timestampsQueue = OdometryManager.getInstance().getTimestampQueue();
+
+    // Start odometry thread
+    OdometryManager.getInstance().start();
+
+    lastMovementTimer.start();
+    setBrakeMode(true);
   }
 
+  @Override
   public void periodic() {
-    PoseEstimator.odometryLock.lock();
-    m_gyroIO.updateInputs(m_gyroInputs);
-    for (var module : m_modules) {
-      module.updateInputs();
+    OdometryManager.odometryLock.lock();
+    try {
+      // Update and log gyro Inputs
+      gyroIO.updateInputs(gyroInputs);
+      Logger.processInputs("Drive/Gyro", gyroInputs);
+      // Update and log only on modules
+      for (var module : modules) {
+        module.updateInputs();
+      }
+      // Get current sample timestamps
+      m_timestampInputs.timestamps =
+          m_timestampsQueue.stream().mapToDouble((Double value) -> value).toArray();
+      m_timestampsQueue.clear();
+      Logger.processInputs("Drive/OdometryTimestamps", m_timestampInputs);
+    } finally {
+      OdometryManager.odometryLock.unlock();
+      LoggedTracer.record("Drive/Inputs");
     }
-    PoseEstimator.odometryLock.unlock();
 
-    Logger.processInputs("Drive/Gyro", m_gyroInputs);
-    for (var module : m_modules) {
+    // Call periodic on modules
+    for (var module : modules) {
       module.periodic();
     }
 
+    // Stop moving when disabled
     if (DriverStation.isDisabled()) {
-      // Stop moving when disabled
-      for (var module : m_modules) {
-        module.disable();
+      for (var module : modules) {
+        module.stop();
       }
+    }
 
-      // Log empty setpoint states when disabled
+    // Log empty setpoint states when disabled
+    if (DriverStation.isDisabled()) {
       Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
-      Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
+      Logger.recordOutput("SwerveStates/SetpointsUnoptimized", new SwerveModuleState[] {});
     }
 
-    // Update odometry
-    int deltaCount =
-        m_gyroInputs.connected ? m_gyroInputs.odometryYawPositions.size() : Integer.MAX_VALUE;
-    for (var module : m_modules) {
-      deltaCount = Math.min(deltaCount, module.getPositionDeltas().size());
-    }
-    for (int i = 0; i < deltaCount; i++) {
-      double timestampSeconds = Double.NEGATIVE_INFINITY;
-      SwerveModulePosition[] wheelDeltas = new SwerveModulePosition[4];
-      for (int j = 0; j < 4; j++) {
-        var moduleMeasurement = m_modules[j].getPositionDeltas().get(i);
-        timestampSeconds = Math.max(moduleMeasurement.getTimestampSeconds(), timestampSeconds);
-        wheelDeltas[j] = moduleMeasurement.getMeasurement();
+    // // Send odometry updates to robot state
+    // var timestamps = m_timestampInputs.timestamps;
+    // var sampleCount = timestamps.length;
+    // // double[] sampleTimestamps =                  //6328 does this, why?
+    // // Constants.getMode() == Mode.SIM
+    // //     ? new double[] {Timer.getTimestamp()}
+    // //     : gyroInputs.odometryYawTimestamps; // All signals are sampled together
+    // for (int i = 0; i < sampleCount; i++) {
+    // SwerveModulePosition[] wheelPositions = new SwerveModulePosition[4];
+    // for (int j = 0; j < 4; j++) {
+    //     wheelPositions[j] = modules[j].getOdometryPositions()[i];
+    // }
+    // RobotState.getInstance()
+    //     .addOdometryObservation(
+    //         new OdometryObservation(
+    //             wheelPositions,
+    //             Optional.ofNullable(
+    //                 gyroInputs.connected ? gyroInputs.odometryYawPositions[i] : null),
+    //             timestamps[i]));
+    // }
+
+    // RobotState.getInstance().setPitch(gyroInputs.pitchPosition);
+    // RobotState.getInstance().setRoll(gyroInputs.rollPosition);
+
+    // Disable brake mode a short duration after the robot is disabled
+    // Reset movement timer if velocity above threshold
+    for (var module : modules) {
+      if (Math.abs(module.getVelocityMetersPerSec()) > coastMetersPerSecondThreshold.get()) {
+        lastMovementTimer.reset();
+        break;
       }
-
-      // The twist represents the motion of the robot since the last
-      // sample in x, y, and theta based only on the modules, without
-      // the gyro. The gyro is always disconnected in simulation.
-      var twist = m_kinematics.toTwist2d(wheelDeltas);
-      if (m_gyroInputs.connected) {
-        var gyroMeasurement = m_gyroInputs.odometryYawPositions.get(i);
-        timestampSeconds = Math.max(gyroMeasurement.getTimestampSeconds(), timestampSeconds);
-        // If the gyro is connected, replace the theta component of the twist
-        // with the change in angle since the last sample.
-        Rotation2d gyroRotation = gyroMeasurement.getMeasurement();
-
-        twist.dtheta = gyroRotation.minus(m_lastGyroRotation).getRadians();
-
-        m_lastGyroRotation = gyroRotation;
-      }
-
-      // Apply the twist (change since last sample) to the current pose
-      PoseEstimator.getInstance().addDriveData(timestampSeconds, twist);
     }
 
-    Logger.recordOutput("Odometry/EstimatedPose", PoseEstimator.getInstance().getPose());
+    if (DriverStation.isEnabled()) {
+      setBrakeMode(true);
+    } else if (lastMovementTimer.hasElapsed(coastWaitTime.get())) {
+      setBrakeMode(false);
+    }
+
+    // Why does 6328 implement this?
+    // switch (coastRequest) {
+    //     case AUTOMATIC -> {
+    //         if (DriverStation.isEnabled()) {
+    //             setBrakeMode(true);
+    //         } else if (lastMovementTimer.hasElapsed(coastWaitTime.get())) {
+    //             setBrakeMode(false);
+    //         }
+    //     }
+    //     case ALWAYS_BRAKE -> {
+    //         setBrakeMode(true);
+    //     }
+    //     case ALWAYS_COAST -> {
+    //         setBrakeMode(false);
+    //     }
+    // }
+
+    // Update current setpoint if not in velocity mode
+    if (!CLOSED_LOOP_MODE) {
+      currentSetpoint =
+          new SwerveSetpointGenerator.SwerveSetpoint(getChassisSpeeds(), getModuleStates());
+    }
+
+    // Update gyro alert
+    gyroDisconnectedAlert.set(
+        !gyroInputs.data.connected() && Constants.getMode() != Constants.Mode.SIM);
+
+    // Record cycle time
+    LoggedTracer.record("Drive/Periodic");
+  }
+
+  /** Set brake mode to {@code enabled} doesn't change brake mode if already set. */
+  private void setBrakeMode(boolean enabled) {
+    if (BRAKE_MODE != enabled) {
+      for (var module : modules) {
+        module.setDriveBrakeMode(enabled);
+      }
+    }
+    BRAKE_MODE = enabled;
   }
 
   /**
-   * Runs the drive at the desired velocity.
+   * Runs the drive at the desired velocity. 6328 has another one with different inputs? Torque
+   * control on Krakens. Intake, drive especially useful.
    *
    * @param speeds Speeds in meters/sec
    */
   public void runVelocity(ChassisSpeeds speeds) {
+    CLOSED_LOOP_MODE = true;
+
     // Calculate module setpoints
-    ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
-    SwerveModuleState[] setpointStates = m_kinematics.toSwerveModuleStates(discreteSpeeds);
-    SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, kMaxLinearVelocityMetersPerSecond);
+    ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, Constants.kLoopPeriodSecs);
+    SwerveModuleState[] setpointStatesUnoptimized = kinematics.toSwerveModuleStates(discreteSpeeds);
+    currentSetpoint =
+        swerveSetpointGenerator.generateSetpoint(
+            DriveConstants.moduleLimitsFree,
+            currentSetpoint,
+            discreteSpeeds,
+            Constants.kLoopPeriodSecs);
+    SwerveModuleState[] setpointStates = currentSetpoint.moduleStates();
+
+    // Log unoptimized setpoints and setpoint speeds
+    Logger.recordOutput("SwerveStates/SetpointsUnoptimized", setpointStatesUnoptimized);
+    Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
+    Logger.recordOutput("SwerveChassisSpeeds/Setpoints", currentSetpoint.chassisSpeeds());
+    Logger.recordOutput(
+        "SwerveChassisSpeeds/SetpointsUnoptimized", currentSetpoint.chassisSpeeds());
 
     // Send setpoints to modules
-    SwerveModuleState[] optimizedSetpointStates = new SwerveModuleState[4];
     for (int i = 0; i < 4; i++) {
-      // The module returns the optimized state, useful for logging
-      optimizedSetpointStates[i] = m_modules[i].runSetpoint(setpointStates[i]);
+      modules[i].runSetpoint(setpointStates[i]);
     }
+  }
 
-    // Log setpoint states
-    Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
-    Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
+  /** Runs the drive in a straight(ish) line with the specified drive output. */
+  public void runCharacterization(double output) {
+    CLOSED_LOOP_MODE = false;
+
+    for (int i = 0; i < 4; i++) {
+      modules[i].runCharacterization(output);
+    }
   }
 
   /** Stops the drive. */
@@ -187,39 +269,190 @@ public class DriveBase extends SubsystemBase {
    * return to their normal orientations the next time a nonzero velocity is requested.
    */
   public void stopWithX() {
-    var translations = getModuleTranslations(kTrackWidthXMeters, kTrackWidthYMeters);
     Rotation2d[] headings = new Rotation2d[4];
     for (int i = 0; i < 4; i++) {
-      headings[i] = translations[i].getAngle();
+      headings[i] = DriveConstants.moduleTranslations[i].getAngle();
     }
-    m_kinematics.resetHeadings(headings);
+    kinematics.resetHeadings(headings);
     stop();
   }
 
   /** Returns the module states (turn angles and drive velocities) for all the modules. */
   @AutoLogOutput(key = "SwerveStates/Measured")
-  public SwerveModuleState[] getModuleStates() {
+  private SwerveModuleState[] getModuleStates() {
     SwerveModuleState[] states = new SwerveModuleState[4];
     for (int i = 0; i < 4; i++) {
-      states[i] = m_modules[i].getState();
+      states[i] = modules[i].getState();
     }
     return states;
   }
 
-  public Command characterizeDriveQuasistatic(SysIdRoutine.Direction direction) {
-    return m_driveCharacterizationRoutine.quasistatic(direction);
+  /** Returns the module positions (turn angles and drive positions) for all the modules. */
+  private SwerveModulePosition[] getModulePositions() {
+    SwerveModulePosition[] states = new SwerveModulePosition[4];
+    for (int i = 0; i < 4; i++) {
+      states[i] = modules[i].getPosition();
+    }
+    return states;
   }
 
-  public Command characterizeDriveDynamic(SysIdRoutine.Direction direction) {
-    return m_driveCharacterizationRoutine.dynamic(direction);
+  /** Returns the measured chassis speeds of the robot. */
+  @AutoLogOutput(key = "SwerveChassisSpeeds/Measured")
+  public ChassisSpeeds getChassisSpeeds() {
+    return kinematics.toChassisSpeeds(getModuleStates());
   }
 
-  public static Translation2d[] getModuleTranslations(double trackWidthX, double trackWidthY) {
-    return new Translation2d[] {
-      new Translation2d(trackWidthX / 2.0, trackWidthY / 2.0),
-      new Translation2d(trackWidthX / 2.0, -trackWidthY / 2.0),
-      new Translation2d(-trackWidthX / 2.0, trackWidthY / 2.0),
-      new Translation2d(-trackWidthX / 2.0, -trackWidthY / 2.0)
-    };
+  /** Returns the position of each module in radians. */
+  public double[] getWheelRadiusCharacterizationPositions() {
+    double[] values = new double[4];
+    for (int i = 0; i < 4; i++) {
+      values[i] = modules[i].getWheelRadiusCharacterizationPosition();
+    }
+    return values;
+  }
+
+  /** Returns the average velocity of the modules in rad/sec. */
+  public double getFFCharacterizationVelocity() {
+    double output = 0.0;
+    for (int i = 0; i < 4; i++) {
+      output += modules[i].getFFCharacterizationVelocity() / 4.0;
+    }
+    return output;
+  }
+
+  /** Returns the raw gyro rotation read by the IMU */
+  public Rotation2d getGyroRotation() {
+    return gyroInputs.data.yawPosition();
+  }
+
+  // These aren't in 6328's code.  Why?
+
+  /**
+   * Measures the velocity feedforward constants for the drive motors.
+   *
+   * <p>This command should only be used in voltage control mode.
+   */
+  public Command feedforwardCharacterization() {
+    List<Double> velocitySamples = new LinkedList<>();
+    List<Double> voltageSamples = new LinkedList<>();
+    Timer timer = new Timer();
+
+    return Commands.sequence(
+        // Reset data
+        Commands.runOnce(
+            () -> {
+              velocitySamples.clear();
+              voltageSamples.clear();
+            }),
+
+        // Allow modules to orient
+        Commands.run(() -> this.runCharacterization(0.0), this).withTimeout(FF_START_DELAY),
+
+        // Start timer
+        Commands.runOnce(timer::restart),
+
+        // Accelerate and gather data
+        Commands.run(
+                () -> {
+                  double voltage = timer.get() * FF_RAMP_RATE;
+                  this.runCharacterization(voltage);
+                  velocitySamples.add(this.getFFCharacterizationVelocity());
+                  voltageSamples.add(voltage);
+                },
+                this)
+
+            // When cancelled, calculate and print results
+            .finallyDo(
+                () -> {
+                  int n = velocitySamples.size();
+                  double sumX = 0.0;
+                  double sumY = 0.0;
+                  double sumXY = 0.0;
+                  double sumX2 = 0.0;
+                  for (int i = 0; i < n; i++) {
+                    sumX += velocitySamples.get(i);
+                    sumY += voltageSamples.get(i);
+                    sumXY += velocitySamples.get(i) * voltageSamples.get(i);
+                    sumX2 += velocitySamples.get(i) * velocitySamples.get(i);
+                  }
+                  double kS = (sumY * sumX2 - sumX * sumXY) / (n * sumX2 - sumX * sumX);
+                  double kV = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+
+                  NumberFormat formatter = new DecimalFormat("#0.00000");
+                  SmartDashboard.putString("kS", formatter.format(kS));
+                  SmartDashboard.putString("kV", formatter.format(kV));
+                }));
+  }
+
+  /** Measures the robot's wheel radius by spinning in a circle. */
+  public Command wheelRadiusCharacterization() {
+    SlewRateLimiter limiter = new SlewRateLimiter(WHEEL_RADIUS_RAMP_RATE);
+    WheelRadiusCharacterizationState state = new WheelRadiusCharacterizationState();
+
+    return Commands.parallel(
+        // Drive control sequence
+        Commands.sequence(
+            // Reset acceleration limiter
+            Commands.runOnce(() -> limiter.reset(0.0)),
+
+            // Turn in place, accelerating up to full speed
+            Commands.run(
+                () -> {
+                  double speed = limiter.calculate(WHEEL_RADIUS_MAX_VELOCITY);
+                  this.runVelocity(new ChassisSpeeds(0.0, 0.0, speed));
+                },
+                this)),
+
+        // Measurement sequence
+        Commands.sequence(
+            // Wait for modules to fully orient before starting measurement
+            Commands.waitSeconds(1.0),
+
+            // Record starting measurement
+            Commands.runOnce(
+                () -> {
+                  state.positions = this.getWheelRadiusCharacterizationPositions();
+                  state.lastAngle = this.getGyroRotation();
+                  state.gyroDelta = 0.0;
+                }),
+
+            // Update gyro delta
+            Commands.run(
+                    () -> {
+                      var rotation = this.getGyroRotation();
+                      state.gyroDelta += Math.abs(rotation.minus(state.lastAngle).getRadians());
+                      state.lastAngle = rotation;
+                    })
+
+                // When cancelled, calculate and print results
+                .finallyDo(
+                    () -> {
+                      double[] positions = this.getWheelRadiusCharacterizationPositions();
+                      double wheelDelta = 0.0;
+                      for (int i = 0; i < 4; i++) {
+                        wheelDelta += Math.abs(positions[i] - state.positions[i]) / 4.0;
+                      }
+                      double wheelRadius =
+                          (state.gyroDelta * DriveConstants.driveBaseRadius) / wheelDelta;
+
+                      NumberFormat formatter = new DecimalFormat("#0.000");
+
+                      SmartDashboard.putString(
+                          "Wheel Delta", formatter.format(wheelDelta) + " radians");
+                      SmartDashboard.putString(
+                          "Gyro Delta", formatter.format(state.gyroDelta) + " radians");
+                      SmartDashboard.putString(
+                          "Wheel Radius",
+                          formatter.format(wheelRadius)
+                              + " meters, "
+                              + formatter.format(Units.metersToInches(wheelRadius))
+                              + " inches");
+                    })));
+  }
+
+  private static class WheelRadiusCharacterizationState {
+    double[] positions = new double[4];
+    Rotation2d lastAngle = new Rotation2d();
+    double gyroDelta = 0.0;
   }
 }

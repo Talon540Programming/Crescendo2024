@@ -1,3 +1,3 @@
 package frc.robot.subsystems.shooter;
 
-public class ShooterBase {}
+public class ShooterIOSim {}

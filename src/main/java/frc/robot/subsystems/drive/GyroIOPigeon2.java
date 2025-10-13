@@ -1,103 +1,64 @@
 package frc.robot.subsystems.drive;
 
+import static frc.robot.subsystems.drive.DriveConstants.PigeonConstants.*;
+
 import com.ctre.phoenix6.BaseStatusSignal;
-import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.configs.Pigeon2Configuration;
 import com.ctre.phoenix6.hardware.Pigeon2;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
-import frc.robot.constants.Constants;
-import frc.robot.constants.HardwareIds;
-import frc.robot.util.OdometryQueueThread;
-import frc.robot.util.PoseEstimator;
-import frc.robot.util.TimestampedSensorMeasurement;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+// import frc.robot.subsystems.drive.GyroIO.GyroIOData;
+// import frc.robot.subsystems.drive.GyroIO.GyroIOInputs;
 import java.util.Queue;
 
-/** IO implementation for Pigeon2 */
 public class GyroIOPigeon2 implements GyroIO {
-  private final Pigeon2 m_gyro;
+  private final Pigeon2 pigeon = new Pigeon2(id);
 
-  private final StatusSignal<Double> m_roll;
-  private final StatusSignal<Double> m_pitch;
-  private final StatusSignal<Double> m_yaw;
+  private final StatusSignal<Angle> yaw = pigeon.getYaw();
+  private final StatusSignal<Angle> pitch = pigeon.getPitch();
+  private final StatusSignal<Angle> roll = pigeon.getRoll();
+  private final StatusSignal<AngularVelocity> yawVelocity = pigeon.getAngularVelocityZWorld();
+  private final StatusSignal<AngularVelocity> pitchVelocity = pigeon.getAngularVelocityXWorld();
+  private final StatusSignal<AngularVelocity> rollVelocity = pigeon.getAngularVelocityYWorld();
 
-  private final StatusSignal<Double> m_rollVelocity;
-  private final StatusSignal<Double> m_pitchVelocity;
-  private final StatusSignal<Double> m_yawVelocity;
+  private final Queue<Double> yawPositionQueue;
 
-  private final StatusSignal<Double> m_accelX;
-  private final StatusSignal<Double> m_accelY;
-  private final StatusSignal<Double> m_accelZ;
-
-  private final Queue<TimestampedSensorMeasurement<Double>> yawPositionQueue;
+  // private final Queue<Double> yawTimestampQueue;
 
   public GyroIOPigeon2() {
-    switch (Constants.getRobotType()) {
-      case ROBOT_2024_COMP -> this.m_gyro = new Pigeon2(HardwareIds.COMP_2024.kPigeonId);
-      default -> throw new RuntimeException("Invalid RobotType for GyroIOPigeon2");
-    }
+    pigeon.getConfigurator().apply(new Pigeon2Configuration());
+    pigeon.getConfigurator().setYaw(0.0);
 
-    this.m_gyro.getConfigurator().setYaw(0.0);
-
-    this.m_roll = this.m_gyro.getRoll();
-    this.m_pitch = this.m_gyro.getPitch();
-    this.m_yaw = this.m_gyro.getYaw();
-
-    this.m_rollVelocity = this.m_gyro.getAngularVelocityXWorld();
-    this.m_pitchVelocity = this.m_gyro.getAngularVelocityYWorld();
-    this.m_yawVelocity = this.m_gyro.getAngularVelocityZWorld();
-
-    this.m_accelX = this.m_gyro.getAccelerationX();
-    this.m_accelY = this.m_gyro.getAccelerationY();
-    this.m_accelZ = this.m_gyro.getAccelerationZ();
-
-    // Faster rate for Yaw for Odometry
-    this.m_yaw.setUpdateFrequency(PoseEstimator.ODOMETRY_FREQUENCY);
-    this.m_yawVelocity.setUpdateFrequency(100);
+    yaw.setUpdateFrequency(DriveConstants.odometryFrequencyHz);
     BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0, m_roll, m_pitch, m_rollVelocity, m_pitchVelocity, m_accelX, m_accelY, m_accelZ);
+        50, pitch, roll, yawVelocity, pitchVelocity, rollVelocity);
+    pigeon.optimizeBusUtilization();
 
-    this.yawPositionQueue =
-        OdometryQueueThread.getInstance().registerSignal(() -> m_gyro.getYaw().getValueAsDouble());
-
-    m_gyro.optimizeBusUtilization();
+    yawPositionQueue =
+        OdometryManager.getInstance().registerSignal(yaw.refresh()::getValueAsDouble);
   }
 
   @Override
   public void updateInputs(GyroIOInputs inputs) {
-    // Only check yaw and yaw velocity as they are needed for odometry
-    inputs.connected =
-        BaseStatusSignal.refreshAll(
-                m_roll,
-                m_pitch,
-                m_yaw,
-                m_rollVelocity,
-                m_pitchVelocity,
-                m_yawVelocity,
-                m_accelX,
-                m_accelY,
-                m_accelZ)
-            .equals(StatusCode.OK);
 
-    inputs.rollPosition = Rotation2d.fromDegrees(m_roll.getValueAsDouble());
-    inputs.pitchPosition = Rotation2d.fromDegrees(m_pitch.getValueAsDouble());
-    inputs.yawPosition = Rotation2d.fromDegrees(m_yaw.getValueAsDouble());
-
-    inputs.rollVelocityRadPerSec = Units.degreesToRadians(m_rollVelocity.getValueAsDouble());
-    inputs.pitchVelocityRadPerSec = Units.degreesToRadians(m_pitchVelocity.getValueAsDouble());
-    inputs.yawVelocityRadPerSec = Units.degreesToRadians(m_yawVelocity.getValueAsDouble());
-
-    inputs.accelX = m_accelX.getValueAsDouble();
-    inputs.accelY = m_accelY.getValueAsDouble();
-    inputs.accelZ = m_accelZ.getValueAsDouble();
+    inputs.data =
+        new GyroIOData(
+            BaseStatusSignal.isAllGood(yaw, yawVelocity, pitch, pitchVelocity, roll, rollVelocity),
+            Rotation2d.fromDegrees(yaw.getValueAsDouble()),
+            Units.degreesToRadians(yawVelocity.getValueAsDouble()),
+            Rotation2d.fromDegrees(pitch.getValueAsDouble()),
+            Units.degreesToRadians(pitchVelocity.getValueAsDouble()),
+            Rotation2d.fromDegrees(roll.getValueAsDouble()),
+            Units.degreesToRadians(rollVelocity.getValueAsDouble()));
 
     inputs.odometryYawPositions =
-        yawPositionQueue.stream()
-            .map(
-                v ->
-                    new TimestampedSensorMeasurement<>(
-                        v.getTimestampSeconds(), Rotation2d.fromDegrees(v.getMeasurement())))
-            .toList();
-    this.yawPositionQueue.clear();
+        yawPositionQueue.stream().map(Rotation2d::fromDegrees).toArray(Rotation2d[]::new);
+    yawPositionQueue.clear();
+    // inputs.odometryYawTimestamps = yawTimestampQueue.stream().mapToDouble((Double value) ->
+    // value).toArray();
+    // yawTimestampQueue.clear();
   }
 }

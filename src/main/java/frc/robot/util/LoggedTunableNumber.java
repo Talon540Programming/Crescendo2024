@@ -1,23 +1,24 @@
 package frc.robot.util;
 
-import frc.robot.constants.Constants;
+import frc.robot.Constants;
 import java.util.HashMap;
 import java.util.Map;
-import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
+import java.util.function.DoubleSupplier;
+import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
 /**
  * Class for a tunable number. Gets value from dashboard in tuning mode, returns default if not or
  * value not in dashboard.
  */
-public class LoggedTunableNumber {
-  private static final String tableKey = "TunableNumbers";
+public class LoggedTunableNumber implements DoubleSupplier {
+  private static final String tableKey = "/TunableNumbers";
 
   private final String key;
   private Double defaultValue = null;
 
   private final Map<Integer, Double> lastValues = new HashMap<>();
 
-  private LoggedDashboardNumber dashboardNumber;
+  private LoggedNetworkNumber dashboardNumber;
 
   /**
    * Create a new LoggedTunableNumber
@@ -55,7 +56,7 @@ public class LoggedTunableNumber {
 
     this.defaultValue = defaultValue;
     if (Constants.TUNING_MODE) {
-      dashboardNumber = new LoggedDashboardNumber(key, defaultValue);
+      dashboardNumber = new LoggedNetworkNumber(key, defaultValue);
     }
   }
 
@@ -93,5 +94,72 @@ public class LoggedTunableNumber {
     }
 
     return false;
+  }
+
+  /**
+   * Checks whether the number has changed since the last time this method was called. Returns true
+   * the first time this method is called.
+   *
+   * @apiNote This method assumes that there is only a single object is calling this method. For
+   *     that use case, see {@link #hasChanged(int)}.
+   * @return Whether the value has changed since the last time this method was called
+   */
+  public boolean hasChanged() {
+    return hasChanged(0);
+  }
+
+  public void resetLastValue(int id) {
+    lastValues.put(id, get());
+  }
+
+  public void resetLastValue() {
+    resetLastValue(0);
+  }
+
+  /**
+   * Run callback if any tunable number has changed. See {@link #hasChanged(int)} for usage.
+   *
+   * @param action action to run
+   * @param resetAll if true and any TunableNumber in the set was changed, will reset the status of
+   *     all TunableNumbers in the set. Useful for avoiding redundant resetting.
+   * @param tunableNumbers tunable numbers to check
+   */
+  public static void ifChanged(
+      int id, Runnable action, boolean resetAll, LoggedTunableNumber... tunableNumbers) {
+
+    // Only force resetLastValue on numbers that haven't already been checked for changes to avoid
+    // redundancy. If not, break the loop on the first found instance.
+    boolean hasRunAction = false;
+    for (var tunableNumber : tunableNumbers) {
+      if (hasRunAction) {
+        tunableNumber.resetLastValue(id);
+      } else if (tunableNumber.hasChanged(id)) {
+        action.run();
+        hasRunAction = true;
+
+        // Exit early if no further resets are needed
+        if (!resetAll) {
+          break;
+        }
+      }
+    }
+  }
+
+  /**
+   * Run callback if any tunable number has changed. See {@link #hasChanged()} for usage.
+   *
+   * @param action action to run
+   * @param resetAll if true and any TunableNumber in the set was changed, will reset the status of
+   *     all TunableNumbers in the set. Useful for avoiding redundant resetting.
+   * @param tunableNumbers tunable numbers to check
+   */
+  public static void ifChanged(
+      Runnable action, boolean resetAll, LoggedTunableNumber... tunableNumbers) {
+    ifChanged(0, action, resetAll, tunableNumbers);
+  }
+
+  @Override
+  public double getAsDouble() {
+    return get();
   }
 }
